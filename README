@@ -1,0 +1,32 @@
+precision_recall.py
+
+Script for computing precision and recall. It takes as input:
+- a gold standard file in bioboxes format
+(https://github.com/bioboxes/rfc/blob/4bb19a633a6a969c2332f1f298852114c5f89b1b/data-format/binning.mkd)
+with optional column _LENGTH
+- a (compressed) fasta or fastq file, required if _LENGTH is not present in the gold standard file
+- the bins to be evaluated in the same format as above
+It outputs a tsv file containing precision and recall for each bin.
+
+usage: precision_recall.py [-h] -g GOLD_STANDARD_FILE -p PARTICIPANT_FILE
+                           [-f FAST_FILE] -o OUT_DIR
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
+                        gold standard - ground truth - file
+  -p PARTICIPANT_FILE, --participant_file PARTICIPANT_FILE
+                        participant file
+  -f FAST_FILE, --fast_file FAST_FILE
+                        FASTA or FASTQ file w/ sequences of gold standard -
+                        required if gold standard file misses column _LENGTH
+  -o OUT_DIR, --out_dir OUT_DIR
+                        output directory
+
+Example:
+
+Download gold standard assembly from https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz
+
+Then run:
+
+./precision_recall.py -g test/gsa_mapping.bin -p test/admiring_curie_3 -f CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz -o $(pwd)
