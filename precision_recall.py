@@ -1,8 +1,11 @@
 #!/usr/bin/python
 
-# Script for computing precision and recall. It takes as input a gold standard file in bioboxes format
+# Script for computing precision and recall. It takes as input:
+# - a gold standard file in bioboxes format
 # (https://github.com/bioboxes/rfc/blob/4bb19a633a6a969c2332f1f298852114c5f89b1b/data-format/binning.mkd)
-# with optional column _LENGTH. If _LENGTH is not present, a (compressed) fasta or fastq file must be provided.
+# with optional column _LENGTH
+# - a (compressed) fasta or fastq file, required if _LENGTH is not present in the gold standard file
+# - the bins to be evaluated in the same format as above
 # It outputs a tsv file containing precision and recall for each bin.
 
 import sys
@@ -303,10 +306,10 @@ def map_genomes(file_path_mapping, file_path_query, file_path_output, file_fasta
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file")
-    parser.add_argument("-p", "--participant_file", help="participant file")
+    parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
+    parser.add_argument("-p", "--participant_file", help="participant file", required=True)
     parser.add_argument("-f", "--fast_file", help="FASTA or FASTQ file w/ sequences of gold standard - required if gold standard file misses column _LENGTH")
-    parser.add_argument("-o", "--out_dir", help="output directory")
+    parser.add_argument("-o", "--out_dir", help="output directory", required=True)
     args = parser.parse_args()
     if not args.gold_standard_file or not args.participant_file or not args.out_dir:
         parser.print_help()
