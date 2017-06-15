@@ -27,4 +27,4 @@ Download gold standard assembly from https://s3-eu-west-1.amazonaws.com/cami-dat
 
 Then run:
 
-./precision_recall.py -g test/gsa_mapping.bin -p test/admiring_curie_3 -f CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz -o $(pwd)
+./precision_recall.py -g test/gsa_mapping.bin -q test/admiring_curie_3 -f CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz -o $(pwd)
