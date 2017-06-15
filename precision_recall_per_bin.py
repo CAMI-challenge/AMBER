@@ -8,13 +8,12 @@
 # - the bins to be evaluated in the same format as above
 # It outputs a tsv file containing precision and recall for each bin.
 
-import sys
 import argparse
-import compression_handler
 import io
-from collections import defaultdict
 from collections import Counter
+from collections import defaultdict
 from exceptions import RuntimeError
+from utils import compression_handler
 
 
 def read_lengths_from_fastx_file(fastx_file):
@@ -237,7 +236,7 @@ def validate_genomes(file_path_query, file_path_mapping, file_path_output):
         write_handler.write("%s \t %s\n" % (precision, recall))
 
 
-def map_genomes(file_path_mapping, file_path_query, file_path_output, file_fasta):
+def map_genomes(file_path_mapping, file_path_query, file_fasta):
     """
     This script mapps a predicted bin to the genome with the highest recall
 
@@ -245,7 +244,6 @@ def map_genomes(file_path_mapping, file_path_query, file_path_output, file_fasta
 
     @param file_path_query:
     @param file_path_mapping:
-    @param file_path_output:
     @return:
     """
     genome_id_to_total_length, genome_id_to_list_of_contigs, sequence_id_to_genome_id, anonymous_contig_id_to_lengths = get_genome_mapping(file_path_mapping, file_fasta)
@@ -287,42 +285,39 @@ def map_genomes(file_path_mapping, file_path_query, file_path_output, file_fasta
 
     bin_metrics = sorted(bin_metrics, key=lambda t: t[3], reverse=True)
 
-    with open(file_path_output + "/by_genome.tsv", 'w') as write_handler:
-        write_handler.write(
-            "Instance\tclass\tprecision\trecall\tpredicted class size\tamount correctly predicted\treal class size\n")
-        for metrics in bin_metrics:
-            write_handler.write("strain\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
-                metrics[1],
-                metrics[2],
-                metrics[3],
-                bin_id_to_total_lengths[metrics[0]],
-                metrics[4],
-                metrics[5]))
-        for genome_id in genome_id_to_list_of_contigs:
-            if genome_id not in mapped:
-                write_handler.write("strain\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
-                genome_id, 'NA', 0., 0, 0, genome_id_to_total_length[genome_id]))  # precision is NA for unpredicted bins
+    print "@@genome\tprecision\trecall\tpredicted_size\tcorrectly_predicted\treal_size"
+    for metrics in bin_metrics:
+        print "%s\t%s\t%s\t%s\t%s\t%s" % (
+            metrics[1],
+            metrics[2],
+            metrics[3],
+            bin_id_to_total_lengths[metrics[0]],
+            metrics[4],
+            metrics[5])
+    for genome_id in genome_id_to_list_of_contigs:
+        if genome_id not in mapped:
+            print "%s\t%s\t%s\t%s\t%s\t%s" % (
+            genome_id, 'NA', .0, 0, 0, genome_id_to_total_length[genome_id])  # precision is NA for unpredicted bins
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
+    parser.add_argument("-q", "--query_file", help="query file", required=True)
+    parser.add_argument("-f", "--fast_file",
+                        help="FASTA or FASTQ file w/ sequences of gold standard - required if gold standard file misses column _LENGTH")
+    args = parser.parse_args()
+    if not args.gold_standard_file or not args.query_file:
+        parser.print_help()
+        parser.exit(1)
+    map_genomes(file_path_mapping=args.gold_standard_file,
+                file_path_query=args.query_file,
+                file_fasta=args.fast_file)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
-    parser.add_argument("-p", "--participant_file", help="participant file", required=True)
-    parser.add_argument("-f", "--fast_file", help="FASTA or FASTQ file w/ sequences of gold standard - required if gold standard file misses column _LENGTH")
-    parser.add_argument("-o", "--out_dir", help="output directory", required=True)
-    args = parser.parse_args()
-    if not args.gold_standard_file or not args.participant_file or not args.out_dir:
-        parser.print_help()
-        parser.exit(1)
-    map_genomes(file_path_mapping = args.gold_standard_file,
-                file_path_query = args.participant_file,
-                file_path_output = args.out_dir,
-                file_fasta = args.fast_file)
-else:
-    map_genomes(file_path_query = sys.argv[1],
-                file_path_mapping = sys.argv[2],
-                file_path_output = sys.argv[3],
-                file_fasta = sys.argv[4] if len(sys.arg) > 4 else None)
+    main()
+
 
 # validate_genomes(
 #     file_path_query=sys.argv[1],
