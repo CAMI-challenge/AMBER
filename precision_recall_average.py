@@ -4,8 +4,6 @@ import sys
 import argparse
 import numpy as np
 
-FILTER_TAIL = True
-
 
 def load_unique_common(unique_common_file_path):
     genome_to_unique_common = {}
@@ -50,13 +48,13 @@ def filter_tail(data):
     return data
 
 
-def compute_precision_and_recall(data):
+def compute_precision_and_recall(data, filter_tail_bool):
     avg_precision = 0
     avg_recall = 0
     count_p = 0
     count_r = 0
 
-    if FILTER_TAIL:
+    if filter_tail_bool:
         data = filter_tail(data)
 
     # for each predicted bin (row of the table)
@@ -80,13 +78,15 @@ def compute_precision_and_recall(data):
 
 def main():
     parser = argparse.ArgumentParser(description="Compute precision and recall from file or standard input")
-    parser.add_argument('file', nargs='?', type=argparse.FileType('r'))
+    parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each bin")
+    parser.add_argument('-f', '--filter', action="store_true", help="Filter out 1%% smallest bins - default is false")
     args = parser.parse_args()
+    filter_tail_bool = args.filter
     if not args.file and sys.stdin.isatty():
         parser.print_help()
         parser.exit(1)
     data = load_data(sys.stdin if not sys.stdin.isatty() else args.file)
-    binner_to_avgprecision, binner_to_avgrecall = compute_precision_and_recall(data)
+    binner_to_avgprecision, binner_to_avgrecall = compute_precision_and_recall(data, filter_tail_bool)
     print binner_to_avgprecision
     print binner_to_avgrecall
 
