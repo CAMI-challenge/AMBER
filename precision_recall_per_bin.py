@@ -6,7 +6,7 @@
 # with optional column _LENGTH
 # - a (compressed) fasta or fastq file, required if _LENGTH is not present in the gold standard file
 # - the bins to be evaluated in the same format as above
-# It outputs a tsv file containing precision and recall for each bin.
+# It writes to standard output a table containing precision and recall for each bin.
 
 import argparse
 import io
@@ -236,20 +236,9 @@ def validate_genomes(file_path_query, file_path_mapping, file_path_output):
         write_handler.write("%s \t %s\n" % (precision, recall))
 
 
-def map_genomes(file_path_mapping, file_path_query, file_fasta):
-    """
-    This script mapps a predicted bin to the genome with the highest recall
-
-    @attention: In case of reads, read ids might not be paired read id and cause error: ReadID/1 ReadID/2
-
-    @param file_path_query:
-    @param file_path_mapping:
-    @return:
-    """
-    genome_id_to_total_length, genome_id_to_list_of_contigs, sequence_id_to_genome_id, anonymous_contig_id_to_lengths = get_genome_mapping(file_path_mapping, file_fasta)
+def open_query(file_path_query, anonymous_contig_id_to_lengths):
     bin_id_to_list_of_sequence_id = {}
     bin_id_to_total_lengths = {}
-
     with open(file_path_query) as read_handler:
         for sequence_id, predicted_bin, length in read_binning_file(read_handler):
             if predicted_bin not in bin_id_to_total_lengths:
@@ -257,11 +246,24 @@ def map_genomes(file_path_mapping, file_path_query, file_fasta):
                 bin_id_to_total_lengths[predicted_bin] = 0
             bin_id_to_list_of_sequence_id[predicted_bin].append(sequence_id)
             bin_id_to_total_lengths[predicted_bin] += anonymous_contig_id_to_lengths[sequence_id]
+    return bin_id_to_list_of_sequence_id, bin_id_to_total_lengths
 
-    bin_metrics = []
+
+def map_genomes(sequence_id_to_genome_id, anonymous_contig_id_to_lengths, bin_id_to_list_of_sequence_id):
+    """
+        This script maps a predicted bin to the genome with the highest recall
+
+        @attention: In case of reads, read ids might not be paired read id and cause error: ReadID/1 ReadID/2
+
+        @param sequence_id_to_genome_id:
+        @param anonymous_contig_id_to_lengths:
+        @param bin_id_to_list_of_sequence_id
+        @return:
+        """
+
     bin_id_to_genome_id_to_total_length = {}
     mapped = set()
-
+    bin_id_to_mapped_genome = {}
     for predicted_bin in bin_id_to_list_of_sequence_id:
         bin_id_to_genome_id_to_total_length[predicted_bin] = {}
         for sequence_id in bin_id_to_list_of_sequence_id[predicted_bin]:
@@ -276,14 +278,27 @@ def map_genomes(file_path_mapping, file_path_query, file_fasta):
                 max_length = bin_id_to_genome_id_to_total_length[predicted_bin][genome_id]
                 best_genome_id = genome_id
         mapped.add(best_genome_id)
+        bin_id_to_mapped_genome[predicted_bin] = best_genome_id
+    return bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped
+
+
+def compute_precision_recall(genome_id_to_total_length,
+                             genome_id_to_list_of_contigs,
+                             bin_id_to_list_of_sequence_id,
+                             bin_id_to_mapped_genome,
+                             bin_id_to_genome_id_to_total_length,
+                             bin_id_to_total_lengths,
+                             mapped):
+
+    bin_metrics = []
+    for predicted_bin in bin_id_to_list_of_sequence_id:
+        best_genome_id = bin_id_to_mapped_genome[predicted_bin]
         # length of genome in bin divided by bin size
         precision = float(bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id]) / float(bin_id_to_total_lengths[predicted_bin])
         recall = float(bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id]) / float(genome_id_to_total_length[best_genome_id])
         bin_metrics.append([predicted_bin, best_genome_id, precision, recall,
-                                      bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id],
-                                      genome_id_to_total_length[best_genome_id]])
-
-    bin_metrics = sorted(bin_metrics, key=lambda t: t[3], reverse=True)
+                            bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id],
+                            genome_id_to_total_length[best_genome_id]])
 
     print "@@genome\tprecision\trecall\tpredicted_size\tcorrectly_predicted\treal_size"
     for metrics in bin_metrics:
@@ -300,6 +315,35 @@ def map_genomes(file_path_mapping, file_path_query, file_fasta):
             genome_id, 'NA', .0, 0, 0, genome_id_to_total_length[genome_id])  # precision is NA for unpredicted bins
 
 
+def choose2(n):
+    return (n * (n - 1)) / 2
+
+
+def ari(bin_id_to_genome_id_to_total_length):
+    for bin_id in bin_id_to_genome_id_to_total_length:
+        for genome_id in bin_id_to_genome_id_to_total_length[bin_id]:
+            bin_id_to_genome_id_to_total_length[bin_id][genome_id]
+
+
+    return 0
+
+
+def compute_metrics(file_path_mapping, file_path_query, file_fasta):
+    genome_id_to_total_length, genome_id_to_list_of_contigs, sequence_id_to_genome_id, anonymous_contig_id_to_lengths = get_genome_mapping(
+        file_path_mapping, file_fasta)
+    bin_id_to_list_of_sequence_id, bin_id_to_total_lengths = open_query(file_path_query, anonymous_contig_id_to_lengths)
+    bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped = map_genomes(sequence_id_to_genome_id,
+                                                                                    anonymous_contig_id_to_lengths,
+                                                                                    bin_id_to_list_of_sequence_id)
+    compute_precision_recall(genome_id_to_total_length,
+                             genome_id_to_list_of_contigs,
+                             bin_id_to_list_of_sequence_id,
+                             bin_id_to_mapped_genome,
+                             bin_id_to_genome_id_to_total_length,
+                             bin_id_to_total_lengths,
+                             mapped)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
@@ -310,7 +354,7 @@ def main():
     if not args.gold_standard_file or not args.query_file:
         parser.print_help()
         parser.exit(1)
-    map_genomes(file_path_mapping=args.gold_standard_file,
+    compute_metrics(file_path_mapping=args.gold_standard_file,
                 file_path_query=args.query_file,
                 file_fasta=args.fast_file)
 
