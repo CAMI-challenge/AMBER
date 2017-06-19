@@ -5,14 +5,6 @@ import argparse
 import numpy as np
 
 
-def load_unique_common(unique_common_file_path):
-    genome_to_unique_common = {}
-    with open(unique_common_file_path) as read_handler:
-        for line in read_handler:
-            genome_to_unique_common[line.split("\t")[0]] = line.split("\t")[1].strip('\n')
-    return genome_to_unique_common
-
-
 def load_data(stream):
     data = []
     for line in stream:
@@ -25,11 +17,11 @@ def load_data(stream):
         predicted_size = int(float(row_data[3]))
 
         if row_data[1] != "NA" and predicted_size > 0:
-            precision = float(row_data[2])
+            precision = float(row_data[1])
         else:
             precision = np.nan
         data.append({'bin': bin, 'precision': precision, 'recall': row_data[2],
-                                       'predicted_size': predicted_size, 'real_size': real_size})
+                     'predicted_size': predicted_size, 'real_size': real_size})
     return data
 
 
@@ -49,8 +41,8 @@ def filter_tail(data):
 
 
 def compute_precision_and_recall(data, filter_tail_bool):
-    avg_precision = 0
-    avg_recall = 0
+    avg_precision = .0
+    avg_recall = .0
     count_p = 0
     count_r = 0
 
@@ -86,9 +78,9 @@ def main():
         parser.print_help()
         parser.exit(1)
     data = load_data(sys.stdin if not sys.stdin.isatty() else args.file)
-    binner_to_avgprecision, binner_to_avgrecall = compute_precision_and_recall(data, filter_tail_bool)
-    print binner_to_avgprecision
-    print binner_to_avgrecall
+    avgprecision, avgrecall = compute_precision_and_recall(data, filter_tail_bool)
+    print "%1.3f" % avgprecision
+    print "%1.3f" % avgrecall
 
 
 if __name__ == "__main__":
