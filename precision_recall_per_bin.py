@@ -239,6 +239,7 @@ def validate_genomes(file_path_query, file_path_mapping, file_path_output):
 def open_query(file_path_query, anonymous_contig_id_to_lengths):
     bin_id_to_list_of_sequence_id = {}
     bin_id_to_total_lengths = {}
+    sequence_id_to_bin_id = {}
     with open(file_path_query) as read_handler:
         for sequence_id, predicted_bin, length in read_binning_file(read_handler):
             if predicted_bin not in bin_id_to_total_lengths:
@@ -246,7 +247,8 @@ def open_query(file_path_query, anonymous_contig_id_to_lengths):
                 bin_id_to_total_lengths[predicted_bin] = 0
             bin_id_to_list_of_sequence_id[predicted_bin].append(sequence_id)
             bin_id_to_total_lengths[predicted_bin] += anonymous_contig_id_to_lengths[sequence_id]
-    return bin_id_to_list_of_sequence_id, bin_id_to_total_lengths
+            sequence_id_to_bin_id[sequence_id] = predicted_bin
+    return bin_id_to_list_of_sequence_id, bin_id_to_total_lengths, sequence_id_to_bin_id
 
 
 def map_genomes(sequence_id_to_genome_id, anonymous_contig_id_to_lengths, bin_id_to_list_of_sequence_id):
@@ -299,6 +301,8 @@ def compute_precision_recall(genome_id_to_total_length,
         bin_metrics.append([predicted_bin, best_genome_id, precision, recall,
                             bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id],
                             genome_id_to_total_length[best_genome_id]])
+    # sort bins by recall
+    bin_metrics = sorted(bin_metrics, key=lambda t: t[3], reverse=True)
 
     print "@@genome\tprecision\trecall\tpredicted_size\tcorrectly_predicted\treal_size"
     for metrics in bin_metrics:
@@ -319,22 +323,62 @@ def choose2(n):
     return (n * (n - 1)) / 2
 
 
-def ari(bin_id_to_genome_id_to_total_length):
-    for bin_id in bin_id_to_genome_id_to_total_length:
-        for genome_id in bin_id_to_genome_id_to_total_length[bin_id]:
-            bin_id_to_genome_id_to_total_length[bin_id][genome_id]
+def ari(bin_id_to_list_of_sequence_id, sequence_id_to_genome_id, sequence_id_to_bin_id):
+    bin_id_to_genome_id_to_total_contigs = {}
+    for bin_id in bin_id_to_list_of_sequence_id:
+        bin_id_to_genome_id_to_total_contigs[bin_id] = {}
+        for sequence_id in bin_id_to_list_of_sequence_id[bin_id]:
+            genome_id = sequence_id_to_genome_id[sequence_id]
+            if genome_id not in bin_id_to_genome_id_to_total_contigs[bin_id]:
+                bin_id_to_genome_id_to_total_contigs[bin_id][genome_id] = 0
+            bin_id_to_genome_id_to_total_contigs[bin_id][genome_id] += 1
+    genome_id_to_bin_id_to_total_contigs = {}
+    for sequence_id in sequence_id_to_bin_id:
+        genome_id = sequence_id_to_genome_id[sequence_id]
+        if genome_id not in genome_id_to_bin_id_to_total_contigs:
+            genome_id_to_bin_id_to_total_contigs[genome_id] = {}
+        bin_id = sequence_id_to_bin_id[sequence_id]
+        if bin_id not in genome_id_to_bin_id_to_total_contigs[genome_id]:
+            genome_id_to_bin_id_to_total_contigs[genome_id][bin_id] = 0
+        genome_id_to_bin_id_to_total_contigs[genome_id][bin_id] += 1
 
+    bin_genome_comb = 0.0
+    bin_comb = 0.0
+    genome_comb = 0.0
+    num_contigs = 0
+    for bin_id in bin_id_to_genome_id_to_total_contigs:
+        for genome_id in bin_id_to_genome_id_to_total_contigs[bin_id]:
+            bin_genome_comb += choose2(bin_id_to_genome_id_to_total_contigs[bin_id][genome_id])
 
-    return 0
+    for bin_id in bin_id_to_genome_id_to_total_contigs:
+        bin_totals = 0
+        for genome_id in bin_id_to_genome_id_to_total_contigs[bin_id]:
+            bin_totals += bin_id_to_genome_id_to_total_contigs[bin_id][genome_id]
+        num_contigs += bin_totals
+        bin_comb += choose2(bin_totals)
+
+    for genome_id in genome_id_to_bin_id_to_total_contigs:
+        genome_totals = 0
+        for bin_id in genome_id_to_bin_id_to_total_contigs[genome_id]:
+            genome_totals += genome_id_to_bin_id_to_total_contigs[genome_id][bin_id]
+        genome_comb += choose2(genome_totals)
+
+    temp = float(bin_comb * genome_comb) / float(choose2(num_contigs))
+
+    # print "\nbin_genome_comb=\t%f\ntemp=\t\t\t%f\nbin_comb=\t\t%f\ngenome_comb=\t\t%f\nnum_contigs=\t\t%s" % (bin_genome_comb, temp, bin_comb, genome_comb, num_contigs)
+
+    ret = bin_genome_comb - temp
+
+    # print ret / (float((bin_comb + genome_comb) / 2.0) - temp)
 
 
 def compute_metrics(file_path_mapping, file_path_query, file_fasta):
     genome_id_to_total_length, genome_id_to_list_of_contigs, sequence_id_to_genome_id, anonymous_contig_id_to_lengths = get_genome_mapping(
         file_path_mapping, file_fasta)
-    bin_id_to_list_of_sequence_id, bin_id_to_total_lengths = open_query(file_path_query, anonymous_contig_id_to_lengths)
+    bin_id_to_list_of_sequence_id, bin_id_to_total_lengths, sequence_id_to_bin_id = open_query(file_path_query, anonymous_contig_id_to_lengths)
     bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped = map_genomes(sequence_id_to_genome_id,
-                                                                                    anonymous_contig_id_to_lengths,
-                                                                                    bin_id_to_list_of_sequence_id)
+                                                                                       anonymous_contig_id_to_lengths,
+                                                                                       bin_id_to_list_of_sequence_id)
     compute_precision_recall(genome_id_to_total_length,
                              genome_id_to_list_of_contigs,
                              bin_id_to_list_of_sequence_id,
@@ -342,6 +386,8 @@ def compute_metrics(file_path_mapping, file_path_query, file_fasta):
                              bin_id_to_genome_id_to_total_length,
                              bin_id_to_total_lengths,
                              mapped)
+
+    ari(bin_id_to_list_of_sequence_id, sequence_id_to_genome_id, sequence_id_to_bin_id)
 
 
 def main():
