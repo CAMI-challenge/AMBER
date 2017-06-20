@@ -12,7 +12,7 @@ def load_unique_common(unique_common_file_path):
     return genome_to_unique_common
 
 
-def load_data(stream, unique_common_file_path, keyword):
+def print_filtered_data(stream, unique_common_file_path, keyword):
     genome_to_unique_common = load_unique_common(unique_common_file_path)
     for line in stream:
         line = line.strip()
@@ -34,9 +34,9 @@ def main():
     if not args.file and sys.stdin.isatty():
         parser.print_help()
         parser.exit(1)
-    load_data(sys.stdin if not sys.stdin.isatty() else args.file,
-              args.bins,
-              args.keyword)
+    print_filtered_data(sys.stdin if not sys.stdin.isatty() else args.file,
+                        args.bins,
+                        args.keyword)
 
 
 if __name__ == "__main__":

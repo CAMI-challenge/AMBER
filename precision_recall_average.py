@@ -3,6 +3,7 @@
 import sys
 import argparse
 import numpy as np
+import math
 
 
 def load_data(stream):
@@ -65,7 +66,25 @@ def compute_precision_and_recall(data, filter_tail_bool):
             count_p += 1
             current_avg = avg_precision
             avg_precision = (precision - current_avg) / count_p + current_avg
-    return avg_precision, avg_recall
+
+    sum_diffs_precision = .0
+    sum_diffs_recall = .0
+    for bin in data:
+        real_size = float(bin['real_size'])
+        if real_size > 0:
+            recall = float(bin['recall'])
+            sum_diffs_recall += math.pow(recall - avg_recall, 2)
+        if not np.isnan(bin['precision']):
+            precision = bin['precision']
+            sum_diffs_precision += math.pow(precision - avg_precision, 2)
+
+    std_deviation_precision = math.sqrt(sum_diffs_precision / count_p)
+    std_error_precision = std_deviation_precision / math.sqrt(count_p)
+
+    std_deviation_recall = math.sqrt(sum_diffs_recall / count_r)
+    std_error_recall = std_deviation_recall / math.sqrt(count_r)
+
+    return avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall
 
 
 def main():
@@ -78,10 +97,18 @@ def main():
         parser.print_help()
         parser.exit(1)
     data = load_data(sys.stdin if not sys.stdin.isatty() else args.file)
-    avgprecision, avgrecall = compute_precision_and_recall(data, filter_tail_bool)
-    print "%1.3f" % avgprecision
-    print "%1.3f" % avgrecall
+    avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall =\
+        compute_precision_and_recall(data, filter_tail_bool)
 
+    print "PRECISION"
+    print "Precision:\t\t%1.3f" % avg_precision
+    print "Standard deviation:\t%1.3f" % std_deviation_precision
+    print "Standard error of mean:\t%1.3f" % std_error_precision
+    print "--------------"
+    print "RECALL"
+    print "Recall:\t\t\t%1.3f" % avg_recall
+    print "Standard deviation:\t%1.3f" % std_deviation_recall
+    print "Standard error of mean:\t%1.3f" % std_error_recall
 
 if __name__ == "__main__":
     main()
