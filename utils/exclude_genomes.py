@@ -25,17 +25,27 @@ def print_filtered_data(stream, unique_common_file_path, keyword):
         print line
 
 
+def filter_data(bin_metrics, unique_common_file_path, keyword):
+    genome_to_unique_common = load_unique_common(unique_common_file_path)
+    filtered_bin_metrics = []
+    for bin in bin_metrics:
+        bin_id = bin['mapped_genome']
+        if bin_id not in genome_to_unique_common or genome_to_unique_common[bin_id] != keyword:
+            filtered_bin_metrics.append(bin)
+    return filtered_bin_metrics
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Exclude bins from file or standard input")
-    parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each bin")
-    parser.add_argument('-b', '--bins', help="File with list of bins", required=True)
+    parser = argparse.ArgumentParser(description="Exclude genomes (i.e. bins) from table file of precision and recall or standard input")
+    parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each genome")
+    parser.add_argument('-r', '--genomes_file', help="File with list of genomes to be removed", required=True)
     parser.add_argument('-k', '--keyword', help="Keyword in second column of input for bins to be removed (no keyword=remove all in list)", required=False)
     args = parser.parse_args()
     if not args.file and sys.stdin.isatty():
         parser.print_help()
         parser.exit(1)
     print_filtered_data(sys.stdin if not sys.stdin.isatty() else args.file,
-                        args.bins,
+                        args.genomes_file,
                         args.keyword)
 
 

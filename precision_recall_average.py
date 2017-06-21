@@ -13,16 +13,18 @@ def load_data(stream):
         if len(line) == 0 or line.startswith("@"):
             continue
         row_data = line.split('\t')
-        bin = row_data[0]
+
+        mapped_genome = row_data[0]
         real_size = int(float(row_data[5]))
         predicted_size = int(float(row_data[3]))
+        correctly_predicted = int(float(row_data[4]))
 
         if row_data[1] != "NA" and predicted_size > 0:
             precision = float(row_data[1])
         else:
             precision = np.nan
-        data.append({'bin': bin, 'precision': precision, 'recall': row_data[2],
-                     'predicted_size': predicted_size, 'real_size': real_size})
+        data.append({'mapped_genome': mapped_genome, 'precision': precision, 'recall': row_data[2],
+                     'predicted_size': predicted_size, 'correctly_predicted': correctly_predicted, 'real_size': real_size})
     return data
 
 
@@ -88,9 +90,9 @@ def compute_precision_and_recall(data, filter_tail_bool):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute precision and recall from file or standard input")
+    parser = argparse.ArgumentParser(description="Compute precision and recall from table file of precision and recall or standard input")
     parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each bin")
-    parser.add_argument('-f', '--filter', action="store_true", help="Filter out 1%% smallest bins - default is false")
+    parser.add_argument('-s', '--filter', action="store_true", help="Filter out 1%% smallest bins - default is false")
     args = parser.parse_args()
     filter_tail_bool = args.filter
     if not args.file and sys.stdin.isatty():
@@ -104,7 +106,6 @@ def main():
     print "Precision:\t\t%1.3f" % avg_precision
     print "Standard deviation:\t%1.3f" % std_deviation_precision
     print "Standard error of mean:\t%1.3f" % std_error_precision
-    print "--------------"
     print "RECALL"
     print "Recall:\t\t\t%1.3f" % avg_recall
     print "Standard deviation:\t%1.3f" % std_deviation_recall
@@ -112,13 +113,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-# main("../metadata/ANI/unique_common.tsv",
-#      "../binning/tables/low_unsupervised_by_genome_all.tsv",
-#      "../binning/tables/medium_unsupervised_by_genome_all.tsv",
-#      "../binning/tables/high_unsupervised_by_genome_all.tsv",
-#      "../binning/tables/low_supervised_by_bin_all.tsv",
-#      "../binning/tables/medium_supervised_by_bin_all.tsv",
-#      "../binning/tables/high_supervised_by_bin_all.tsv")
