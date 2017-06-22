@@ -4,14 +4,13 @@ import argparse
 import precision_recall_per_genome
 import precision_recall_average
 from utils import exclude_genomes
+from utils import load_data
 
 
-def evaluate_all(gold_standard_file, query_files, fasta_file, filter_tail_bool, genomes_file, keyword):
+def evaluate_all(gold_standard, query_files, filter_tail_bool, genomes_file, keyword):
     for query_file in query_files:
         print "Evaluating: %s" % query_file
-        bin_metrics = precision_recall_per_genome.compute_metrics(gold_standard_file,
-                                                                  query_file,
-                                                                  fasta_file)
+        bin_metrics = precision_recall_per_genome.compute_metrics(query_file, gold_standard)
 
         if genomes_file:
             bin_metrics = exclude_genomes.filter_data(bin_metrics, genomes_file, keyword)
@@ -41,9 +40,9 @@ def main():
     parser.add_argument('-r', '--genomes_file', help="File with list of genomes to be removed", required=False)
     parser.add_argument('-k', '--keyword', help="Keyword in second column of input for bins to be removed (no keyword=remove all in list)", required=False)
     args = parser.parse_args()
-    evaluate_all(args.gold_standard_file,
+    gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
+    evaluate_all(gold_standard,
                  args.query_files,
-                 args.fasta_file,
                  args.filter,
                  args.genomes_file,
                  args.keyword)
