@@ -1,5 +1,8 @@
 Feature: Run Scripts without error
 
+  Background: Initial Seup
+    Given I downloaded the scripts
+
   Scenario: Run precision_recall_per_genome.py
 
     Given I download the file "https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz" to "gold_standard.fasta"

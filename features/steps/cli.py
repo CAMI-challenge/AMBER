@@ -54,3 +54,10 @@ def step_impl(context):
 def step_impl(context, stream):
     output = get_stream(context, stream)
     assert context.text in output
+
+@given(u'I downloaded the scripts')
+def create_tmp_dir(context):
+    dir_ = os.path.dirname(os.path.abspath(__file__))
+    tmp_dir = os.path.join(dir_, '..', '..', "tmp")
+    if not os.path.exists(tmp_dir):
+        os.makedirs(tmp_dir)

@@ -3,3 +3,4 @@
 .tox
 *.pyc
 tmp
+*.egg-info
