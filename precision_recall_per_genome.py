@@ -30,7 +30,7 @@ def map_genomes(gold_standard, bin_id_to_list_of_sequence_id):
     for predicted_bin in bin_id_to_list_of_sequence_id:
         bin_id_to_genome_id_to_total_length[predicted_bin] = {}
         for sequence_id in bin_id_to_list_of_sequence_id[predicted_bin]:
-            genome_id = gold_standard.sequence_id_to_genome_id[sequence_id]
+            genome_id = gold_standard.contig_id_to_genome_id[sequence_id]
             if genome_id not in bin_id_to_genome_id_to_total_length[predicted_bin]:
                 bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] = 0
             bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += gold_standard.contig_id_to_lengths[sequence_id]

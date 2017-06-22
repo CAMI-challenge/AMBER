@@ -80,7 +80,7 @@ def get_genome_mapping(mapping_file, fastx_file):
     gold_standard = GoldStandard()
     gold_standard.genome_id_to_total_length = {}
     gold_standard.genome_id_to_list_of_contigs = {}
-    gold_standard.sequence_id_to_genome_id = {}
+    gold_standard.contig_id_to_genome_id = {}
     gold_standard.contig_id_to_lengths = {}
 
     with open(mapping_file, 'r') as read_handler:
@@ -93,12 +93,12 @@ def get_genome_mapping(mapping_file, fastx_file):
         for anonymous_contig_id, genome_id, length in read_binning_file(read_handler):
             total_length = length if is_length_column_av else sequence_length[anonymous_contig_id]
             gold_standard.contig_id_to_lengths[anonymous_contig_id] = total_length
-            gold_standard.sequence_id_to_genome_id[anonymous_contig_id] = genome_id
+            gold_standard.contig_id_to_genome_id[anonymous_contig_id] = genome_id
             if genome_id not in gold_standard.genome_id_to_total_length:
                 gold_standard.genome_id_to_total_length[genome_id] = 0
                 gold_standard.genome_id_to_list_of_contigs[genome_id] = []
-                gold_standard.genome_id_to_total_length[genome_id] += total_length
-                gold_standard.genome_id_to_list_of_contigs[genome_id].append(anonymous_contig_id)
+            gold_standard.genome_id_to_total_length[genome_id] += total_length
+            gold_standard.genome_id_to_list_of_contigs[genome_id].append(anonymous_contig_id)
 
     return gold_standard
 
