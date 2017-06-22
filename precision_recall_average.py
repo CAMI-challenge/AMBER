@@ -8,6 +8,7 @@ import math
 
 def load_data(stream):
     data = []
+    next(stream)
     for line in stream:
         line = line.strip()
         if len(line) == 0 or line.startswith("@"):
@@ -89,6 +90,20 @@ def compute_precision_and_recall(data, filter_tail_bool):
     return avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall
 
 
+def print_precision_recall_table_header():
+    print "tool\tprecision\tstd_dev_precision\tsem_precision\trecall\tstd_dev_recall\tsem_recall"
+
+
+def print_precision_recall(toolname, avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall):
+    print "%s\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f" % (toolname,
+                                                            avg_precision,
+                                                            std_deviation_precision,
+                                                            std_error_precision,
+                                                            avg_recall,
+                                                            std_deviation_recall,
+                                                            std_error_recall)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Compute precision and recall from table file of precision and recall or standard input")
     parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each bin")
@@ -101,15 +116,8 @@ def main():
     data = load_data(sys.stdin if not sys.stdin.isatty() else args.file)
     avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall =\
         compute_precision_and_recall(data, filter_tail_bool)
-
-    print "PRECISION"
-    print "Precision:\t\t%1.3f" % avg_precision
-    print "Standard deviation:\t%1.3f" % std_deviation_precision
-    print "Standard error of mean:\t%1.3f" % std_error_precision
-    print "RECALL"
-    print "Recall:\t\t\t%1.3f" % avg_recall
-    print "Standard deviation:\t%1.3f" % std_deviation_recall
-    print "Standard error of mean:\t%1.3f" % std_error_recall
+    print_precision_recall_table_header()
+    print_precision_recall("unknown", avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall)
 
 if __name__ == "__main__":
     main()

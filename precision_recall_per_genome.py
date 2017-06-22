@@ -94,7 +94,7 @@ def compute_metrics(file_path_query, gold_standard):
 
 
 def print_metrics(bin_metrics):
-    print "@@genome\tprecision\trecall\tpredicted_size\tcorrectly_predicted\treal_size"
+    print "genome\tprecision\trecall\tpredicted_size\tcorrectly_predicted\treal_size"
     for bin in bin_metrics:
         print "%s\t%s\t%s\t%s\t%s\t%s" % (
             bin['mapped_genome'],

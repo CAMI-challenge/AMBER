@@ -54,7 +54,7 @@ def ari(bin_id_to_list_of_sequence_id, sequence_id_to_genome_id, sequence_id_to_
 
     ret = bin_genome_comb - temp
 
-    print "Adjusted rand index: %1.3f" % (ret / (float((bin_comb + genome_comb) / 2.0) - temp))
+    print "%1.3f" % (ret / (float((bin_comb + genome_comb) / 2.0) - temp))
 
 
 def compute_metrics(file_path_mapping, file_path_query):

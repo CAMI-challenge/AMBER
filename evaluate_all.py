@@ -8,8 +8,8 @@ from utils import load_data
 
 
 def evaluate_all(gold_standard, query_files, filter_tail_bool, genomes_file, keyword):
+    precision_recall_average.print_precision_recall_table_header()
     for query_file in query_files:
-        print "Evaluating: %s" % query_file
         bin_metrics = precision_recall_per_genome.compute_metrics(query_file, gold_standard)
 
         if genomes_file:
@@ -18,16 +18,13 @@ def evaluate_all(gold_standard, query_files, filter_tail_bool, genomes_file, key
         avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall = \
             precision_recall_average.compute_precision_and_recall(bin_metrics, filter_tail_bool)
 
-        print "PRECISION"
-        print "Precision:\t\t%1.3f" % avg_precision
-        print "Standard deviation:\t%1.3f" % std_deviation_precision
-        print "Standard error of mean:\t%1.3f" % std_error_precision
-        print "RECALL"
-        print "Recall:\t\t\t%1.3f" % avg_recall
-        print "Standard deviation:\t%1.3f" % std_deviation_recall
-        print "Standard error of mean:\t%1.3f" % std_error_recall
-
-    return 0
+        precision_recall_average.print_precision_recall(query_file.split('/')[-1],
+                                                        avg_precision,
+                                                        avg_recall,
+                                                        std_deviation_precision,
+                                                        std_deviation_recall,
+                                                        std_error_precision,
+                                                        std_error_recall)
 
 
 def main():
