@@ -1,6 +1,6 @@
 Feature: Run Scripts without error
 
-  Background: Initial Seup
+  Background: Initial Setup
     Given I downloaded the scripts
 
   Scenario: Run precision_recall_per_genome.py

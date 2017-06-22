@@ -5,7 +5,7 @@ from scripttest import TestFileEnvironment
 root_dir = pt.abspath(pt.join(pt.dirname(__file__), '..'))
 
 def before_scenario(context, _):
-    context.env = TestFileEnvironment(base_path = "/home/belmann/projects/genome_binning_evaluation/tmp")
+    context.env = TestFileEnvironment(base_path = context.config.userdata["TMPDIR"])
 
     # Mounting volumes in Docker needs an explict full path.
     # The path cannot be hard coded into the features as it varies
