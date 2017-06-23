@@ -6,7 +6,7 @@ import numpy as np
 import math
 
 
-def load_data(stream):
+def load_tsv_table(stream):
     data = []
     next(stream)
     for line in stream:
@@ -94,8 +94,10 @@ def print_precision_recall_table_header():
     print "tool\tprecision\tstd_dev_precision\tsem_precision\trecall\tstd_dev_recall\tsem_recall"
 
 
-def print_precision_recall(toolname, avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall):
-    print "%s\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f" % (toolname,
+def print_precision_recall(label, avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall):
+    if not label:
+        label = ""
+    print "%s\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f" % (label,
                                                             avg_precision,
                                                             std_deviation_precision,
                                                             std_error_precision,
@@ -106,18 +108,19 @@ def print_precision_recall(toolname, avg_precision, avg_recall, std_deviation_pr
 
 def main():
     parser = argparse.ArgumentParser(description="Compute precision and recall from table file of precision and recall or standard input")
-    parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each bin")
+    parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each genome")
     parser.add_argument('-s', '--filter', action="store_true", help="Filter out 1%% smallest bins - default is false")
+    parser.add_argument('-l', '--label', help="Binning name", required=False)
     args = parser.parse_args()
     filter_tail_bool = args.filter
     if not args.file and sys.stdin.isatty():
         parser.print_help()
         parser.exit(1)
-    data = load_data(sys.stdin if not sys.stdin.isatty() else args.file)
+    metrics = load_tsv_table(sys.stdin if not sys.stdin.isatty() else args.file)
     avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall =\
-        compute_precision_and_recall(data, filter_tail_bool)
+        compute_precision_and_recall(metrics, filter_tail_bool)
     print_precision_recall_table_header()
-    print_precision_recall("unknown", avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall)
+    print_precision_recall(args.label, avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall)
 
 if __name__ == "__main__":
     main()
