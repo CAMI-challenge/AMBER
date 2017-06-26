@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Script for computing precision and recall. It takes as input:
 # - a gold standard file in bioboxes format
