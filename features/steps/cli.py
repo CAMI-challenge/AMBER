@@ -61,3 +61,7 @@ def create_tmp_dir(context):
     tmp_dir = os.path.join(dir_, '..', '..', "tmp")
     if not os.path.exists(tmp_dir):
         os.makedirs(tmp_dir)
+
+@given(u'I create the directory "{directory}"')
+def step_impl(context, directory):
+    os.makedirs(get_env_path(context, directory))
