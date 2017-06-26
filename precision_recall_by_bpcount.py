@@ -75,9 +75,9 @@ def compute_metrics(file_path_mapping, file_path_query, file_fasta):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Compute precision and recall weighed by base pair counts - not averaged over genome bins - from binning file")
     parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
-    parser.add_argument("-q", "--query_file", help="query file", required=True)
+    parser.add_argument("query_file", help="Query file")
     parser.add_argument("-f", "--fasta_file",
                         help="FASTA or FASTQ file w/ sequences of gold standard - required if gold standard file misses column _LENGTH")
     args = parser.parse_args()

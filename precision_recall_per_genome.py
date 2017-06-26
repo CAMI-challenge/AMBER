@@ -107,8 +107,8 @@ def print_metrics(bin_metrics):
 
 def main():
     parser = argparse.ArgumentParser(description="Compute table of precision and recall per genome bin")
+    parser.add_argument("query_file", help="Query file")
     parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
-    parser.add_argument("-q", "--query_file", help="Query file", required=True)
     parser.add_argument("-f", "--fasta_file",
                         help="FASTA or FASTQ file w/ sequences of gold standard - required if gold standard file misses column _LENGTH")
     args = parser.parse_args()

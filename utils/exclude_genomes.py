@@ -36,7 +36,7 @@ def filter_data(bin_metrics, unique_common_file_path, keyword):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Exclude genomes (i.e. bins) from table file of precision and recall or standard input")
+    parser = argparse.ArgumentParser(description="Exclude genome bins from table file of precision and recall or standard input")
     parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each genome")
     parser.add_argument('-r', '--genomes_file', help="File with list of genomes to be removed", required=True)
     parser.add_argument('-k', '--keyword', help="Keyword in second column of input for bins to be removed (no keyword=remove all in list)", required=False)

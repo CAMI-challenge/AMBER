@@ -108,7 +108,7 @@ def print_precision_recall(label, avg_precision, avg_recall, std_deviation_preci
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute precision and recall from table file of precision and recall or standard input")
+    parser = argparse.ArgumentParser(description="Compute precision and recall, including standard deviation and standard error of the mean, from table of precision and recall per genome provided as a file or via the standard input")
     parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each genome")
     parser.add_argument('-p', '--filter', help="Filter out [FILTER]%% smallest bins - default is 0")
     parser.add_argument('-l', '--label', help="Binning name", required=False)

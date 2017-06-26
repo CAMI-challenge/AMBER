@@ -29,7 +29,7 @@ def evaluate_all(gold_standard, query_files, labels, filter_tail_percentage, gen
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute metrics for multiple binning files at once")
+    parser = argparse.ArgumentParser(description="Compute precision and recall, including standard deviation and standard error of the mean, for binning files")
     parser.add_argument("query_files", nargs='+', help="Query files")
     parser.add_argument('-l', '--labels', help="Comma-separated binning names", required=False)
     parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
