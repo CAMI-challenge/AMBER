@@ -13,11 +13,11 @@ Feature: Run Scripts without error
       |  gsa_mapping.binning      | input |
     When I run the command
     """
-    ../precision_recall_by_bpcount.py  -g input/gsa_mapping.binning -q input/test_query.binning -f gold_standard.fasta
+    ../precision_recall_by_bpcount.py -g input/gsa_mapping.binning -f gold_standard.fasta input/test_query.binning
     """
     Then the exit code should be 0
     And the stdout should contain:
      """
-     Precision:	0.700
-     Recall:		0.839
+     precision	recall
+     0.700	0.839
 """
