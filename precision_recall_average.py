@@ -29,7 +29,8 @@ def load_tsv_table(stream):
     return data
 
 
-def filter_tail(data):
+def filter_tail(data, percentage):
+    value = float(percentage) / 100.0
     # sort bins by increasing predicted size
     data = sorted(data, key=lambda x: x['predicted_size'])
     sum_of_predicted_sizes = sum([int(float(bin['predicted_size'])) for bin in data])
@@ -37,21 +38,21 @@ def filter_tail(data):
     for bin in data:
         predicted_size = int(float(bin['predicted_size']))
         cumsum_of_predicted_sizes += predicted_size
-        if float(cumsum_of_predicted_sizes) / float(sum_of_predicted_sizes) <= .01:
+        if float(cumsum_of_predicted_sizes) / float(sum_of_predicted_sizes) <= value:
             bin['precision'] = np.nan
         else:
             break
     return data
 
 
-def compute_precision_and_recall(data, filter_tail_bool):
+def compute_precision_and_recall(data, filter_tail_percentage):
     avg_precision = .0
     avg_recall = .0
     count_p = 0
     count_r = 0
 
-    if filter_tail_bool:
-        data = filter_tail(data)
+    if filter_tail_percentage:
+        data = filter_tail(data, filter_tail_percentage)
 
     # for each predicted bin (row of the table)
     for bin in data:
@@ -109,16 +110,15 @@ def print_precision_recall(label, avg_precision, avg_recall, std_deviation_preci
 def main():
     parser = argparse.ArgumentParser(description="Compute precision and recall from table file of precision and recall or standard input")
     parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each genome")
-    parser.add_argument('-s', '--filter', action="store_true", help="Filter out 1%% smallest bins - default is false")
+    parser.add_argument('-p', '--filter', help="Filter out [FILTER]%% smallest bins - default is 0")
     parser.add_argument('-l', '--label', help="Binning name", required=False)
     args = parser.parse_args()
-    filter_tail_bool = args.filter
     if not args.file and sys.stdin.isatty():
         parser.print_help()
         parser.exit(1)
     metrics = load_tsv_table(sys.stdin if not sys.stdin.isatty() else args.file)
     avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall =\
-        compute_precision_and_recall(metrics, filter_tail_bool)
+        compute_precision_and_recall(metrics, args.filter)
     print_precision_recall_table_header()
     print_precision_recall(args.label, avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall)
 

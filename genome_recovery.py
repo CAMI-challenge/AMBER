@@ -28,7 +28,6 @@ def calc_table(metrics):
                 genome_recovery[4] += 1
             if precision > 0.9:
                 genome_recovery[5] += 1
-
     return genome_recovery
 
 
@@ -46,17 +45,15 @@ def print_table(genome_recovery, label):
 def main():
     parser = argparse.ArgumentParser(description="Compute number of genomes in ranges of completeness and contamination")
     parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each genome")
-    parser.add_argument('-s', '--filter', action="store_true", help="Filter out 1%% smallest bins - default is false")
+    parser.add_argument('-p', '--filter', help="Filter out [FILTER]%% smallest bins - default is 0")
     parser.add_argument('-l', '--label', help="Binning name", required=False)
     args = parser.parse_args()
-    filter_tail_bool = args.filter
     if not args.file and sys.stdin.isatty():
         parser.print_help()
         parser.exit(1)
     metrics = precision_recall_average.load_tsv_table(sys.stdin if not sys.stdin.isatty() else args.file)
-    if filter_tail_bool:
-        metrics = precision_recall_average.load_tsv_table(sys.stdin)
-    metrics = precision_recall_average.filter_tail(metrics)
+    if args.filter:
+        metrics = precision_recall_average.filter_tail(metrics, args.filter)
     print_table(calc_table(metrics), args.label)
 
 
