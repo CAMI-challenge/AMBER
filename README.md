@@ -45,9 +45,9 @@ test/naughty_carson_2 test/goofy_hypatia_2 test/elated_franklin_0
 **Output:**
 ~~~BASH
 tool       precision std_dev_precision sem_precision recall std_dev_recall sem_recall
-MaxBin 2.0 0.931     0.117             0.020         0.799  0.364          0.058
-CONCOCT    0.766     0.313             0.054         0.517  0.476          0.069
-MetaBAT    0.833     0.251             0.044         0.570  0.428          0.065
+MaxBin 2.0 0.948     0.095             0.016         0.799  0.364          0.058
+CONCOCT    0.837     0.266             0.052         0.517  0.476          0.069
+MetaBAT    0.822     0.256             0.047         0.570  0.428          0.065
 ~~~
 
 ## precision_recall_per_genome.py
