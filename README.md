@@ -1,4 +1,12 @@
-## Script for computing precision and recall. 
+[![CircleCI](https://circleci.com/gh/CAMI-challenge/genome_binning_evaluation/tree/master.svg?style=svg)](https://circleci.com/gh/CAMI-challenge/genome_binning_evaluation/tree/master)
+
+# Scripts for computing precision and recall. 
+
+## Requirements
+
+* python2
+
+## User Guide
 
 It takes as input:
 
@@ -34,4 +42,17 @@ Then run:
 
 ~~~BASH
 ./precision_recall_per_genome.py -g test/gsa_mapping.bin -q test/admiring_curie_3 -f CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz
+~~~
+
+
+## Developer Guide
+
+We are using [tox]((https://tox.readthedocs.io/en/latest/)) for project automation.
+
+### Tests
+
+If you want to run tests just type tox in project dir:
+
+~~~BASH
+tox
 ~~~
