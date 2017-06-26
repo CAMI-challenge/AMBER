@@ -52,8 +52,7 @@ def compute_metrics(file_path_mapping, file_path_query, file_fasta):
     @param file_path_query:
     @return:
     """
-    genome_id_to_total_length, genome_id_to_list_of_contigs, sequence_id_to_genome_id, anonymouse_contig_id_to_length = \
-        load_data.get_genome_mapping(file_path_mapping, file_fasta)
+    gold_standard = load_data.get_genome_mapping(file_path_mapping, file_fasta)
     bin_id_to_list_of_sequence_id = {}
     bin_id_to_total_length = {}
     with open(file_path_query) as read_handler:
@@ -62,24 +61,23 @@ def compute_metrics(file_path_mapping, file_path_query, file_fasta):
                 bin_id_to_list_of_sequence_id[predicted_bin] = []
                 bin_id_to_total_length[predicted_bin] = 0
             bin_id_to_list_of_sequence_id[predicted_bin].append(sequence_id)
-            bin_id_to_total_length[predicted_bin] += anonymouse_contig_id_to_length[sequence_id]
+            bin_id_to_total_length[predicted_bin] += gold_standard.contig_id_to_lengths[sequence_id]
 
     bin_id_to_genome_id_to_total_length = defaultdict(Counter)
     for predicted_bin in bin_id_to_list_of_sequence_id:
         for sequence_id in bin_id_to_list_of_sequence_id[predicted_bin]:
-            genome_id = sequence_id_to_genome_id[sequence_id]
-            bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += anonymouse_contig_id_to_length[sequence_id]
+            genome_id = gold_standard.contig_id_to_genome_id[sequence_id]
+            bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += gold_standard.contig_id_to_lengths[sequence_id]
 
     precision, recall = calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_length,
-                                              genome_id_to_total_length)
-    print "Precision:\t%1.3f" % precision
-    print "Recall:\t\t%1.3f" % recall
+                                              gold_standard.genome_id_to_total_length)
+    print "precision\trecall\n%1.3f\t%1.3f" % (precision, recall)
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Compute precision and recall weighed by base pair counts - not averaged over genome bins - from binning file")
     parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
-    parser.add_argument("-q", "--query_file", help="query file", required=True)
+    parser.add_argument("query_file", help="Query file")
     parser.add_argument("-f", "--fasta_file",
                         help="FASTA or FASTQ file w/ sequences of gold standard - required if gold standard file misses column _LENGTH")
     args = parser.parse_args()
