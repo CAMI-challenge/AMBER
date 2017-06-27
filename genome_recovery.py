@@ -4,6 +4,8 @@ import sys
 import precision_recall_average
 import numpy as np
 import argparse
+from utils import filter_tail
+from utils import load_data
 
 
 def calc_table(metrics):
@@ -51,9 +53,9 @@ def main():
     if not args.file and sys.stdin.isatty():
         parser.print_help()
         parser.exit(1)
-    metrics = precision_recall_average.load_tsv_table(sys.stdin if not sys.stdin.isatty() else args.file)
+    metrics = load_data.load_tsv_table(sys.stdin if not sys.stdin.isatty() else args.file)
     if args.filter:
-        metrics = precision_recall_average.filter_tail(metrics, args.filter)
+        metrics = filter_tail.filter_tail(metrics, args.filter)
     print_table(calc_table(metrics), args.label)
 
 

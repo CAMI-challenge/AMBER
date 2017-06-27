@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import io
+import numpy as np
 from utils import compression_handler
 
 
@@ -9,7 +10,31 @@ class GoldStandard:
         pass
 
 
+def load_tsv_table(stream):
+    data = []
+    next(stream)
+    for line in stream:
+        line = line.strip()
+        if len(line) == 0 or line.startswith("@"):
+            continue
+        row_data = line.split('\t')
+
+        mapped_genome = row_data[0]
+        real_size = int(float(row_data[5]))
+        predicted_size = int(float(row_data[3]))
+        correctly_predicted = int(float(row_data[4]))
+
+        if row_data[1] != "NA" and predicted_size > 0:
+            precision = float(row_data[1])
+        else:
+            precision = np.nan
+        data.append({'mapped_genome': mapped_genome, 'precision': precision, 'recall': row_data[2],
+                     'predicted_size': predicted_size, 'correctly_predicted': correctly_predicted, 'real_size': real_size})
+    return data
+
+
 def read_lengths_from_fastx_file(fastx_file):
+    # TODO: use Bio package
     length = {}
     f = compression_handler.get_compressed_file(fastx_file)
     br = io.BufferedReader(f.accessor)
