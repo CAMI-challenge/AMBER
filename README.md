@@ -180,7 +180,7 @@ optional arguments:
 ~~~BASH
 ./precision_recall_by_bpcount.py -g test/gsa_mapping.bin \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
-/home/fmeyer/cami/data/binning/naughty_carson_2
+test/naughty_carson_2
 ~~~
 **Output:**
 ~~~BASH
