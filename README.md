@@ -42,7 +42,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall.py -g /home/fmeyer/cami/data/gs_low/gsa_mapping.bin \
+./precision_recall.py -g test/gsa_mapping.bin \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 -r test/unique_common.tsv -k "circular element" \
 -p 1 \
@@ -79,7 +79,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g /home/fmeyer/cami/data/gs_low/gsa_mapping.bin \
+./precision_recall_per_genome.py -g test/gsa_mapping.bin \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2
 ~~~
@@ -114,7 +114,7 @@ optional arguments:
 
 The example computes the table of precision and recall and pipes it to utils/exclude_genomes.py.
 ~~~BASH
-./precision_recall_per_genome.py -g /home/fmeyer/cami/data/gs_low/gsa_mapping.bin \
+./precision_recall_per_genome.py -g test/gsa_mapping.bin \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element"
@@ -144,7 +144,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g /home/fmeyer/cami/data/gs_low/gsa_mapping.bin \
+./precision_recall_per_genome.py -g test/gsa_mapping.bin \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element" | \
