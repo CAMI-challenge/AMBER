@@ -188,7 +188,7 @@ precision recall
 0.934     0.838
 ~~~
 
-##ari.py
+## ari.py
 ~~~BASH
 usage: ari.py [-h] -g GOLD_STANDARD_FILE query_file
 
@@ -211,8 +211,38 @@ optional arguments:
 0.782
 ~~~
 
+## genome_recovery.py
+~~~BASH
+usage: genome_recovery.py [-h] [-p FILTER] [-l LABEL] [file]
 
-## Developer Guide
+Compute number of genomes in ranges of completeness and contamination
+
+positional arguments:
+  file                  File containing precision and recall for each genome
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p FILTER, --filter FILTER
+                        Filter out [FILTER]% smallest bins - default is 0
+  -l LABEL, --label LABEL
+                        Binning name
+~~~
+**Example:**
+~~~BASH
+./precision_recall_per_genome.py -g test/gsa_mapping.bin \
+-f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
+test/naughty_carson_2 | \
+./genome_recovery.py -l "MaxBin 2.0" -p 1
+~~~
+**Output:**
+~~~BASH
+MaxBin 2.0         >50% complete >70% complete >90% complete
+<10% contamination 28            28            24
+<5% contamination  23            23            21
+~~~
+
+
+# Developer Guide
 
 We are using [tox]((https://tox.readthedocs.io/en/latest/)) for project automation.
 
