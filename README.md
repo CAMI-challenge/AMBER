@@ -1,6 +1,13 @@
-The examples below require the gold standard assembly from
+[![CircleCI](https://circleci.com/gh/CAMI-challenge/genome_binning_evaluation/tree/master.svg?style=svg)](https://circleci.com/gh/CAMI-challenge/genome_binning_evaluation/tree/master)
+
+# Requirements
+
+* The examples below require the gold standard assembly from
 [https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz). 
 Please download it to the _test_ directory.
+* python2
+
+# User Guide
 
 ## precision_recall.py
 
@@ -35,7 +42,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall.py -g /home/fmeyer/cami/data/gs_low/gsa_mapping.bin \
+./precision_recall.py -g test/gsa_mapping.bin \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 -r test/unique_common.tsv -k "circular element" \
 -p 1 \
@@ -72,7 +79,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g /home/fmeyer/cami/data/gs_low/gsa_mapping.bin \
+./precision_recall_per_genome.py -g test/gsa_mapping.bin \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2
 ~~~
@@ -107,7 +114,7 @@ optional arguments:
 
 The example computes the table of precision and recall and pipes it to utils/exclude_genomes.py.
 ~~~BASH
-./precision_recall_per_genome.py -g /home/fmeyer/cami/data/gs_low/gsa_mapping.bin \
+./precision_recall_per_genome.py -g test/gsa_mapping.bin \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element"
@@ -137,7 +144,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g /home/fmeyer/cami/data/gs_low/gsa_mapping.bin \
+./precision_recall_per_genome.py -g test/gsa_mapping.bin \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element" | \
@@ -173,7 +180,7 @@ optional arguments:
 ~~~BASH
 ./precision_recall_by_bpcount.py -g test/gsa_mapping.bin \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
-/home/fmeyer/cami/data/binning/naughty_carson_2
+test/naughty_carson_2
 ~~~
 **Output:**
 ~~~BASH
@@ -181,7 +188,7 @@ precision recall
 0.934     0.838
 ~~~
 
-##ari.py
+## ari.py
 ~~~BASH
 usage: ari.py [-h] -g GOLD_STANDARD_FILE query_file
 
@@ -202,4 +209,47 @@ optional arguments:
 **Output:**
 ~~~BASH
 0.782
+~~~
+
+## genome_recovery.py
+~~~BASH
+usage: genome_recovery.py [-h] [-p FILTER] [-l LABEL] [file]
+
+Compute number of genomes in ranges of completeness and contamination
+
+positional arguments:
+  file                  File containing precision and recall for each genome
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p FILTER, --filter FILTER
+                        Filter out [FILTER]% smallest bins - default is 0
+  -l LABEL, --label LABEL
+                        Binning name
+~~~
+**Example:**
+~~~BASH
+./precision_recall_per_genome.py -g test/gsa_mapping.bin \
+-f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
+test/naughty_carson_2 | \
+./genome_recovery.py -l "MaxBin 2.0" -p 1
+~~~
+**Output:**
+~~~BASH
+MaxBin 2.0         >50% complete >70% complete >90% complete
+<10% contamination 28            28            24
+<5% contamination  23            23            21
+~~~
+
+
+# Developer Guide
+
+We are using [tox]((https://tox.readthedocs.io/en/latest/)) for project automation.
+
+### Tests
+
+If you want to run tests just type tox in project dir:
+
+~~~BASH
+tox
 ~~~

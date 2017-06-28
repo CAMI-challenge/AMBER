@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import argparse
-import precision_recall_average
-import numpy as np
+# import precision_recall_average
+# import numpy as np
 from utils import load_data
 
 
@@ -62,14 +62,18 @@ def ari(bin_id_to_list_of_sequence_id, sequence_id_to_genome_id, sequence_id_to_
 
     temp = float(bin_comb * genome_comb) / float(choose2(num_contigs))
     ret = bin_genome_comb - temp
-    print "%1.3f" % (ret / (float((bin_comb + genome_comb) / 2.0) - temp))
+    return ret / (float((bin_comb + genome_comb) / 2.0) - temp)
+
+
+def print_ari(ari, stream=sys.stdout):
+    stream.write("%1.3f\n" % ari)
 
 
 def compute_metrics(file_path_mapping, file_path_query):
     # metrics = precision_recall_average.load_tsv_table(sys.stdin)
     genome_id_to_list_of_contigs, sequence_id_to_genome_id = load_data.get_genome_mapping_without_lenghts(file_path_mapping)
     bin_id_to_list_of_sequence_id,sequence_id_to_bin_id = load_data.open_query(file_path_query)
-    ari(bin_id_to_list_of_sequence_id, sequence_id_to_genome_id, sequence_id_to_bin_id)
+    return ari(bin_id_to_list_of_sequence_id, sequence_id_to_genome_id, sequence_id_to_bin_id)
 
 
 def main():
@@ -80,8 +84,9 @@ def main():
     if not args.gold_standard_file or not args.query_file:
         parser.print_help()
         parser.exit(1)
-    compute_metrics(file_path_mapping=args.gold_standard_file,
-                    file_path_query=args.query_file)
+    ari = compute_metrics(file_path_mapping=args.gold_standard_file,
+                          file_path_query=args.query_file)
+    print_ari(ari)
 
 
 if __name__ == "__main__":

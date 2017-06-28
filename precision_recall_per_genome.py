@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Script for computing precision and recall. It takes as input:
 # - a gold standard file in bioboxes format
@@ -10,6 +10,7 @@
 
 import argparse
 import numpy as np
+import sys
 from utils import load_data
 
 
@@ -93,16 +94,16 @@ def compute_metrics(file_path_query, gold_standard):
     return bin_metrics
 
 
-def print_metrics(bin_metrics):
-    print "genome\tprecision\trecall\tpredicted_size\tcorrectly_predicted\treal_size"
+def print_metrics(bin_metrics, stream=sys.stdout):
+    stream.write("genome\tprecision\trecall\tpredicted_size\tcorrectly_predicted\treal_size\n")
     for bin in bin_metrics:
-        print "%s\t%s\t%s\t%s\t%s\t%s" % (
+        stream.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (
             bin['mapped_genome'],
             bin['precision'] if not np.isnan(bin['precision']) else 'NA',
             bin['recall'],
             bin['predicted_size'],
             bin['correctly_predicted'],
-            bin['real_size'])
+            bin['real_size']))
 
 
 def main():
