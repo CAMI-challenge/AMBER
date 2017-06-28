@@ -5,7 +5,7 @@
 * The examples below require the gold standard assembly from
 [https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz). 
 Please download it to the _test_ directory.
-* python2
+* python3.5
 
 # User Guide
 
