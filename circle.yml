@@ -7,7 +7,8 @@ machine:
     version: 3.5.1
   services:
     - docker
-
+  post:
+    - pyenv global 2.7.12
 dependencies:
   pre:
     - sudo apt-get update && sudo apt-get install --no-install-recommends build-essential libpython2.7-dev python3
