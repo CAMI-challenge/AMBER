@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import io
+import os
+from Bio import SeqIO
 from utils import compression_handler
 
 
@@ -10,43 +12,32 @@ class GoldStandard:
 
 
 def read_lengths_from_fastx_file(fastx_file):
+    """
+
+    @param fastx_file: file path
+    @type fastx_file: str
+    @rtype: int
+    """
+    if os.path.getsize(fastx_file) == 0:
+        return 0
+
     length = {}
     f = compression_handler.get_compressed_file(fastx_file)
     br = io.BufferedReader(f.accessor)
 
-    is_fastq = False
-    for line in br:
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith('@'):
-            is_fastq = True
-        elif line.startswith(">"):
-            br.seek(0)
-            break
+    file_format = None
+    line = br.readline()
+    if line.startswith('@'):
+        file_format = "fastq"
+    elif line.startswith(">"):
+        file_format = "fasta"
 
-    if is_fastq:
-        for line in br:
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith('@'):
-                sequence_id = line[1:].strip()
-                sequence = f.accessor.readline().strip()
-                length[sequence_id] = len(sequence)
-                next(f.accessor)
-    else:
-        for line in br:
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith(">"):
-                sequence_id = line[1:]
-                if sequence_id not in length:
-                    length[sequence_id] = 0
-                continue
-            sequence = line
-            length[sequence_id] += len(sequence)
+    if not file_format:
+        raise RuntimeError("Invalid sequence file: '{}".format(fastx_file))
+
+    for seq_record in SeqIO.parse(br, file_format):
+        length[seq_record.id] = len(seq_record.seq)
+
     return length
 
 
