@@ -17,12 +17,12 @@ def print_filtered_data(stream, unique_common_file_path, keyword):
     for line in stream:
         line = line.strip()
         if len(line) == 0 or line.startswith("@"):
-            print line
+            print(line)
             continue
         bin = line.split('\t')[0]
         if bin in genome_to_unique_common and (keyword is None or genome_to_unique_common[bin] == keyword):
             continue
-        print line
+        print(line)
 
 
 def filter_data(bin_metrics, unique_common_file_path, keyword):
