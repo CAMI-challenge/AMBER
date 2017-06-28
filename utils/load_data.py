@@ -31,7 +31,7 @@ def load_tsv_table(stream):
             precision = float(row_data[1])
         else:
             precision = np.nan
-        data.append({'mapped_genome': mapped_genome, 'precision': precision, 'recall': row_data[2],
+        data.append({'mapped_genome': mapped_genome, 'precision': precision, 'recall': float(row_data[2]),
                      'predicted_size': predicted_size, 'correctly_predicted': correctly_predicted, 'real_size': real_size})
     return data
 
