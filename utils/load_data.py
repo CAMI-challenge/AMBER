@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import io
+import os
+from Bio import SeqIO
 import numpy as np
 from utils import compression_handler
 
@@ -34,44 +36,33 @@ def load_tsv_table(stream):
 
 
 def read_lengths_from_fastx_file(fastx_file):
-    # TODO: use Bio package
+    """
+
+    @param fastx_file: file path
+    @type fastx_file: str
+    @rtype: dict[str, int]
+    """
     length = {}
+    if os.path.getsize(fastx_file) == 0:
+        return length
+
     f = compression_handler.get_compressed_file(fastx_file)
     br = io.BufferedReader(f.accessor)
 
-    is_fastq = False
-    for line in br:
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith('@'):
-            is_fastq = True
-        elif line.startswith(">"):
-            br.seek(0)
-            break
+    file_format = None
+    line = br.readline()
+    if line.startswith('@'):
+        file_format = "fastq"
+    elif line.startswith(">"):
+        file_format = "fasta"
+    br.seek(0)
 
-    if is_fastq:
-        for line in br:
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith('@'):
-                sequence_id = line[1:].strip()
-                sequence = f.accessor.readline().strip()
-                length[sequence_id] = len(sequence)
-                next(f.accessor)
-    else:
-        for line in br:
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith(">"):
-                sequence_id = line[1:]
-                if sequence_id not in length:
-                    length[sequence_id] = 0
-                continue
-            sequence = line
-            length[sequence_id] += len(sequence)
+    if not file_format:
+        raise RuntimeError("Invalid sequence file: '{}".format(fastx_file))
+
+    for seq_record in SeqIO.parse(br, file_format):
+        length[seq_record.id] = len(seq_record.seq)
+
     return length
 
 
@@ -110,11 +101,12 @@ def get_genome_mapping(mapping_file, fastx_file):
 
     with open(mapping_file, 'r') as read_handler:
         is_length_column_av = is_length_column_available(read_handler)
+        sequence_length = {}
         if not is_length_column_av:
             if not fastx_file:
                 raise RuntimeError("Sequences' length could not be determined")
             sequence_length = read_lengths_from_fastx_file(fastx_file)
-
+            # print(sorted(sequence_length.keys()))
         for anonymous_contig_id, genome_id, length in read_binning_file(read_handler):
             total_length = length if is_length_column_av else sequence_length[anonymous_contig_id]
             gold_standard.contig_id_to_lengths[anonymous_contig_id] = total_length
