@@ -2,9 +2,10 @@
 
 import io
 import os
+import gzip
+import mimetypes
 from Bio import SeqIO
 import numpy as np
-from utils import compression_handler
 
 
 class GoldStandard:
@@ -42,26 +43,33 @@ def read_lengths_from_fastx_file(fastx_file):
     @type fastx_file: str
     @rtype: dict[str, int]
     """
+    file_type = mimetypes.guess_type(fastx_file)[1]
+    if file_type == 'gzip':
+        f = gzip.open(fastx_file, "rt")
+    elif not file_type:
+        f = open(fastx_file, "rt")
+    else:
+        raise RuntimeError("Unknown type of file: '{}".format(fastx_file))
+
     length = {}
     if os.path.getsize(fastx_file) == 0:
         return length
 
-    f = compression_handler.get_compressed_file(fastx_file)
-    br = io.BufferedReader(f.accessor)
-
     file_format = None
-    line = br.readline()
+    line = f.readline()
     if line.startswith('@'):
         file_format = "fastq"
     elif line.startswith(">"):
         file_format = "fasta"
-    br.seek(0)
+    f.seek(0)
 
     if not file_format:
         raise RuntimeError("Invalid sequence file: '{}".format(fastx_file))
 
-    for seq_record in SeqIO.parse(br, file_format):
+    for seq_record in SeqIO.parse(f, file_format):
         length[seq_record.id] = len(seq_record.seq)
+
+    f.close()
 
     return length
 
