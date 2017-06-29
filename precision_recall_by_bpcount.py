@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import sys
 from utils import load_data
 from collections import Counter
 from collections import defaultdict
@@ -44,7 +45,7 @@ def calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_l
     return precision, recall
 
 
-def compute_metrics(file_path_mapping, file_path_query, file_fasta):
+def compute_metrics(file_path_mapping, file_path_query, file_fasta, stream=sys.stdout):
     """
     This script calculates precision and recall for binned contigs
 
@@ -61,17 +62,17 @@ def compute_metrics(file_path_mapping, file_path_query, file_fasta):
                 bin_id_to_list_of_sequence_id[predicted_bin] = []
                 bin_id_to_total_length[predicted_bin] = 0
             bin_id_to_list_of_sequence_id[predicted_bin].append(sequence_id)
-            bin_id_to_total_length[predicted_bin] += gold_standard.contig_id_to_lengths[sequence_id]
+            bin_id_to_total_length[predicted_bin] += gold_standard.sequence_id_to_lengths[sequence_id]
 
     bin_id_to_genome_id_to_total_length = defaultdict(Counter)
     for predicted_bin in bin_id_to_list_of_sequence_id:
         for sequence_id in bin_id_to_list_of_sequence_id[predicted_bin]:
-            genome_id = gold_standard.contig_id_to_genome_id[sequence_id]
-            bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += gold_standard.contig_id_to_lengths[sequence_id]
+            genome_id = gold_standard.sequence_id_to_genome_id[sequence_id]
+            bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += gold_standard.sequence_id_to_lengths[sequence_id]
 
     precision, recall = calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_length,
                                               gold_standard.genome_id_to_total_length)
-    print("precision\trecall\n%1.3f\t%1.3f" % (precision, recall))
+    stream.write("precision\trecall\n%1.3f\t%1.3f\n" % (precision, recall))
 
 
 def main():

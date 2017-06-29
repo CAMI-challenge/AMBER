@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import io
 import os
 import gzip
 import mimetypes
@@ -9,6 +8,11 @@ import numpy as np
 
 
 class GoldStandard:
+    def __init__(self):
+        pass
+
+
+class Query:
     def __init__(self):
         pass
 
@@ -81,17 +85,18 @@ def get_genome_mapping_without_lenghts(mapping_file):
 
     @return:
     """
-    genome_id_to_list_of_contigs = {}
-    anonymous_contig_id_to_genome_id = {}
+    gold_standard = GoldStandard()
+    gold_standard.genome_id_to_list_of_contigs = {}
+    gold_standard.sequence_id_to_genome_id = {}
 
     with open(mapping_file, 'r') as read_handler:
-        for anonymous_contig_id, genome_id, length in read_binning_file(read_handler):
-            anonymous_contig_id_to_genome_id[anonymous_contig_id] = genome_id
-            if genome_id not in genome_id_to_list_of_contigs:
-                genome_id_to_list_of_contigs[genome_id] = []
-            genome_id_to_list_of_contigs[genome_id].append(anonymous_contig_id)
+        for sequence_id, genome_id, length in read_binning_file(read_handler):
+            gold_standard.sequence_id_to_genome_id[sequence_id] = genome_id
+            if genome_id not in gold_standard.genome_id_to_list_of_contigs:
+                gold_standard.genome_id_to_list_of_contigs[genome_id] = []
+                gold_standard.genome_id_to_list_of_contigs[genome_id].append(sequence_id)
 
-    return genome_id_to_list_of_contigs, anonymous_contig_id_to_genome_id
+    return gold_standard
 
 
 def get_genome_mapping(mapping_file, fastx_file):
@@ -104,8 +109,8 @@ def get_genome_mapping(mapping_file, fastx_file):
     gold_standard = GoldStandard()
     gold_standard.genome_id_to_total_length = {}
     gold_standard.genome_id_to_list_of_contigs = {}
-    gold_standard.contig_id_to_genome_id = {}
-    gold_standard.contig_id_to_lengths = {}
+    gold_standard.sequence_id_to_genome_id = {}
+    gold_standard.sequence_id_to_lengths = {}
 
     with open(mapping_file, 'r') as read_handler:
         is_length_column_av = is_length_column_available(read_handler)
@@ -117,8 +122,8 @@ def get_genome_mapping(mapping_file, fastx_file):
             # print(sorted(sequence_length.keys()))
         for anonymous_contig_id, genome_id, length in read_binning_file(read_handler):
             total_length = length if is_length_column_av else sequence_length[anonymous_contig_id]
-            gold_standard.contig_id_to_lengths[anonymous_contig_id] = total_length
-            gold_standard.contig_id_to_genome_id[anonymous_contig_id] = genome_id
+            gold_standard.sequence_id_to_lengths[anonymous_contig_id] = total_length
+            gold_standard.sequence_id_to_genome_id[anonymous_contig_id] = genome_id
             if genome_id not in gold_standard.genome_id_to_total_length:
                 gold_standard.genome_id_to_total_length[genome_id] = 0
                 gold_standard.genome_id_to_list_of_contigs[genome_id] = []
@@ -199,12 +204,21 @@ def read_binning_file(input_stream):
 
 
 def open_query(file_path_query):
-    bin_id_to_list_of_sequence_id = {}
-    sequence_id_to_bin_id = {}
+    query = Query()
+    query.path = file_path_query
+    query.bin_id_to_list_of_sequence_id = {}
+    query.sequence_id_to_bin_id = {}
     with open(file_path_query) as read_handler:
         for sequence_id, predicted_bin, length in read_binning_file(read_handler):
-            if predicted_bin not in bin_id_to_list_of_sequence_id:
-                bin_id_to_list_of_sequence_id[predicted_bin] = []
-            bin_id_to_list_of_sequence_id[predicted_bin].append(sequence_id)
-            sequence_id_to_bin_id[sequence_id] = predicted_bin
-    return bin_id_to_list_of_sequence_id, sequence_id_to_bin_id
+            if predicted_bin not in query.bin_id_to_list_of_sequence_id:
+                query.bin_id_to_list_of_sequence_id[predicted_bin] = []
+            query.bin_id_to_list_of_sequence_id[predicted_bin].append(sequence_id)
+            query.sequence_id_to_bin_id[sequence_id] = predicted_bin
+    return query
+
+
+def open_queries(file_path_queries):
+    queries = []
+    for file_path in file_path_queries:
+        queries.append(open_query(file_path))
+    return queries

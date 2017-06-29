@@ -212,10 +212,9 @@ optional arguments:
 test/naughty_carson_2
 ~~~
 **Output:**
-The first (second) value is computed by considering contigs/reads (base pairs) as true and false positives.
 ~~~BASH
-0.782
-0.917
+ari_weighed_by_bp       ari_unweighed
+0.917   0.782
 ~~~
 
 ## genome_recovery.py

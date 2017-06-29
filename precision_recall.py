@@ -7,11 +7,12 @@ from utils import exclude_genomes
 from utils import load_data
 
 
-def evaluate_all(gold_standard, query_files, labels, filter_tail_percentage, genomes_file, keyword):
+def evaluate_all(gold_standard, queries, labels, filter_tail_percentage, genomes_file, keyword):
     precision_recall_average.print_precision_recall_table_header()
     labels_iterator = iter(labels)
-    for query_file in query_files:
-        bin_metrics = precision_recall_per_genome.compute_metrics(query_file, gold_standard)
+    for query in queries:
+
+        bin_metrics = precision_recall_per_genome.compute_metrics(query, gold_standard)
 
         if genomes_file:
             bin_metrics = exclude_genomes.filter_data(bin_metrics, genomes_file, keyword)
@@ -19,7 +20,7 @@ def evaluate_all(gold_standard, query_files, labels, filter_tail_percentage, gen
         avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall = \
             precision_recall_average.compute_precision_and_recall(bin_metrics, filter_tail_percentage)
 
-        precision_recall_average.print_precision_recall(next(labels_iterator) if len(labels) > 0 else query_file.split('/')[-1],
+        precision_recall_average.print_precision_recall(next(labels_iterator) if len(labels) > 0 else query.path.split('/')[-1],
                                                         avg_precision,
                                                         avg_recall,
                                                         std_deviation_precision,
@@ -45,8 +46,9 @@ def main():
         if len(labels) != len(args.query_files):
             parser.error('number of labels does not match the number of query files')
     gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
+    queries = load_data.open_queries(args.query_files)
     evaluate_all(gold_standard,
-                 args.query_files,
+                 queries,
                  labels,
                  args.filter,
                  args.genomes_file,
