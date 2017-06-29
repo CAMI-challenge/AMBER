@@ -90,17 +90,14 @@ def print_ari(ari_by_bp, ari_unweighed, stream=sys.stdout):
     stream.write("ari_weighed_by_bp\tari_unweighed\n%1.3f\t%1.3f\n" % (ari_by_bp, ari_unweighed))
 
 
-def compute_metrics(file_path_mapping, file_path_query, file_fasta):
+def compute_metrics(query, gold_standard):
     # metrics = precision_recall_average.load_tsv_table(sys.stdin)
-    gold_standard = load_data.get_genome_mapping(file_path_mapping, file_fasta)
-    query = load_data.open_query(file_path_query)
-
     bin_id_to_genome_id_to_total_sequences, genome_id_to_bin_id_to_total_sequences = preprocess_by_sequence_counts(query, gold_standard)
-    ari_unweighted = compute_ari(bin_id_to_genome_id_to_total_sequences, genome_id_to_bin_id_to_total_sequences)
+    ari_unweighed = compute_ari(bin_id_to_genome_id_to_total_sequences, genome_id_to_bin_id_to_total_sequences)
 
     bin_id_to_genome_id_to_length, genome_id_to_bin_id_to_length = preprocess_by_bp_counts(query, gold_standard)
-    ari_weighted = compute_ari(bin_id_to_genome_id_to_length, genome_id_to_bin_id_to_length)
-    return ari_unweighted, ari_weighted
+    ari_weighed = compute_ari(bin_id_to_genome_id_to_length, genome_id_to_bin_id_to_length)
+    return ari_weighed, ari_unweighed
 
 
 def main():
@@ -110,9 +107,9 @@ def main():
     if not args.query_file:
         parser.print_help()
         parser.exit(1)
-    ari_unweighed, ari_by_bp = compute_metrics(file_path_mapping=args.gold_standard_file,
-                                               file_path_query=args.query_file,
-                                               file_fasta=args.fasta_file)
+    gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
+    query = load_data.open_query(args.query_file)
+    ari_by_bp, ari_unweighed = compute_metrics(query, gold_standard)
     print_ari(ari_by_bp, ari_unweighed)
 
 
