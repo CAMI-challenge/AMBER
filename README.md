@@ -190,7 +190,7 @@ precision recall
 
 ## ari.py
 ~~~BASH
-usage: ari.py [-h] -g GOLD_STANDARD_FILE query_file
+usage: ari.py [-h] -g GOLD_STANDARD_FILE -f FASTA_FILE query_file
 
 Compute adjusted rand index from binning file, unweighted and weighted by base pairs
 
