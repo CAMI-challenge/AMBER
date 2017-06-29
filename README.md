@@ -5,7 +5,8 @@
 * The examples below require the gold standard assembly from
 [https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz). 
 Please download it to the _test_ directory.
-* python2
+* python3.5
+* tox (only for automatic tests)
 
 # User Guide
 
@@ -42,7 +43,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall.py -g test/gsa_mapping.bin \
+./precision_recall.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 -r test/unique_common.tsv -k "circular element" \
 -p 1 \
@@ -79,7 +80,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g test/gsa_mapping.bin \
+./precision_recall_per_genome.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2
 ~~~
@@ -114,7 +115,7 @@ optional arguments:
 
 The example computes the table of precision and recall and pipes it to utils/exclude_genomes.py.
 ~~~BASH
-./precision_recall_per_genome.py -g test/gsa_mapping.bin \
+./precision_recall_per_genome.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element"
@@ -144,7 +145,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g test/gsa_mapping.bin \
+./precision_recall_per_genome.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element" | \
@@ -178,7 +179,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_by_bpcount.py -g test/gsa_mapping.bin \
+./precision_recall_by_bpcount.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2
 ~~~
@@ -204,7 +205,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./ari.py -g test/gsa_mapping.bin test/naughty_carson_2
+./ari.py -g test/gsa_mapping.binning test/naughty_carson_2
 ~~~
 **Output:**
 ~~~BASH
@@ -229,7 +230,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g test/gsa_mapping.bin \
+./precision_recall_per_genome.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./genome_recovery.py -l "MaxBin 2.0" -p 1
@@ -248,7 +249,7 @@ We are using [tox]((https://tox.readthedocs.io/en/latest/)) for project automati
 
 ### Tests
 
-If you want to run tests just type tox in project dir:
+If you want to run tests, just type _tox_ in the project's root directory:
 
 ~~~BASH
 tox
