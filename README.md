@@ -192,23 +192,28 @@ precision recall
 ~~~BASH
 usage: ari.py [-h] -g GOLD_STANDARD_FILE query_file
 
-Compute adjusted rand index from binning file
+Compute adjusted rand index from binning file, unweighted and weighted by base pairs
 
 positional arguments:
   query_file            Query file
 
 optional arguments:
   -h, --help            show this help message and exit
+  -f FASTA_FILE, --fasta_file FASTA_FILE
+                        FASTA or FASTQ file w/ sequences of gold standard
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
                         gold standard - ground truth - file
 ~~~
 **Example:**
 ~~~BASH
-./ari.py -g test/gsa_mapping.bin test/naughty_carson_2
+./ari.py -g test/gsa_mapping.bin \
+-f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
+test/naughty_carson_2
 ~~~
 **Output:**
 ~~~BASH
 0.782
+0.917
 ~~~
 
 ## genome_recovery.py
