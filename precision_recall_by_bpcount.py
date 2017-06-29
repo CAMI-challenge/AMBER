@@ -12,7 +12,7 @@ def calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_l
     denominator_p = sum(bin_id_to_total_lengths.values())
     false_positives_p = 0.0
 
-    for predicted_bin, genome_assigns in bin_id_to_genome_id_to_total_length.iteritems():
+    for predicted_bin, genome_assigns in list(bin_id_to_genome_id_to_total_length.items()):
         # get maximal genome assignment
         if len(genome_assigns) > 0:
             maxAssign = max(genome_assigns.values())
@@ -71,7 +71,7 @@ def compute_metrics(file_path_mapping, file_path_query, file_fasta):
 
     precision, recall = calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_length,
                                               gold_standard.genome_id_to_total_length)
-    print "precision\trecall\n%1.3f\t%1.3f" % (precision, recall)
+    print("precision\trecall\n%1.3f\t%1.3f" % (precision, recall))
 
 
 def main():
