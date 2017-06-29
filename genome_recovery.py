@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import sys
-import precision_recall_average
 import numpy as np
 import argparse
 from utils import filter_tail
 from utils import load_data
+from utils import argparse_parents
 
 
 def calc_table(metrics):
@@ -33,22 +33,17 @@ def calc_table(metrics):
     return genome_recovery
 
 
-def print_table(genome_recovery, label):
+def print_table(genome_recovery, label, stream=sys.stdout):
     if not label:
         label = ""
-    line = "%s\t>50%% complete\t>70%% complete\t>90%% complete" % label
-    print(line)
-    line = "<10%% contamination\t%s\t%s\t%s" % (genome_recovery[5], genome_recovery[3], genome_recovery[1])
-    print(line)
-    line = "<5%% contamination\t%s\t%s\t%s" % (genome_recovery[4], genome_recovery[2], genome_recovery[0])
-    print(line)
+    stream.write("%s\t>50%% complete\t>70%% complete\t>90%% complete\n" % label)
+    stream.write("<10%% contamination\t%s\t%s\t%s\n" % (genome_recovery[5], genome_recovery[3], genome_recovery[1]))
+    stream.write("<5%% contamination\t%s\t%s\t%s\n" % (genome_recovery[4], genome_recovery[2], genome_recovery[0]))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute number of genomes in ranges of completeness and contamination")
-    parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each genome")
-    parser.add_argument('-p', '--filter', help="Filter out [FILTER]%% smallest bins - default is 0")
-    parser.add_argument('-l', '--label', help="Binning name", required=False)
+    parser = argparse.ArgumentParser(description="Compute number of genomes in ranges of completeness and contamination",
+                                     parents=[argparse_parents.PARSER_MULTI])
     args = parser.parse_args()
     if not args.file and sys.stdin.isatty():
         parser.print_help()

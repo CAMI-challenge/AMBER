@@ -11,10 +11,9 @@ Please download it to the _test_ directory.
 # User Guide
 
 ## precision_recall.py
-
 ~~~BASH
-usage: precision_recall.py [-h] [-l LABELS] -g GOLD_STANDARD_FILE
-                           [-f FASTA_FILE] [-p FILTER] [-r GENOMES_FILE]
+usage: precision_recall.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE]
+                           [-l LABELS] [-p FILTER] [-r GENOMES_FILE]
                            [-k KEYWORD]
                            query_files [query_files ...]
 
@@ -22,17 +21,17 @@ Compute precision and recall, including standard deviation and standard error
 of the mean, for binning files
 
 positional arguments:
-  query_files           Query files
+  query_files           Query binning files
 
 optional arguments:
   -h, --help            show this help message and exit
-  -l LABELS, --labels LABELS
-                        Comma-separated binning names
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
                         gold standard - ground truth - file
   -f FASTA_FILE, --fasta_file FASTA_FILE
                         FASTA or FASTQ file w/ sequences of gold standard -
                         required if gold standard file misses column _LENGTH
+  -l LABELS, --labels LABELS
+                        Comma-separated binning names
   -p FILTER, --filter FILTER
                         Filter out [FILTER]% smallest bins - default is 0
   -r GENOMES_FILE, --genomes_file GENOMES_FILE
@@ -59,7 +58,6 @@ MetaBAT    0.822     0.256             0.047         0.570  0.428          0.065
 ~~~
 
 ## precision_recall_per_genome.py
-
 ~~~BASH
 usage: precision_recall_per_genome.py [-h] -g GOLD_STANDARD_FILE
                                       [-f FASTA_FILE]
@@ -68,7 +66,7 @@ usage: precision_recall_per_genome.py [-h] -g GOLD_STANDARD_FILE
 Compute table of precision and recall per genome bin
 
 positional arguments:
-  query_file            Query file
+  query_file            Query binning file
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -98,7 +96,8 @@ evo_1035930.029 0.995223021915 1.0     2423708        2412130             241213
 ~~~BASH
 usage: exclude_genomes.py [-h] -r GENOMES_FILE [-k KEYWORD] [file]
 
-Exclude genome bins from table file of precision and recall or standard input
+Exclude genome bins from table of precision and recall per genome. The table
+can be provided as file or via the standard input
 
 positional arguments:
   file                  File containing precision and recall for each genome
@@ -130,8 +129,8 @@ The output the is the table from precision_recall_per_genome.py without the excl
 usage: precision_recall_average.py [-h] [-p FILTER] [-l LABEL] [file]
 
 Compute precision and recall, including standard deviation and standard error
-of the mean, from table of precision and recall per genome provided as a file
-or via the standard input
+of the mean, from table of precision and recall per genome. The table can be
+provided as file or via the standard input
 
 positional arguments:
   file                  File containing precision and recall for each genome
@@ -141,7 +140,7 @@ optional arguments:
   -p FILTER, --filter FILTER
                         Filter out [FILTER]% smallest bins - default is 0
   -l LABEL, --label LABEL
-                        Binning name                        
+                        Binning name
 ~~~
 **Example:**
 ~~~BASH
@@ -163,18 +162,18 @@ usage: precision_recall_by_bpcount.py [-h] -g GOLD_STANDARD_FILE
                                       [-f FASTA_FILE]
                                       query_file
 
-Compute precision and recall weighed by base pair counts - not averaged over
-genome bins - from binning file
+Compute precision and recall weighed by base pair counts (not averaged over
+genome bins) from binning file
 
 positional arguments:
-  query_file            Query file
+  query_file            Query binning file
 
 optional arguments:
   -h, --help            show this help message and exit
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
                         gold standard - ground truth - file
   -f FASTA_FILE, --fasta_file FASTA_FILE
-                        FASTA or FASTQ file w/ sequences of gold standard -
+                        FASTA or FASTQ file with sequences of gold standard -
                         required if gold standard file misses column _LENGTH
 ~~~
 **Example:**
@@ -191,19 +190,21 @@ precision recall
 
 ## ari.py
 ~~~BASH
-usage: ari.py [-h] -g GOLD_STANDARD_FILE -f FASTA_FILE query_file
+usage: ari.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] query_file
 
-Compute adjusted rand index from binning file, unweighed and weighed by base pairs
+Compute adjusted rand index from binning file, unweighed and weighed by base
+pairs
 
 positional arguments:
-  query_file            Query file
+  query_file            Query binning file
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f FASTA_FILE, --fasta_file FASTA_FILE
-                        FASTA or FASTQ file w/ sequences of gold standard
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
                         gold standard - ground truth - file
+  -f FASTA_FILE, --fasta_file FASTA_FILE
+                        FASTA or FASTQ file with sequences of gold standard -
+                        required if gold standard file misses column _LENGTH
 ~~~
 **Example:**
 ~~~BASH
@@ -213,8 +214,8 @@ test/naughty_carson_2
 ~~~
 **Output:**
 ~~~BASH
-ari_weighed_by_bp       ari_unweighed
-0.917   0.782
+ari_weighed_by_bp ari_unweighed
+0.917             0.782
 ~~~
 
 ## genome_recovery.py

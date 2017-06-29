@@ -5,6 +5,7 @@ import sys
 from utils import load_data
 from collections import Counter
 from collections import defaultdict
+from utils import argparse_parents
 
 
 def calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_lengths, genome_id_to_total_length):
@@ -76,13 +77,10 @@ def compute_metrics(file_path_mapping, file_path_query, file_fasta, stream=sys.s
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute precision and recall weighed by base pair counts - not averaged over genome bins - from binning file")
-    parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
-    parser.add_argument("query_file", help="Query file")
-    parser.add_argument("-f", "--fasta_file",
-                        help="FASTA or FASTQ file w/ sequences of gold standard - required if gold standard file misses column _LENGTH")
+    parser = argparse.ArgumentParser(description="Compute precision and recall weighed by base pair counts (not averaged over genome bins) from binning file",
+                                     parents=[argparse_parents.PARSER_GS])
     args = parser.parse_args()
-    if not args.gold_standard_file or not args.query_file:
+    if not args.query_file:
         parser.print_help()
         parser.exit(1)
     compute_metrics(file_path_mapping=args.gold_standard_file,

@@ -3,6 +3,7 @@
 import sys
 import argparse
 from utils import load_data
+from utils import argparse_parents
 
 
 def choose2(n):
@@ -103,11 +104,8 @@ def compute_metrics(file_path_mapping, file_path_query, file_fasta):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute adjusted rand index from binning file")
-    parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
-    parser.add_argument("query_file", help="Query file")
-    parser.add_argument("-f", "--fasta_file",
-                        help="FASTA or FASTQ file w/ sequences of gold standard - required if gold standard file misses column _LENGTH")
+    parser = argparse.ArgumentParser(description="Compute adjusted rand index from binning file, unweighed and weighed by base pairs",
+                                     parents=[argparse_parents.PARSER_GS])
     args = parser.parse_args()
     if not args.query_file:
         parser.print_help()

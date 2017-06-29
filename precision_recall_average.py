@@ -6,6 +6,7 @@ import numpy as np
 import math
 from utils import filter_tail
 from utils import load_data
+from utils import argparse_parents
 
 
 def compute_precision_and_recall(data, filter_tail_percentage):
@@ -72,10 +73,8 @@ def print_precision_recall(label, avg_precision, avg_recall, std_deviation_preci
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute precision and recall, including standard deviation and standard error of the mean, from table of precision and recall per genome provided as a file or via the standard input")
-    parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each genome")
-    parser.add_argument('-p', '--filter', help="Filter out [FILTER]%% smallest bins - default is 0")
-    parser.add_argument('-l', '--label', help="Binning name", required=False)
+    parser = argparse.ArgumentParser(description="Compute precision and recall, including standard deviation and standard error of the mean, from table of precision and recall per genome. The table can be provided as file or via the standard input",
+                                     parents=[argparse_parents.PARSER_MULTI])
     args = parser.parse_args()
     if not args.file and sys.stdin.isatty():
         parser.print_help()

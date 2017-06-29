@@ -5,6 +5,7 @@ import precision_recall_per_genome
 import precision_recall_average
 from utils import exclude_genomes
 from utils import load_data
+from utils import argparse_parents
 
 
 def evaluate_all(gold_standard, queries, labels, filter_tail_percentage, genomes_file, keyword):
@@ -30,15 +31,8 @@ def evaluate_all(gold_standard, queries, labels, filter_tail_percentage, genomes
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute precision and recall, including standard deviation and standard error of the mean, for binning files")
-    parser.add_argument("query_files", nargs='+', help="Query files")
-    parser.add_argument('-l', '--labels', help="Comma-separated binning names", required=False)
-    parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
-    parser.add_argument("-f", "--fasta_file",
-                        help="FASTA or FASTQ file w/ sequences of gold standard - required if gold standard file misses column _LENGTH")
-    parser.add_argument('-p', '--filter', help="Filter out [FILTER]%% smallest bins - default is 0")
-    parser.add_argument('-r', '--genomes_file', help="File with list of genomes to be removed", required=False)
-    parser.add_argument('-k', '--keyword', help="Keyword in second column of input for bins to be removed (no keyword=remove all in list)", required=False)
+    parser = argparse.ArgumentParser(description="Compute precision and recall, including standard deviation and standard error of the mean, for binning files",
+                                     parents=[argparse_parents.PARSER_MULTI2])
     args = parser.parse_args()
     labels = []
     if args.labels:
