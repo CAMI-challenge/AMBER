@@ -56,13 +56,13 @@ test/elated_franklin_0 \
 ~~~
 **Output:**
 ~~~BASH
-tool       avg_precision std_dev_precision sem_precision avg_recall std_dev_recall sem_recall precision recall ari_by_bp ari_unweighed percent_assigned_bps >0.5compl<0.1cont >0.7compl<0.1cont >0.9compl<0.1cont >0.5compl<0.05cont >0.7compl<0.05cont >0.9compl<0.05cont
-MaxBin 2.0 0.948         0.095             0.016         0.799      0.364          0.058      0.934     0.838  0.917     0.782         0.864                28                28                 24               23                 23                 21
-CONCOCT    0.837         0.266             0.052         0.517      0.476          0.069      0.684     0.936  0.644     0.751         0.967                18                17                 15               16                 16                 14
-MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724     0.825  0.674     0.86          0.917                17                16                 12               17                 16                 12
+tool       avg_precision std_dev_precision sem_precision avg_recall std_dev_recall sem_recall precision recall rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq >0.5compl<0.1cont >0.7compl<0.1cont >0.9compl<0.1cont >0.5compl<0.05cont >0.7compl<0.05cont >0.9compl<0.05cont
+MaxBin 2.0 0.948         0.095             0.016         0.799      0.364          0.058      0.934     0.838  0.995            0.951 0.917       0.782              0.864                28                28                 24               23                 23                 21
+CONCOCT    0.837         0.266             0.052         0.517      0.476          0.069      0.684     0.936  0.972            0.946 0.644       0.751              0.967                18                17                 15               16                 16                 14
+MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724     0.825  0.976            0.965 0.674       0.860              0.917                17                16                 12               17                 16                 12
 ~~~
 Additionally, in directory _output_dir_, directories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ are created with the following files:
-* _ari.tsv_: contains value of adjusted rand index (ARI) and percentage of assigned/binned bases. ARI is computed weighed and unweighed by base pairs
+* _rand_index.tsv_: contains value of (adjusted) rand index and percentage of assigned/binned bases. Rand index is weighed and unweighed by base pairs
 * _precision_recall.tsv_: contains precision and recall per genome bin
 * _precision_recall_avg.tsv_: contains precision and recall averaged over genome bins. Includes standard deviation and standard error of the mean
 * _precision_recall_by_bpcount.tsv_: contains precision and recall weighed by base pairs
@@ -245,11 +245,11 @@ precision recall
 0.934     0.838
 ~~~
 
-## ari.py
+## rand_index.py
 ~~~BASH
-usage: ari.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] query_file
+usage: rand_index.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] query_file
 
-Compute adjusted rand index from binning file, unweighed and weighed by base
+Compute (adjusted) rand index from binning file, unweighed and weighed by base
 pairs
 
 positional arguments:
@@ -258,21 +258,21 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
-                        gold standard - ground truth - file
+                        Gold standard - ground truth - file
   -f FASTA_FILE, --fasta_file FASTA_FILE
                         FASTA or FASTQ file with sequences of gold standard -
                         required if gold standard file misses column _LENGTH
 ~~~
 **Example:**
 ~~~BASH
-./ari.py -g test/gsa_mapping.binning \
+./rand_index.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2
 ~~~
 **Output:**
 ~~~BASH
-ari_weighed_by_bp ari_unweighed percent_assigned_bps
-0.917             0.782         0.864
+rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq percent_assigned_bps
+0.995            0.951             0.917              0.782               0.864
 ~~~
 
 ## genome_recovery.py

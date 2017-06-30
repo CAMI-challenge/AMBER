@@ -7,7 +7,7 @@ import errno
 import precision_recall_per_genome
 import precision_recall_average
 import precision_recall_by_bpcount
-import ari
+import rand_index
 import genome_recovery
 from utils import exclude_genomes
 from utils import load_data
@@ -64,10 +64,10 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
         precision_recall_by_bpcount.print_precision_recall_by_bpcount(precision, recall, f)
         f.close()
 
-        # ARI
-        ari_by_bp, ari_unweighed, percentage_of_assigned_bps = ari.compute_metrics(query, gold_standard)
-        f = open(path + "/ari.tsv", 'w')
-        ari.print_ari(ari_by_bp, ari_unweighed, percentage_of_assigned_bps, f)
+        # (ADJUSTED) RAND INDEX
+        ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq, percentage_of_assigned_bps = rand_index.compute_metrics(query, gold_standard)
+        f = open(path + "/rand_index.tsv", 'w')
+        rand_index.print_rand_indices(ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq, percentage_of_assigned_bps, f)
         f.close()
 
         # GENOME RECOVERY
@@ -82,8 +82,10 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
                                   format(std_error_recall, '.3f'),
                                   format(precision, '.3f'),
                                   format(recall, '.3f'),
+                                  format(ri_by_bp, '.3f'),
+                                  format(ri_by_seq, '.3f'),
                                   format(ari_by_bp, '.3f'),
-                                  format(ari_unweighed, '.3f'),
+                                  format(ari_by_seq, '.3f'),
                                   format(percentage_of_assigned_bps, '.3f'),
                                   str(genome_recovery_val[5]),
                                   str(genome_recovery_val[3]),
@@ -97,8 +99,11 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
 def print_summary(summary_per_query, stream=sys.stdout):
     stream.write("%s\n" % "\t".join((labels.TOOL, labels.AVG_PRECISION, labels.STD_DEV_PRECISION,
                                      labels.SEM_PRECISION, labels.AVG_RECALL, labels.STD_DEV_RECALL, labels.
-                                     SEM_RECALL, labels.PRECISION, labels.RECALL, labels.ARI_BY_BP,
-                                     labels.ARI_UNWEIGHED,
+                                     SEM_RECALL, labels.PRECISION, labels.RECALL,
+                                     labels.RI_BY_BP,
+                                     labels.RI_BY_SEQ,
+                                     labels.ARI_BY_BP,
+                                     labels.ARI_BY_SEQ,
                                      labels.PERCENTAGE_ASSIGNED_BPS,
                                      ">0.5compl<0.1cont",
                                      ">0.7compl<0.1cont",
