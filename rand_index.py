@@ -128,7 +128,7 @@ def compute_metrics(query, gold_standard):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute (adjusted) rand index from binning file, unweighed and weighed by base pairs",
+    parser = argparse.ArgumentParser(description="Compute (adjusted) rand index from binning file, unweighed and weighed by base pairs, and percentage of binned base pairs",
                                      parents=[argparse_parents.PARSER_GS])
     args = parser.parse_args()
     if not args.query_file:

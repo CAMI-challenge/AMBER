@@ -10,6 +10,28 @@ Please download it to the _test_ directory.
 
 # User Guide
 
+## List of metrics and abbreviations
+
+* **avg_precision**: precision averaged over genome bins
+* **std_dev_precision**: standard deviation of precision averaged over genome bins
+* **sem_precision**: standard error of the mean of precision averaged over genome bins
+* **avg_recall**: recall averaged over genome bins
+* **std_dev_recall**: standard deviation of recall averaged over genome bins
+* **sem_recall**: standard error of the mean of recall averaged over genome bins
+* **precision**: precision weighed by base pairs
+* **recall**: recall weighed by base pairs
+* **rand_index_by_bp**: rand index weighed by base pairs
+* **rand_index_by_seq**: rand index weighed by sequence counts
+* **a_rand_index_by_bp**: adjusted rand index weighed by base pairs
+* **a_rand_index_by_seq**: adjusted rand index weighed by sequence counts
+* **percent_assigned_bps**: percentage of base pairs that were assigned to bins
+* **\>0.5compl<0.1cont**: number of genomes with more than 50% completeness and less than 10% contamination
+* **\>0.7compl<0.1cont**: number of genomes with more than 70% completeness and less than 10% contamination
+* **\>0.9compl<0.1cont**: number of genomes with more than 90% completeness and less than 10% contamination
+* **\>0.5compl<0.05cont**: number of genomes with more than 50% completeness and less than 5% contamination
+* **\>0.7compl<0.05cont**: number of genomes with more than 70% completeness and less than 5% contamination
+* **\>0.9compl<0.05cont**: number of genomes with more than 90% completeness and less than 5% contamination
+
 ## evaluate.py
 ~~~BASH
 usage: evaluate.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
@@ -56,10 +78,10 @@ test/elated_franklin_0 \
 ~~~
 **Output:**
 ~~~BASH
-tool       avg_precision std_dev_precision sem_precision avg_recall std_dev_recall sem_recall precision recall rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq >0.5compl<0.1cont >0.7compl<0.1cont >0.9compl<0.1cont >0.5compl<0.05cont >0.7compl<0.05cont >0.9compl<0.05cont
-MaxBin 2.0 0.948         0.095             0.016         0.799      0.364          0.058      0.934     0.838  0.995            0.951 0.917       0.782              0.864                28                28                 24               23                 23                 21
-CONCOCT    0.837         0.266             0.052         0.517      0.476          0.069      0.684     0.936  0.972            0.946 0.644       0.751              0.967                18                17                 15               16                 16                 14
-MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724     0.825  0.976            0.965 0.674       0.860              0.917                17                16                 12               17                 16                 12
+tool       avg_precision std_dev_precision sem_precision avg_recall std_dev_recall sem_recall precision recall rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq percent_assigned_bps >0.5compl<0.1cont >0.7compl<0.1cont >0.9compl<0.1cont >0.5compl<0.05cont >0.7compl<0.05cont >0.9compl<0.05cont
+MaxBin 2.0 0.948         0.095             0.016         0.799      0.364          0.058      0.934     0.838  0.995            0.951             0.917              0.782               0.864                28                28                24                23                 23                 21
+CONCOCT    0.837         0.266             0.052         0.517      0.476          0.069      0.684     0.936  0.972            0.946             0.644              0.751               0.967                18                17                15                16                 16                 14
+MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724     0.825  0.976            0.965             0.674              0.860               0.917                17                16                12                17                 16                 12
 ~~~
 Additionally, in directory _output_dir_, directories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ are created with the following files:
 * _rand_index.tsv_: contains value of (adjusted) rand index and percentage of assigned/binned bases. Rand index is weighed and unweighed by base pairs
@@ -250,7 +272,7 @@ precision recall
 usage: rand_index.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] query_file
 
 Compute (adjusted) rand index from binning file, unweighed and weighed by base
-pairs
+pairs, and percentage of binned base pairs
 
 positional arguments:
   query_file            Query binning file
