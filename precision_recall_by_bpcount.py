@@ -46,33 +46,27 @@ def calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_l
     return precision, recall
 
 
-def compute_metrics(file_path_mapping, file_path_query, file_fasta, stream=sys.stdout):
+def compute_metrics(query, gold_standard):
     """
-    This script calculates precision and recall for binned contigs
-
-    @param file_path_mapping:
-    @param file_path_query:
-    @return:
+    @param query
+    @param gold_standard
+    @return: query, gold_standard
     """
-    gold_standard = load_data.get_genome_mapping(file_path_mapping, file_fasta)
-    bin_id_to_list_of_sequence_id = {}
     bin_id_to_total_length = {}
-    with open(file_path_query) as read_handler:
-        for sequence_id, predicted_bin, length in load_data.read_binning_file(read_handler):
-            if predicted_bin not in bin_id_to_total_length:
-                bin_id_to_list_of_sequence_id[predicted_bin] = []
-                bin_id_to_total_length[predicted_bin] = 0
-            bin_id_to_list_of_sequence_id[predicted_bin].append(sequence_id)
-            bin_id_to_total_length[predicted_bin] += gold_standard.sequence_id_to_lengths[sequence_id]
-
     bin_id_to_genome_id_to_total_length = defaultdict(Counter)
-    for predicted_bin in bin_id_to_list_of_sequence_id:
-        for sequence_id in bin_id_to_list_of_sequence_id[predicted_bin]:
+    for predicted_bin in query.bin_id_to_list_of_sequence_id:
+        if predicted_bin not in bin_id_to_total_length:
+            bin_id_to_total_length[predicted_bin] = 0
+        for sequence_id in query.bin_id_to_list_of_sequence_id[predicted_bin]:
+            bin_id_to_total_length[predicted_bin] += gold_standard.sequence_id_to_lengths[sequence_id]
             genome_id = gold_standard.sequence_id_to_genome_id[sequence_id]
             bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += gold_standard.sequence_id_to_lengths[sequence_id]
-
     precision, recall = calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_length,
                                               gold_standard.genome_id_to_total_length)
+    return precision, recall
+
+
+def print_precision_recall_by_bpcount(precision, recall, stream=sys.stdout):
     stream.write("precision\trecall\n%1.3f\t%1.3f\n" % (precision, recall))
 
 
@@ -83,9 +77,10 @@ def main():
     if not args.query_file:
         parser.print_help()
         parser.exit(1)
-    compute_metrics(file_path_mapping=args.gold_standard_file,
-                    file_path_query=args.query_file,
-                    file_fasta=args.fasta_file)
+    gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
+    query = load_data.open_query(args.query_file)
+    precision, recall = compute_metrics(query, gold_standard)
+    print_precision_recall_by_bpcount(precision, recall)
 
 
 if __name__ == "__main__":
