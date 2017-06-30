@@ -4,10 +4,20 @@ import sys
 import argparse
 from utils import load_data
 from utils import argparse_parents
+from utils import labels
 
 
 def choose2(n):
     return (n * (n - 1)) / 2.0
+
+
+def compute_percentage_of_assigned_bps(query, gold_standard):
+    assigned_bps = 0
+    for bin_id in query.bin_id_to_list_of_sequence_id:
+        for sequence_id in query.bin_id_to_list_of_sequence_id[bin_id]:
+            assigned_bps += gold_standard.sequence_id_to_lengths[sequence_id]
+    gold_size_in_bps = sum(gold_standard.genome_id_to_total_length.values())
+    return float(assigned_bps) / float(gold_size_in_bps)
 
 
 def compute_ari(bin_id_to_genome_id_to_counts, genome_id_to_bin_id_to_counts):
@@ -86,8 +96,11 @@ def preprocess_by_sequence_counts(query, gold_standard):
     return bin_id_to_genome_id_to_total_sequences, genome_id_to_bin_id_to_total_sequences
 
 
-def print_ari(ari_by_bp, ari_unweighed, stream=sys.stdout):
-    stream.write("ari_weighed_by_bp\tari_unweighed\n%1.3f\t%1.3f\n" % (ari_by_bp, ari_unweighed))
+def print_ari(ari_by_bp, ari_unweighed, percentage_of_assigned_bps, stream=sys.stdout):
+    stream.write("%s\n%s\n" % ("\t".join((labels.ARI_BY_BP, labels.ARI_UNWEIGHED, labels.PERCENTAGE_ASSIGNED_BPS)),
+                 "\t".join((format(ari_by_bp, '.3f'),
+                            format(ari_unweighed, '.3f'),
+                            format(percentage_of_assigned_bps, '.3f')))))
 
 
 def compute_metrics(query, gold_standard):
@@ -97,7 +110,10 @@ def compute_metrics(query, gold_standard):
 
     bin_id_to_genome_id_to_length, genome_id_to_bin_id_to_length = preprocess_by_bp_counts(query, gold_standard)
     ari_weighed = compute_ari(bin_id_to_genome_id_to_length, genome_id_to_bin_id_to_length)
-    return ari_weighed, ari_unweighed
+
+    percentage_of_assigned_bps = compute_percentage_of_assigned_bps(query, gold_standard)
+
+    return ari_weighed, ari_unweighed, percentage_of_assigned_bps
 
 
 def main():
@@ -109,8 +125,8 @@ def main():
         parser.exit(1)
     gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
     query = load_data.open_query(args.query_file)
-    ari_by_bp, ari_unweighed = compute_metrics(query, gold_standard)
-    print_ari(ari_by_bp, ari_unweighed)
+    ari_by_bp, ari_unweighed, percentage_of_assigned_bps = compute_metrics(query, gold_standard)
+    print_ari(ari_by_bp, ari_unweighed, percentage_of_assigned_bps)
 
 
 if __name__ == "__main__":

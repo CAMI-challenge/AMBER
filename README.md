@@ -10,6 +10,63 @@ Please download it to the _test_ directory.
 
 # User Guide
 
+## evaluate.py
+~~~BASH
+usage: evaluate.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
+                   [-p FILTER] [-r GENOMES_FILE] [-k KEYWORD] -o OUTPUT_DIR
+                   query_files [query_files ...]
+
+Compute all metrics for binning files; output summary to screen and results
+per query binning file to chosen directory
+
+positional arguments:
+  query_files           Query binning files
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
+                        Gold standard - ground truth - file
+  -f FASTA_FILE, --fasta_file FASTA_FILE
+                        FASTA or FASTQ file with sequences of gold standard -
+                        required if gold standard file misses column _LENGTH
+  -l LABELS, --labels LABELS
+                        Comma-separated binning names
+  -p FILTER, --filter FILTER
+                        Filter out [FILTER]% smallest bins - default is 0
+  -r GENOMES_FILE, --genomes_file GENOMES_FILE
+                        File with list of genomes to be removed
+  -k KEYWORD, --keyword KEYWORD
+                        Keyword in second column of input for bins to be
+                        removed (no keyword=remove all in list)
+  -o OUTPUT_DIR, --output_dir OUTPUT_DIR
+                        Directory to write the results per query to
+~~~
+**Example:**
+~~~BASH
+./evaluate.py -g test/gsa_mapping.binning \
+-f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
+-l "MaxBin 2.0, CONCOCT, MetaBAT" \
+-p 1 \
+-r test/unique_common.tsv \
+-k "circular element" \
+test/naughty_carson_2 \
+test/goofy_hypatia_2 \
+test/elated_franklin_0 \
+-o output_dir/
+~~~
+**Output:**
+~~~BASH
+tool       avg_precision std_dev_precision sem_precision avg_recall std_dev_recall sem_recall precision recall ari_by_bp ari_unweighed percent_assigned_bps >0.5compl<0.1cont >0.7compl<0.1cont >0.9compl<0.1cont >0.5compl<0.05cont >0.7compl<0.05cont >0.9compl<0.05cont
+MaxBin 2.0 0.948         0.095             0.016         0.799      0.364          0.058      0.934     0.838  0.917     0.782         0.864                28                28                 24               23                 23                 21
+CONCOCT    0.837         0.266             0.052         0.517      0.476          0.069      0.684     0.936  0.644     0.751         0.967                18                17                 15               16                 16                 14
+MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724     0.825  0.674     0.86          0.917                17                16                 12               17                 16                 12
+~~~
+Additionally, in directory _output_dir_, directories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ are created with the following files:
+* _ari.tsv_: contains value of adjusted rand index (ARI) and percentage of assigned/binned bases. ARI is computed weighed and unweighed by base pairs
+* _precision_recall.tsv_: contains precision and recall per genome bin
+* _precision_recall_avg.tsv_: contains precision and recall averaged over genome bins. Includes standard deviation and standard error of the mean
+* _precision_recall_by_bpcount.tsv_: contains precision and recall weighed by base pairs
+
 ## precision_recall.py
 ~~~BASH
 usage: precision_recall.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE]
@@ -214,8 +271,8 @@ test/naughty_carson_2
 ~~~
 **Output:**
 ~~~BASH
-ari_weighed_by_bp ari_unweighed
-0.917             0.782
+ari_weighed_by_bp ari_unweighed percent_assigned_bps
+0.917             0.782         0.864
 ~~~
 
 ## genome_recovery.py

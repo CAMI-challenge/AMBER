@@ -65,9 +65,9 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
         f.close()
 
         # ARI
-        ari_by_bp, ari_unweighed = ari.compute_metrics(query, gold_standard)
+        ari_by_bp, ari_unweighed, percentage_of_assigned_bps = ari.compute_metrics(query, gold_standard)
         f = open(path + "/ari.tsv", 'w')
-        ari.print_ari(ari_by_bp, ari_unweighed, f)
+        ari.print_ari(ari_by_bp, ari_unweighed, percentage_of_assigned_bps, f)
         f.close()
 
         # GENOME RECOVERY
@@ -84,6 +84,7 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
                                   format(recall, '.3f'),
                                   format(ari_by_bp, '.3f'),
                                   format(ari_unweighed, '.3f'),
+                                  format(percentage_of_assigned_bps, '.3f'),
                                   str(genome_recovery_val[5]),
                                   str(genome_recovery_val[3]),
                                   str(genome_recovery_val[1]),
@@ -98,6 +99,7 @@ def print_summary(summary_per_query, stream=sys.stdout):
                                      labels.SEM_PRECISION, labels.AVG_RECALL, labels.STD_DEV_RECALL, labels.
                                      SEM_RECALL, labels.PRECISION, labels.RECALL, labels.ARI_BY_BP,
                                      labels.ARI_UNWEIGHED,
+                                     labels.PERCENTAGE_ASSIGNED_BPS,
                                      ">0.5compl<0.1cont",
                                      ">0.7compl<0.1cont",
                                      ">0.9compl<0.1cont",
@@ -109,9 +111,9 @@ def print_summary(summary_per_query, stream=sys.stdout):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute all metrics for binning files",
+    parser = argparse.ArgumentParser(description="Compute all metrics for binning files; output summary to screen and results per query binning file to chosen directory",
                                      parents=[argparse_parents.PARSER_MULTI2])
-    parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
+    parser.add_argument('-o', '--output_dir', help="Directory to write the results per query to", required=True)
     args = parser.parse_args()
     binning_labels = []
     if args.labels:
