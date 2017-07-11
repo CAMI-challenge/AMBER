@@ -1,2 +1,2 @@
-numpy==v1.13.0
-biopython==v1.69.0
+numpy==1.13.0
+biopython==1.69.0

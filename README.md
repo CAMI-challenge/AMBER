@@ -328,6 +328,36 @@ MaxBin 2.0         >50% complete >70% complete >90% complete
 ~~~
 
 
+## Run the tool as a Biobox
+
+1. Build the container running the following command:
+
+~~~BASH
+docker build  -t genome_binning_evaluation .
+~~~
+
+2. Run the container by specifying the executing the following command
+
+~~~BASH
+docker run -v $(pwd)/input/gold_standard.fasta:/bbx/input/gold_standard.fasta -v $(pwd)/input/gsa_mapping.binning:/bbx/input/gsa_mapping.binning  -v  $(pwd)/input/test_query.binning:/bbx/input/test_query.binning  -v  $(pwd)/output:/bbx/output -v $(pwd)/input/biobox.yaml:/bbx/input/biobox.yaml genome_binning_evaluation default
+~~~
+
+where biobox.yaml contains the following values:
+
+~~~YAML
+version: 0.11.0
+arguments:
+  - fasta:
+      value: /bbx/input/gold_standard.fasta
+      type: contig
+  - labels:
+      value: /bbx/input/gsa_mapping.binning
+      type: binning
+  - predictions:
+      value: /bbx/input/test_query.binning
+      type: binning
+~~~ 
+
 # Developer Guide
 
 We are using [tox]((https://tox.readthedocs.io/en/latest/)) for project automation.
