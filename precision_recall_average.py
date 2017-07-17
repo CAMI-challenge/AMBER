@@ -6,6 +6,8 @@ import numpy as np
 import math
 from utils import filter_tail
 from utils import load_data
+from utils import argparse_parents
+from utils import labels
 
 
 def compute_precision_and_recall(data, filter_tail_percentage):
@@ -55,27 +57,27 @@ def compute_precision_and_recall(data, filter_tail_percentage):
 
 
 def print_precision_recall_table_header(stream=sys.stdout):
-    stream.write("tool\tavg_precision\tstd_dev_precision\tsem_precision\tavg_recall\tstd_dev_recall\tsem_recall\n")
+    stream.write("%s\n" % "\t".join((labels.TOOL, labels.AVG_PRECISION, labels.STD_DEV_PRECISION,
+                                     labels.SEM_PRECISION, labels.AVG_RECALL, labels.STD_DEV_RECALL, labels.
+                                     SEM_RECALL)))
 
 
 def print_precision_recall(label, avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall,
                            stream=sys.stdout):
     if not label:
         label = ""
-    stream.write("%s\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\t%1.3f\n" % (label,
-                                                                     avg_precision,
-                                                                     std_deviation_precision,
-                                                                     std_error_precision,
-                                                                     avg_recall,
-                                                                     std_deviation_recall,
-                                                                     std_error_recall))
+    stream.write("%s\n" % "\t".join((label,
+                                    format(avg_precision, '.3f'),
+                                    format(std_deviation_precision, '.3f'),
+                                    format(std_error_precision, '.3f'),
+                                    format(avg_recall, '.3f'),
+                                    format(std_deviation_recall, '.3f'),
+                                    format(std_error_recall, '.3f'))))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute precision and recall, including standard deviation and standard error of the mean, from table of precision and recall per genome provided as a file or via the standard input")
-    parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each genome")
-    parser.add_argument('-p', '--filter', help="Filter out [FILTER]%% smallest bins - default is 0")
-    parser.add_argument('-l', '--label', help="Binning name", required=False)
+    parser = argparse.ArgumentParser(description="Compute precision and recall, including standard deviation and standard error of the mean, from table of precision and recall per genome. The table can be provided as file or via the standard input",
+                                     parents=[argparse_parents.PARSER_MULTI])
     args = parser.parse_args()
     if not args.file and sys.stdin.isatty():
         parser.print_help()

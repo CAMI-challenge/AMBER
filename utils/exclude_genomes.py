@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import argparse
+
+try:
+    import argparse_parents
+except ImportError:
+    sys.path.append(os.path.dirname(__file__))
+    try:
+        import argparse_parents
+    finally:
+        sys.path.remove(os.path.dirname(__file__))
 
 
 def load_unique_common(unique_common_file_path):
@@ -17,12 +27,12 @@ def print_filtered_data(stream, unique_common_file_path, keyword):
     for line in stream:
         line = line.strip()
         if len(line) == 0 or line.startswith("@"):
-            print line
+            print(line)
             continue
         bin = line.split('\t')[0]
         if bin in genome_to_unique_common and (keyword is None or genome_to_unique_common[bin] == keyword):
             continue
-        print line
+        print(line)
 
 
 def filter_data(bin_metrics, unique_common_file_path, keyword):
@@ -36,10 +46,10 @@ def filter_data(bin_metrics, unique_common_file_path, keyword):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Exclude genome bins from table file of precision and recall or standard input")
-    parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help="File containing precision and recall for each genome")
-    parser.add_argument('-r', '--genomes_file', help="File with list of genomes to be removed", required=True)
-    parser.add_argument('-k', '--keyword', help="Keyword in second column of input for bins to be removed (no keyword=remove all in list)", required=False)
+    parser = argparse.ArgumentParser(description="Exclude genome bins from table of precision and recall per genome. The table can be provided as file or via the standard input")
+    parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help=argparse_parents.HELP_FILE)
+    parser.add_argument('-r', '--genomes_file', help=argparse_parents.HELP_GENOMES_FILE, required=True)
+    parser.add_argument('-k', '--keyword', help=argparse_parents.HELP_KEYWORD, required=False)
     args = parser.parse_args()
     if not args.file and sys.stdin.isatty():
         parser.print_help()

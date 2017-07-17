@@ -12,6 +12,7 @@ import argparse
 import numpy as np
 import sys
 from utils import load_data
+from utils import argparse_parents
 
 
 def map_genomes(gold_standard, bin_id_to_list_of_sequence_id):
@@ -21,7 +22,7 @@ def map_genomes(gold_standard, bin_id_to_list_of_sequence_id):
         @attention: In case of reads, read ids might not be paired read id and cause error: ReadID/1 ReadID/2
 
         @param sequence_id_to_genome_id:
-        @param anonymous_contig_id_to_lengths:
+        @param anonymous_sequence_id_to_lengths:
         @param bin_id_to_list_of_sequence_id
         @return:
         """
@@ -31,10 +32,10 @@ def map_genomes(gold_standard, bin_id_to_list_of_sequence_id):
     for predicted_bin in bin_id_to_list_of_sequence_id:
         bin_id_to_genome_id_to_total_length[predicted_bin] = {}
         for sequence_id in bin_id_to_list_of_sequence_id[predicted_bin]:
-            genome_id = gold_standard.contig_id_to_genome_id[sequence_id]
+            genome_id = gold_standard.sequence_id_to_genome_id[sequence_id]
             if genome_id not in bin_id_to_genome_id_to_total_length[predicted_bin]:
                 bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] = 0
-            bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += gold_standard.contig_id_to_lengths[sequence_id]
+            bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += gold_standard.sequence_id_to_lengths[sequence_id]
         max_length = 0
         best_genome_id = ""
         for genome_id in bin_id_to_genome_id_to_total_length[predicted_bin]:
@@ -56,7 +57,7 @@ def compute_precision_recall(gold_standard,
         for sequence_id in bin_id_to_list_of_sequence_id[predicted_bin]:
             if predicted_bin not in bin_id_to_total_lengths:
                 bin_id_to_total_lengths[predicted_bin] = 0
-            bin_id_to_total_lengths[predicted_bin] += gold_standard.contig_id_to_lengths[sequence_id]
+            bin_id_to_total_lengths[predicted_bin] += gold_standard.sequence_id_to_lengths[sequence_id]
 
     bin_metrics = []
     for predicted_bin in bin_id_to_list_of_sequence_id:
@@ -82,12 +83,11 @@ def compute_precision_recall(gold_standard,
     return sorted(bin_metrics, key=lambda t: t['recall'], reverse=True)
 
 
-def compute_metrics(file_path_query, gold_standard):
-    bin_id_to_list_of_sequence_id, sequence_id_to_bin_id = load_data.open_query(file_path_query)
+def compute_metrics(query, gold_standard):
     bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped = map_genomes(gold_standard,
-                                                                                       bin_id_to_list_of_sequence_id)
+                                                                                       query.bin_id_to_list_of_sequence_id)
     bin_metrics = compute_precision_recall(gold_standard,
-                                           bin_id_to_list_of_sequence_id,
+                                           query.bin_id_to_list_of_sequence_id,
                                            bin_id_to_mapped_genome,
                                            bin_id_to_genome_id_to_total_length,
                                            mapped)
@@ -107,17 +107,15 @@ def print_metrics(bin_metrics, stream=sys.stdout):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute table of precision and recall per genome bin")
-    parser.add_argument("query_file", help="Query file")
-    parser.add_argument("-g", "--gold_standard_file", help="gold standard - ground truth - file", required=True)
-    parser.add_argument("-f", "--fasta_file",
-                        help="FASTA or FASTQ file w/ sequences of gold standard - required if gold standard file misses column _LENGTH")
+    parser = argparse.ArgumentParser(description="Compute table of precision and recall per genome bin",
+                                     parents=[argparse_parents.PARSER_GS])
     args = parser.parse_args()
     if not args.gold_standard_file or not args.query_file:
         parser.print_help()
         parser.exit(1)
     gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
-    bin_metrics = compute_metrics(args.query_file, gold_standard)
+    query = load_data.open_query(args.query_file)
+    bin_metrics = compute_metrics(query, gold_standard)
     print_metrics(bin_metrics)
 
 
