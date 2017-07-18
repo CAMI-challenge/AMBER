@@ -42,7 +42,7 @@ def plot_by_genome(data, out_file=None, sort_by='recall'):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Plot sorted precision and recall per genome")
+    parser = argparse.ArgumentParser(description="Plot precision and recall per genome. Genomes can be sorted by recall (default) or precision")
     parser.add_argument('file', nargs='?', type=argparse.FileType('r'), help=argparse_parents.HELP_FILE)
     parser.add_argument('-s','--sort_by', help='Sort by either precision or recall (default: recall)', choices=set(['precision','recall']))
     parser.add_argument('-o','--out_file', help='Path to store image (default: only show image)')

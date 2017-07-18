@@ -131,11 +131,11 @@ def main():
     parser = argparse.ArgumentParser(description="Compute (adjusted) rand index from binning file, unweighed and weighed by base pairs, and percentage of binned base pairs",
                                      parents=[argparse_parents.PARSER_GS])
     args = parser.parse_args()
-    if not args.query_file:
+    if not args.bin_file:
         parser.print_help()
         parser.exit(1)
     gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
-    query = load_data.open_query(args.query_file)
+    query = load_data.open_query(args.bin_file)
     ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq, percentage_of_assigned_bps = compute_metrics(query, gold_standard)
     print_rand_indices(ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq, percentage_of_assigned_bps)
 

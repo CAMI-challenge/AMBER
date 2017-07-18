@@ -29,7 +29,7 @@ def convert(paths, output_file):
 
 def main():
     parser = argparse.ArgumentParser(description="Convert bins in FASTA files to CAMI tsv format")
-    parser.add_argument("paths", nargs='+', help="FASTA files")
+    parser.add_argument("paths", nargs='+', help="FASTA files including full paths")
     parser.add_argument("-o", "--output_file", required=False, help="Output file")
     args = parser.parse_args()
     convert(args.paths, args.output_file)

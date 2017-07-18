@@ -37,10 +37,10 @@ def main():
     labels = []
     if args.labels:
         labels = [x.strip() for x in args.labels.split(',')]
-        if len(labels) != len(args.query_files):
+        if len(labels) != len(args.bin_files):
             parser.error('number of labels does not match the number of query files')
     gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
-    queries = load_data.open_queries(args.query_files)
+    queries = load_data.open_queries(args.bin_files)
     evaluate_all(gold_standard,
                  queries,
                  labels,

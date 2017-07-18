@@ -74,11 +74,11 @@ def main():
     parser = argparse.ArgumentParser(description="Compute precision and recall weighed by base pair counts (not averaged over genome bins) from binning file",
                                      parents=[argparse_parents.PARSER_GS])
     args = parser.parse_args()
-    if not args.query_file:
+    if not args.bin_file:
         parser.print_help()
         parser.exit(1)
     gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
-    query = load_data.open_query(args.query_file)
+    query = load_data.open_query(args.bin_file)
     precision, recall = compute_metrics(query, gold_standard)
     print_precision_recall_by_bpcount(precision, recall)
 

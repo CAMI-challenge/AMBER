@@ -197,9 +197,9 @@ def print_summary(summary_per_query, stream=sys.stdout):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute all metrics for binning files; output summary to screen and results per query binning file to chosen directory",
+    parser = argparse.ArgumentParser(description="Compute all metrics and figures for one or more binning files; output summary to screen and results per binning file to chosen directory",
                                      parents=[argparse_parents.PARSER_MULTI2])
-    parser.add_argument('-o', '--output_dir', help="Directory to write the results per query to", required=True)
+    parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
     args = parser.parse_args()
     binning_labels = []
     if args.labels:

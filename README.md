@@ -2,11 +2,12 @@
 
 # Requirements
 
-* The examples below require the gold standard assembly from
-[https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz). 
-Please download it to the _test_ directory.
-* python3.5
+* python &ge; 3.5
+* numpy &ge; v1.13.0
+* biopython &ge; v1.69.0
+* matplotlib &ge; v2.0.2
 * tox (only for automatic tests)
+* The examples below require a gold standard assembly. Please [download it](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz) to the _test_ directory.
 
 # User Guide
 
@@ -36,21 +37,21 @@ Please download it to the _test_ directory.
 ~~~BASH
 usage: evaluate.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
                    [-p FILTER] [-r GENOMES_FILE] [-k KEYWORD] -o OUTPUT_DIR
-                   query_files [query_files ...]
+                   bin_files [bin_files ...]
 
-Compute all metrics for binning files; output summary to screen and results
-per query binning file to chosen directory
+Compute all metrics and figures for one or more binning files; output summary
+to screen and results per binning file to chosen directory
 
 positional arguments:
-  query_files           Query binning files
+  bin_files             Binning files
 
 optional arguments:
   -h, --help            show this help message and exit
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
                         Gold standard - ground truth - file
   -f FASTA_FILE, --fasta_file FASTA_FILE
-                        FASTA or FASTQ file with sequences of gold standard -
-                        required if gold standard file misses column _LENGTH
+                        FASTA or FASTQ file with sequences of gold standard
+                        (required if gold standard file misses column _LENGTH)
   -l LABELS, --labels LABELS
                         Comma-separated binning names
   -p FILTER, --filter FILTER
@@ -61,7 +62,7 @@ optional arguments:
                         Keyword in second column of input for bins to be
                         removed (no keyword=remove all in list)
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
-                        Directory to write the results per query to
+                        Directory to write the results to
 ~~~
 **Example:**
 ~~~BASH
@@ -83,32 +84,36 @@ MaxBin 2.0 0.948         0.095             0.016         0.799      0.364       
 CONCOCT    0.837         0.266             0.052         0.517      0.476          0.069      0.684     0.936  0.972            0.946             0.644              0.751               0.967                18                17                15                16                 16                 14
 MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724     0.825  0.976            0.965             0.674              0.860               0.917                17                16                12                17                 16                 12
 ~~~
-Additionally, in directory _output_dir_, directories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ are created with the following files:
-* _rand_index.tsv_: contains value of (adjusted) rand index and percentage of assigned/binned bases. Rand index is weighed and unweighed by base pairs
-* _precision_recall.tsv_: contains precision and recall per genome bin
-* _precision_recall_avg.tsv_: contains precision and recall averaged over genome bins. Includes standard deviation and standard error of the mean
-* _precision_recall_by_bpcount.tsv_: contains precision and recall weighed by base pairs
+Additionally, directory _output_dir_ will contain figures **avg_precision_recall.png + .pdf** (average precision vs. average recall)
+and **ari_vs_assigned_bps.png + .pdf** (adjusted rand index vs. percentage of assigned base pairs).
+In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ will be created with the following files:
+* **rand_index.tsv**: contains value of (adjusted) rand index and percentage of assigned/binned bases. Rand index is both weighed and unweighed by base pairs
+* **precision_recall.tsv**: contains precision and recall per genome bin
+* **precision_recall_avg.tsv**: contains precision and recall averaged over genome bins. Includes standard deviation and standard error of the mean
+* **precision_recall_by_bpcount.tsv**: contains precision and recall weighed by base pairs
+* **genomes_sorted_by_precision.png + .pdf**: figure of precision and recall per genome with genomes sorted by precision
+* **genomes_sorted_by_recall.png + .pdf**: figure of precision and recall per genome with genomes sorted by recall
 
 ## precision_recall.py
 ~~~BASH
 usage: precision_recall.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE]
                            [-l LABELS] [-p FILTER] [-r GENOMES_FILE]
                            [-k KEYWORD]
-                           query_files [query_files ...]
+                           bin_files [bin_files ...]
 
 Compute precision and recall, including standard deviation and standard error
 of the mean, for binning files
 
 positional arguments:
-  query_files           Query binning files
+  bin_files             Binning files
 
 optional arguments:
   -h, --help            show this help message and exit
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
-                        gold standard - ground truth - file
+                        Gold standard - ground truth - file
   -f FASTA_FILE, --fasta_file FASTA_FILE
-                        FASTA or FASTQ file w/ sequences of gold standard -
-                        required if gold standard file misses column _LENGTH
+                        FASTA or FASTQ file with sequences of gold standard
+                        (required if gold standard file misses column _LENGTH)
   -l LABELS, --labels LABELS
                         Comma-separated binning names
   -p FILTER, --filter FILTER
@@ -140,20 +145,20 @@ MetaBAT    0.822     0.256             0.047         0.570  0.428          0.065
 ~~~BASH
 usage: precision_recall_per_genome.py [-h] -g GOLD_STANDARD_FILE
                                       [-f FASTA_FILE]
-                                      query_file
+                                      bin_file
 
 Compute table of precision and recall per genome bin
 
 positional arguments:
-  query_file            Query binning file
+  bin_file              Binning file
 
 optional arguments:
   -h, --help            show this help message and exit
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
-                        gold standard - ground truth - file
+                        Gold standard - ground truth - file
   -f FASTA_FILE, --fasta_file FASTA_FILE
-                        FASTA or FASTQ file w/ sequences of gold standard -
-                        required if gold standard file misses column _LENGTH
+                        FASTA or FASTQ file with sequences of gold standard
+                        (required if gold standard file misses column _LENGTH)
 ~~~
 **Example:**
 ~~~BASH
@@ -217,7 +222,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -p FILTER, --filter FILTER
-                        Filter out [FILTER]% smallest bins - default is 0
+                        Filter out [FILTER]% smallest bins (default: 0)
   -l LABEL, --label LABEL
                         Binning name
 ~~~
@@ -239,21 +244,21 @@ MaxBin 2.0 0.948     0.095             0.016         0.799  0.364          0.058
 ~~~BASH
 usage: precision_recall_by_bpcount.py [-h] -g GOLD_STANDARD_FILE
                                       [-f FASTA_FILE]
-                                      query_file
+                                      bin_file
 
 Compute precision and recall weighed by base pair counts (not averaged over
 genome bins) from binning file
 
 positional arguments:
-  query_file            Query binning file
+  bin_file              Binning file
 
 optional arguments:
   -h, --help            show this help message and exit
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
-                        gold standard - ground truth - file
+                        Gold standard - ground truth - file
   -f FASTA_FILE, --fasta_file FASTA_FILE
-                        FASTA or FASTQ file with sequences of gold standard -
-                        required if gold standard file misses column _LENGTH
+                        FASTA or FASTQ file with sequences of gold standard
+                        (required if gold standard file misses column _LENGTH)
 ~~~
 **Example:**
 ~~~BASH
@@ -269,21 +274,21 @@ precision recall
 
 ## rand_index.py
 ~~~BASH
-usage: rand_index.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] query_file
+usage: rand_index.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] bin_file
 
 Compute (adjusted) rand index from binning file, unweighed and weighed by base
 pairs, and percentage of binned base pairs
 
 positional arguments:
-  query_file            Query binning file
+  bin_file              Binning file
 
 optional arguments:
   -h, --help            show this help message and exit
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
                         Gold standard - ground truth - file
   -f FASTA_FILE, --fasta_file FASTA_FILE
-                        FASTA or FASTQ file with sequences of gold standard -
-                        required if gold standard file misses column _LENGTH
+                        FASTA or FASTQ file with sequences of gold standard
+                        (required if gold standard file misses column _LENGTH)
 ~~~
 **Example:**
 ~~~BASH
@@ -309,7 +314,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -p FILTER, --filter FILTER
-                        Filter out [FILTER]% smallest bins - default is 0
+                        Filter out [FILTER]% smallest bins (default: 0)
   -l LABEL, --label LABEL
                         Binning name
 ~~~
@@ -327,6 +332,65 @@ MaxBin 2.0         >50% complete >70% complete >90% complete
 <5% contamination  23            23            21
 ~~~
 
+## plot_by_genome.py
+~~~BASH
+usage: plot_by_genome.py [-h] [-s {recall,precision}] [-o OUT_FILE] [file]
+
+Plot precision and recall per genome. Genomes can be sorted by recall
+(default) or precision
+
+positional arguments:
+  file                  File containing precision and recall for each genome
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s {recall,precision}, --sort_by {recall,precision}
+                        Sort by either precision or recall (default: recall)
+  -o OUT_FILE, --out_file OUT_FILE
+                        Path to store image (default: only show image)
+~~~
+**Example:**
+~~~BASH
+./precision_recall_per_genome.py -g test/gsa_mapping.binning \
+-f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
+test/naughty_carson_2 | \
+/plot_by_genome.py
+~~~
+**Output:**
+Figure is shown on screen.
+
+## utils/convert_fasta_bins_to_biobox_format.py
+~~~BASH
+usage: convert_fasta_bins_to_biobox_format.py [-h] [-o OUTPUT_FILE]
+                                              paths [paths ...]
+
+Convert bins in FASTA files to CAMI tsv format
+
+positional arguments:
+  paths                 FASTA files including full paths
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OUTPUT_FILE, --output_file OUTPUT_FILE
+                        Output file
+~~~
+**Example:**
+~~~BASH
+./utils/convert_fasta_bins_to_cami.py \
+/path/to/file/maxbin.out.001.fasta \
+/path/to/file/maxbin.out.002.fasta \
+/path/to/file/maxbin.out.003.fasta \
+/path/to/file/maxbin.out.004.fasta \
+/path/to/file/maxbin.out.005.fasta \
+-o bins.tsv
+~~~
+Alternatively:
+~~~BASH
+./utils/convert_fasta_bins_to_cami.py /path/to/file/maxbin.out.0* -o bins.tsv
+~~~
+
+**Output:**
+File bins.tsv is created in the working directory.
 
 # Developer Guide
 

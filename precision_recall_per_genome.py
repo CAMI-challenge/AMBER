@@ -110,11 +110,11 @@ def main():
     parser = argparse.ArgumentParser(description="Compute table of precision and recall per genome bin",
                                      parents=[argparse_parents.PARSER_GS])
     args = parser.parse_args()
-    if not args.gold_standard_file or not args.query_file:
+    if not args.gold_standard_file or not args.bin_file:
         parser.print_help()
         parser.exit(1)
     gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
-    query = load_data.open_query(args.query_file)
+    query = load_data.open_query(args.bin_file)
     bin_metrics = compute_metrics(query, gold_standard)
     print_metrics(bin_metrics)
 
