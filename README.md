@@ -354,7 +354,7 @@ optional arguments:
 ./precision_recall_per_genome.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
-/plot_by_genome.py
+./plot_by_genome.py
 ~~~
 **Output:**
 Figure is shown on screen.
