@@ -3,6 +3,7 @@
 # Requirements
 
 * python &ge; 3.5
+* python-tk
 * numpy &ge; v1.13.0
 * biopython &ge; v1.69.0
 * matplotlib &ge; v2.0.2
@@ -55,7 +56,7 @@ optional arguments:
   -l LABELS, --labels LABELS
                         Comma-separated binning names
   -p FILTER, --filter FILTER
-                        Filter out [FILTER]% smallest bins - default is 0
+                        Filter out [FILTER]% smallest bins (default: 0)
   -r GENOMES_FILE, --genomes_file GENOMES_FILE
                         File with list of genomes to be removed
   -k KEYWORD, --keyword KEYWORD
@@ -117,7 +118,7 @@ optional arguments:
   -l LABELS, --labels LABELS
                         Comma-separated binning names
   -p FILTER, --filter FILTER
-                        Filter out [FILTER]% smallest bins - default is 0
+                        Filter out [FILTER]% smallest bins (default: 0)
   -r GENOMES_FILE, --genomes_file GENOMES_FILE
                         File with list of genomes to be removed
   -k KEYWORD, --keyword KEYWORD
