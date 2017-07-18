@@ -3,12 +3,13 @@
 import sys
 import argparse
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 from utils import load_data
 from utils import argparse_parents
 
 
-def plot_by_genome(data, out_file = None, sort_by='recall'):
+def plot_by_genome(data, out_file=None, sort_by='recall'):
     not_sort_by = list(set(['precision','recall']) - set([sort_by]))[0]  # get the metric not sorted by
     data = sorted(data, key=lambda x: x[sort_by])
     genomes = []
@@ -36,7 +37,8 @@ def plot_by_genome(data, out_file = None, sort_by='recall'):
     if out_file is None:
         plt.show()
     else:
-        plt.savefig(out_file)
+        plt.savefig(os.path.normpath(out_file + '.png'), dpi=100, format='png', bbox_inches='tight')
+        plt.savefig(os.path.normpath(out_file + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
 
 
 def main():

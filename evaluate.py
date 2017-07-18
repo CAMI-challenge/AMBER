@@ -9,6 +9,7 @@ import precision_recall_average
 import precision_recall_by_bpcount
 import rand_index
 import genome_recovery
+import plot_by_genome
 import matplotlib.pyplot as plt
 import numpy as np
 from utils import exclude_genomes
@@ -43,6 +44,8 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
             bin_metrics = exclude_genomes.filter_data(bin_metrics, genomes_file, keyword)
         f = open(path + "/precision_recall.tsv", 'w')
         precision_recall_per_genome.print_metrics(bin_metrics, f)
+        plot_by_genome.plot_by_genome(bin_metrics, path + '/genomes_sorted_by_recall', 'recall')
+        plot_by_genome.plot_by_genome(bin_metrics, path + '/genomes_sorted_by_precision', 'precision')
         f.close()
 
         # AVG PRECISION RECALL
@@ -109,7 +112,7 @@ def create_colors_list():
     return colors_list
 
 
-def plot_avg_precision_recall(summary_per_query, output_dir):
+def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, ylabel):
     colors_list = create_colors_list()
     if len(summary_per_query) > len(colors_list):
         raise RuntimeError("Plot of precision and recall only supports 29 colors")
@@ -122,14 +125,20 @@ def plot_avg_precision_recall(summary_per_query, output_dir):
 
     i = 0
     plot_labels = []
-    for summary in summary_per_query:
-        axs.errorbar(float(summary[1]), float(summary[4]), xerr=float(summary[3]), yerr=float(summary[6]), fmt='o',
-                     ecolor=colors_list[i],
-                     mec=colors_list[i],
-                     mfc=colors_list[i],
-                     capsize=3)
-        plot_labels.append(summary[0])
-        i += 1
+    if plot_type == 'e':
+        for summary in summary_per_query:
+            axs.errorbar(float(summary[1]), float(summary[4]), xerr=float(summary[3]), yerr=float(summary[6]), fmt='o',
+                         ecolor=colors_list[i],
+                         mec=colors_list[i],
+                         mfc=colors_list[i],
+                         capsize=3)
+            plot_labels.append(summary[0])
+            i += 1
+    elif plot_type == 'p':
+        for summary in summary_per_query:
+            axs.plot(float(summary[11]), float(summary[13]), marker='o', color=colors_list[i])
+            plot_labels.append(summary[0])
+            i += 1
 
     # turn on grid
     axs.minorticks_on()
@@ -143,48 +152,29 @@ def plot_avg_precision_recall(summary_per_query, output_dir):
     axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
 
     lgd = plt.legend(plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False)
-    plt.xlabel("Precision")
-    plt.ylabel("Recall")
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.tight_layout()
-    fig.savefig(os.path.normpath(output_dir + '/avg_precision_recall.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.normpath(output_dir + '/avg_precision_recall.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+
+def plot_avg_precision_recall(summary_per_query, output_dir):
+    plot_summary(summary_per_query,
+                 output_dir,
+                 'e',
+                 'avg_precision_recall',
+                 'Precision',
+                 'Recall')
 
 
 def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
-    colors_list = create_colors_list()
-    if len(summary_per_query) > len(colors_list):
-        raise RuntimeError("Plot of precision and recall only supports 29 colors")
-
-    fig, axs = plt.subplots(figsize=(6, 5))
-
-    # force axis to be from 0 to 100%
-    axs.set_xlim([0.0, 1.0])
-    axs.set_ylim([0.0, 1.0])
-
-    i = 0
-    plot_labels = []
-    for summary in summary_per_query:
-        axs.plot(float(summary[11]), float(summary[13]), marker='o', color=colors_list[i])
-        plot_labels.append(summary[0])
-        i += 1
-
-    # turn on grid
-    axs.minorticks_on()
-    axs.grid(which='major', linestyle='-', linewidth='0.5')
-    axs.grid(which='minor', linestyle=':', linewidth='0.5')
-
-    # transform plot_labels to percentages
-    vals = axs.get_xticks()
-    axs.set_xticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
-    vals = axs.get_yticks()
-    axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
-
-    lgd = plt.legend(plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False)
-    plt.xlabel("Adjusted rand index")
-    plt.ylabel("Percentage of assigned base pairs")
-    plt.tight_layout()
-    fig.savefig(os.path.normpath(output_dir + '/ari_vs_assigned_bps.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.normpath(output_dir + '/ari_vs_assigned_bps.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plot_summary(summary_per_query,
+                 output_dir,
+                 'p',
+                 'ari_vs_assigned_bps',
+                 'Adjusted rand index',
+                 'Percentage of assigned base pairs')
 
 
 def print_summary(summary_per_query, stream=sys.stdout):
