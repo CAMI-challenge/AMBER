@@ -86,7 +86,7 @@ CONCOCT    0.837         0.266             0.052         0.517      0.476       
 MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724     0.825  0.976            0.965             0.674              0.860               0.917                17                16                12                17                 16                 12
 ~~~
 Additionally, directory _output_dir_ will contain figures **avg_precision_recall.png + .pdf** (average precision vs. average recall)
-and **ari_vs_assigned_bps.png + .pdf** (adjusted rand index vs. percentage of assigned base pairs).
+and **ari_vs_assigned_bps.png + .pdf** (adjusted rand index vs. percentage of assigned base pairs), and **rankings.txt** (binnings sorted by average precision, average recall, and average precision + recall).
 In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ will be created with the following files:
 * **rand_index.tsv**: contains value of (adjusted) rand index and percentage of assigned/binned bases. Rand index is both weighed and unweighed by base pairs
 * **precision_recall.tsv**: contains precision and recall per genome bin
