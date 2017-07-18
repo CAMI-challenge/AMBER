@@ -78,27 +78,53 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
         # GENOME RECOVERY
         genome_recovery_val = genome_recovery.calc_table(bin_metrics)
 
-        summary_per_query.append((binning_label,
-                                  format(avg_precision, '.3f'),
-                                  format(std_deviation_precision, '.3f'),
-                                  format(std_error_precision, '.3f'),
-                                  format(avg_recall, '.3f'),
-                                  format(std_deviation_recall, '.3f'),
-                                  format(std_error_recall, '.3f'),
-                                  format(precision, '.3f'),
-                                  format(recall, '.3f'),
-                                  format(ri_by_bp, '.3f'),
-                                  format(ri_by_seq, '.3f'),
-                                  format(ari_by_bp, '.3f'),
-                                  format(ari_by_seq, '.3f'),
-                                  format(percentage_of_assigned_bps, '.3f'),
-                                  str(genome_recovery_val[5]),
-                                  str(genome_recovery_val[3]),
-                                  str(genome_recovery_val[1]),
-                                  str(genome_recovery_val[4]),
-                                  str(genome_recovery_val[2]),
-                                  str(genome_recovery_val[0])))
+        summary_per_query.append({'binning_label': binning_label,
+                                  'avg_precision': avg_precision,
+                                  'std_deviation_precision': std_deviation_precision,
+                                  'std_error_precision': std_error_precision,
+                                  'avg_recall': avg_recall,
+                                  'std_deviation_recall': std_deviation_recall,
+                                  'std_error_recall': std_error_recall,
+                                  'precision': precision,
+                                  'recall': recall,
+                                  'ri_by_bp': ri_by_bp,
+                                  'ri_by_seq': ri_by_seq,
+                                  'ari_by_bp': ari_by_bp,
+                                  'ari_by_seq': ari_by_seq,
+                                  'percentage_of_assigned_bps': percentage_of_assigned_bps,
+                                  '_05compl_01cont': genome_recovery_val[5],
+                                  '_07compl_01cont': genome_recovery_val[3],
+                                  '_09compl_01cont': genome_recovery_val[1],
+                                  '_05compl_005cont': genome_recovery_val[4],
+                                  '_07compl_005cont': genome_recovery_val[2],
+                                  '_09compl_005cont': genome_recovery_val[0]})
     return summary_per_query
+
+
+def convert_summary_to_tuples_of_strings(summary_per_query):
+    tuples = []
+    for summary in summary_per_query:
+        tuples.append(((summary['binning_label']),
+                      format(summary['avg_precision'], '.3f'),
+                      format(summary['std_deviation_precision'], '.3f'),
+                      format(summary['std_error_precision'], '.3f'),
+                      format(summary['avg_recall'], '.3f'),
+                      format(summary['std_deviation_recall'], '.3f'),
+                      format(summary['std_error_recall'], '.3f'),
+                      format(summary['precision'], '.3f'),
+                      format(summary['recall'], '.3f'),
+                      format(summary['ri_by_bp'], '.3f'),
+                      format(summary['ri_by_seq'], '.3f'),
+                      format(summary['ari_by_bp'], '.3f'),
+                      format(summary['ari_by_seq'], '.3f'),
+                      format(summary['percentage_of_assigned_bps'], '.3f'),
+                      str(summary['_05compl_01cont']),
+                      str(summary['_07compl_01cont']),
+                      str(summary['_09compl_01cont']),
+                      str(summary['_05compl_005cont']),
+                      str(summary['_07compl_005cont']),
+                      str(summary['_09compl_005cont'])))
+    return tuples
 
 
 def create_colors_list():
@@ -127,17 +153,18 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
     plot_labels = []
     if plot_type == 'e':
         for summary in summary_per_query:
-            axs.errorbar(float(summary[1]), float(summary[4]), xerr=float(summary[3]), yerr=float(summary[6]), fmt='o',
+            axs.errorbar(summary['avg_precision'], summary['avg_recall'], xerr=summary['std_error_precision'], yerr=summary['std_error_recall'],
+                         fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
                          mfc=colors_list[i],
                          capsize=3)
-            plot_labels.append(summary[0])
+            plot_labels.append(summary['binning_label'])
             i += 1
     elif plot_type == 'p':
         for summary in summary_per_query:
-            axs.plot(float(summary[11]), float(summary[13]), marker='o', color=colors_list[i])
-            plot_labels.append(summary[0])
+            axs.plot(summary['ari_by_bp'], summary['percentage_of_assigned_bps'], marker='o', color=colors_list[i])
+            plot_labels.append(summary['binning_label'])
             i += 1
 
     # turn on grid
@@ -178,9 +205,15 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
 
 
 def print_summary(summary_per_query, stream=sys.stdout):
-    stream.write("%s\n" % "\t".join((labels.TOOL, labels.AVG_PRECISION, labels.STD_DEV_PRECISION,
-                                     labels.SEM_PRECISION, labels.AVG_RECALL, labels.STD_DEV_RECALL, labels.
-                                     SEM_RECALL, labels.PRECISION, labels.RECALL,
+    stream.write("%s\n" % "\t".join((labels.TOOL,
+                                     labels.AVG_PRECISION,
+                                     labels.STD_DEV_PRECISION,
+                                     labels.SEM_PRECISION,
+                                     labels.AVG_RECALL,
+                                     labels.STD_DEV_RECALL,
+                                     labels.SEM_RECALL,
+                                     labels.PRECISION,
+                                     labels.RECALL,
                                      labels.RI_BY_BP,
                                      labels.RI_BY_SEQ,
                                      labels.ARI_BY_BP,
@@ -196,6 +229,25 @@ def print_summary(summary_per_query, stream=sys.stdout):
         stream.write("%s\n" % "\t".join(summary))
 
 
+def compute_rankings(summary_per_query, output_dir):
+    f = open(os.path.normpath(output_dir + '/rankings.txt'), 'w')
+    f.write("Average precision\n")
+    sorted_by = sorted(summary_per_query, key=lambda x: x['avg_precision'], reverse=True)
+    for summary in sorted_by:
+        f.write("%s \t %1.3f\n" % (summary['binning_label'], summary['avg_precision']))
+
+    sorted_by = sorted(summary_per_query, key=lambda x: x['avg_recall'], reverse=True)
+    f.write("\nAverage recall\n")
+    for summary in sorted_by:
+        f.write("%s \t %1.3f\n" % (summary['binning_label'], summary['avg_recall']))
+
+    sorted_by = sorted(summary_per_query, key=lambda x: x['avg_precision'] + x['avg_recall'], reverse=True)
+    f.write("\nAverage precision + average recall\n")
+    for summary in sorted_by:
+        f.write("%s \t %1.3f\n" % (summary['binning_label'], summary['avg_precision'] + summary['avg_recall']))
+    f.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Compute all metrics and figures for one or more binning files; output summary to screen and results per binning file to chosen directory",
                                      parents=[argparse_parents.PARSER_MULTI2])
@@ -204,19 +256,20 @@ def main():
     binning_labels = []
     if args.labels:
         binning_labels = [x.strip() for x in args.labels.split(',')]
-        if len(binning_labels) != len(args.query_files):
-            parser.error('number of labels does not match the number of query files')
+        if len(binning_labels) != len(args.bin_files):
+            parser.error('number of labels does not match the number of binning files')
     summary_per_query = evaluate_all(args.gold_standard_file,
                                      args.fasta_file,
-                                     args.query_files,
+                                     args.bin_files,
                                      binning_labels,
                                      args.filter,
                                      args.genomes_file,
                                      args.keyword,
                                      args.output_dir)
-    print_summary(summary_per_query)
+    print_summary(convert_summary_to_tuples_of_strings(summary_per_query))
     plot_avg_precision_recall(summary_per_query, args.output_dir)
     plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, args.output_dir)
+    compute_rankings(summary_per_query, args.output_dir)
 
 
 if __name__ == "__main__":
