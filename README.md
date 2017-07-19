@@ -22,10 +22,10 @@
 * **sem_recall**: standard error of the mean of recall averaged over genome bins
 * **precision**: precision weighed by base pairs
 * **recall**: recall weighed by base pairs
-* **rand_index_by_bp**: rand index weighed by base pairs
-* **rand_index_by_seq**: rand index weighed by sequence counts
-* **a_rand_index_by_bp**: adjusted rand index weighed by base pairs
-* **a_rand_index_by_seq**: adjusted rand index weighed by sequence counts
+* **rand_index_by_bp**: Rand index weighed by base pairs
+* **rand_index_by_seq**: Rand index weighed by sequence counts
+* **a_rand_index_by_bp**: adjusted Rand index weighed by base pairs
+* **a_rand_index_by_seq**: adjusted Rand index weighed by sequence counts
 * **percent_assigned_bps**: percentage of base pairs that were assigned to bins
 * **\>0.5compl<0.1cont**: number of genomes with more than 50% completeness and less than 10% contamination
 * **\>0.7compl<0.1cont**: number of genomes with more than 70% completeness and less than 10% contamination
@@ -86,9 +86,9 @@ CONCOCT    0.837         0.266             0.052         0.517      0.476       
 MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724     0.825  0.976            0.965             0.674              0.860               0.917                17                16                12                17                 16                 12
 ~~~
 Additionally, directory _output_dir_ will contain figures **avg_precision_recall.png + .pdf** (average precision vs. average recall)
-and **ari_vs_assigned_bps.png + .pdf** (adjusted rand index vs. percentage of assigned base pairs), and **rankings.txt** (binnings sorted by average precision, average recall, and average precision + recall).
+and **ari_vs_assigned_bps.png + .pdf** (adjusted Rand index vs. percentage of assigned base pairs), and **rankings.txt** (binnings sorted by average precision, average recall, and average precision + recall).
 In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ will be created with the following files:
-* **rand_index.tsv**: contains value of (adjusted) rand index and percentage of assigned/binned bases. Rand index is both weighed and unweighed by base pairs
+* **rand_index.tsv**: contains value of (adjusted) Rand index and percentage of assigned/binned bases. Rand index is both weighed and unweighed by base pairs
 * **precision_recall.tsv**: contains precision and recall per genome bin
 * **precision_recall_avg.tsv**: contains precision and recall averaged over genome bins. Includes standard deviation and standard error of the mean
 * **precision_recall_by_bpcount.tsv**: contains precision and recall weighed by base pairs
@@ -277,7 +277,7 @@ precision recall
 ~~~BASH
 usage: rand_index.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] bin_file
 
-Compute (adjusted) rand index from binning file, unweighed and weighed by base
+Compute (adjusted) Rand index from binning file, unweighed and weighed by base
 pairs, and percentage of binned base pairs
 
 positional arguments:
@@ -389,9 +389,43 @@ Alternatively:
 ~~~BASH
 ./utils/convert_fasta_bins_to_cami.py /path/to/file/maxbin.out.0* -o bins.tsv
 ~~~
-
 **Output:**
 File bins.tsv is created in the working directory.
+
+## utils/add_length_column.py
+~~~BASH
+usage: add_length_column.py [-h] -g GOLD_STANDARD_FILE -f FASTA_FILE
+
+Add length column _LENGTH to gold standard mapping and print mapping on the
+standard output
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
+                        Gold standard - ground truth - file
+  -f FASTA_FILE, --fasta_file FASTA_FILE
+                        FASTA or FASTQ file with sequences of gold standard
+~~~
+**Example:**
+~~~BASH
+./utils/add_length_column.py -g test/gsa_mapping.binning \
+-f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz
+~~~
+**Output:**
+~~~BASH
+@Version:0.9.1
+@SampleID:gsa
+
+@@SEQUENCEID    BINID           TAXID  _contig_id                                    _number_reads _LENGTH
+RL|S1|C10817    Sample18_57     45202  Sample18_57_from_2_to_20519_total_20518       44394         20518
+RL|S1|C11497    Sample22_57     10239  Sample22_57_from_4_to_37675_total_37672       18432         37672
+RL|S1|C6571     evo_1286_AP.033 1385   contig_1_4_from_3_to_69916_total_69914        30978         69914
+RL|S1|C10560    evo_1286_AP.033 1385   contig_1_4_from_69981_to_1065637_total_995657 443334        995657
+...
+~~~
+Note that only columns SEQUENCEID and BINID are required in a gold standard mapping file. The added
+optional column _LENGTH, however, eliminates the need for a FASTA or FASTQ file when
+evaluating binnings.
 
 # Developer Guide
 

@@ -165,9 +165,9 @@ def read_rows(input_stream, index_key, index_value, index_length):
         value = row_data[index_value]
         if index_length is not None:
             length = row_data[index_length]
-            yield key, value, length
+            yield key, value, int(length)
         else:
-            yield key, value, 0
+            yield key, value, int(0)
 
 
 def is_length_column_available(input_stream):

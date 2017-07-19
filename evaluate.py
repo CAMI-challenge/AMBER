@@ -200,7 +200,7 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
                  output_dir,
                  'p',
                  'ari_vs_assigned_bps',
-                 'Adjusted rand index',
+                 'Adjusted Rand index',
                  'Percentage of assigned base pairs')
 
 
