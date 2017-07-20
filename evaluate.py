@@ -11,7 +11,6 @@ import rand_index
 import genome_recovery
 import plot_by_genome
 import matplotlib.pyplot as plt
-import numpy as np
 from utils import exclude_genomes
 from utils import load_data
 from utils import argparse_parents
@@ -78,26 +77,27 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
         # GENOME RECOVERY
         genome_recovery_val = genome_recovery.calc_table(bin_metrics)
 
-        summary_per_query.append({'binning_label': binning_label,
-                                  'avg_precision': avg_precision,
-                                  'std_deviation_precision': std_deviation_precision,
-                                  'std_error_precision': std_error_precision,
-                                  'avg_recall': avg_recall,
-                                  'std_deviation_recall': std_deviation_recall,
-                                  'std_error_recall': std_error_recall,
-                                  'precision': precision,
-                                  'recall': recall,
-                                  'ri_by_bp': ri_by_bp,
-                                  'ri_by_seq': ri_by_seq,
-                                  'ari_by_bp': ari_by_bp,
-                                  'ari_by_seq': ari_by_seq,
-                                  'percentage_of_assigned_bps': percentage_of_assigned_bps,
-                                  '_05compl_01cont': genome_recovery_val[5],
-                                  '_07compl_01cont': genome_recovery_val[3],
-                                  '_09compl_01cont': genome_recovery_val[1],
-                                  '_05compl_005cont': genome_recovery_val[4],
-                                  '_07compl_005cont': genome_recovery_val[2],
-                                  '_09compl_005cont': genome_recovery_val[0]})
+        summary_per_query.append(({'binning_label': binning_label,
+                                   'avg_precision': avg_precision,
+                                   'std_deviation_precision': std_deviation_precision,
+                                   'std_error_precision': std_error_precision,
+                                   'avg_recall': avg_recall,
+                                   'std_deviation_recall': std_deviation_recall,
+                                   'std_error_recall': std_error_recall,
+                                   'precision': precision,
+                                   'recall': recall,
+                                   'ri_by_bp': ri_by_bp,
+                                   'ri_by_seq': ri_by_seq,
+                                   'ari_by_bp': ari_by_bp,
+                                   'ari_by_seq': ari_by_seq,
+                                   'percentage_of_assigned_bps': percentage_of_assigned_bps,
+                                   '_05compl_01cont': genome_recovery_val[5],
+                                   '_07compl_01cont': genome_recovery_val[3],
+                                   '_09compl_01cont': genome_recovery_val[1],
+                                   '_05compl_005cont': genome_recovery_val[4],
+                                   '_07compl_005cont': genome_recovery_val[2],
+                                   '_09compl_005cont': genome_recovery_val[0]},
+                                  bin_metrics))
     return summary_per_query
 
 
@@ -127,21 +127,10 @@ def convert_summary_to_tuples_of_strings(summary_per_query):
     return tuples
 
 
-def create_colors_list():
-    colors_list = []
-    for color in plt.cm.Set1(np.linspace(0, 1, 9)):
-        colors_list.append(tuple(color))
-    for color in plt.cm.Set2(np.linspace(0, 1, 8)):
-        colors_list.append(tuple(color))
-    for color in plt.cm.Set3(np.linspace(0, 1, 12)):
-        colors_list.append(tuple(color))
-    return colors_list
-
-
 def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, ylabel):
-    colors_list = create_colors_list()
+    colors_list = plot_by_genome.create_colors_list()
     if len(summary_per_query) > len(colors_list):
-        raise RuntimeError("Plot of precision and recall only supports 29 colors")
+        raise RuntimeError("Plot only supports 29 colors")
 
     fig, axs = plt.subplots(figsize=(6, 5))
 
@@ -266,10 +255,12 @@ def main():
                                      args.genomes_file,
                                      args.keyword,
                                      args.output_dir)
-    print_summary(convert_summary_to_tuples_of_strings(summary_per_query))
-    plot_avg_precision_recall(summary_per_query, args.output_dir)
-    plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, args.output_dir)
-    compute_rankings(summary_per_query, args.output_dir)
+    summary_dict = [x[0] for x in summary_per_query]
+    print_summary(convert_summary_to_tuples_of_strings(summary_dict))
+    plot_avg_precision_recall(summary_dict, args.output_dir)
+    plot_adjusted_rand_index_vs_assigned_bps(summary_dict, args.output_dir)
+    plot_by_genome.plot_by_genome2(summary_per_query, args.output_dir)
+    compute_rankings(summary_dict, args.output_dir)
 
 
 if __name__ == "__main__":
