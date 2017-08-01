@@ -1,3 +1,5 @@
 numpy==v1.13.0
 biopython==v1.69.0
 matplotlib==v2.0.2
+bokeh==v0.12.6
+pandas==v0.20.3
