@@ -1,5 +1,27 @@
 [![CircleCI](https://circleci.com/gh/CAMI-challenge/genome_binning_evaluation/tree/master.svg?style=svg)](https://circleci.com/gh/CAMI-challenge/genome_binning_evaluation/tree/master)
 
+# Introduction
+AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the comparative assessment of genome
+reconstructions from metagenome benchmark datasets. It provides performance metrics, results rankings, and
+comparative visualizations for assessing multiple programs or parameter effects. The provided metrics were
+used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic
+Interpretation](http://www.cami-challenge.org/).
+
+## Inputs
+As input, the main tool _evaluate.py_ of AMBER uses three files:
+1. a gold standard mapping of contigs or read IDs to genomes in the
+[CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format);
+see [here](https://github.com/CAMI-challenge/genome_binning_evaluation/blob/master/test/gsa_mapping.binning) example (note: only columns SEQUENCEID and BINID are required)
+2. one or more files with bin assignments for the sequences also in the
+[CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format), with each file
+containing all the bin assignments from the run of a binning program. A tool for converting FASTA files, such that each file represents a bin,
+is available (see _utils/convert_fasta_bins_to_biobox_format.py_ below)
+3. a FASTA or FASTQ file with the sequences for obtaining their lengths. Optionally, the lenghts may be added to the
+gold standard mapping file using tool _utils/add_length_column.py_ (see below). In this way,
+_evaluate.py_ no longer requires a FASTA or FASTQ file
+
+Additional parameters may be specified - see below.
+
 # Requirements
 
 * python &ge; 3.5
@@ -27,12 +49,12 @@
 * **a_rand_index_by_bp**: adjusted Rand index weighed by base pairs
 * **a_rand_index_by_seq**: adjusted Rand index weighed by sequence counts
 * **percent_assigned_bps**: percentage of base pairs that were assigned to bins
-* **\>0.5compl<0.1cont**: number of genomes with more than 50% completeness and less than 10% contamination
-* **\>0.7compl<0.1cont**: number of genomes with more than 70% completeness and less than 10% contamination
-* **\>0.9compl<0.1cont**: number of genomes with more than 90% completeness and less than 10% contamination
-* **\>0.5compl<0.05cont**: number of genomes with more than 50% completeness and less than 5% contamination
-* **\>0.7compl<0.05cont**: number of genomes with more than 70% completeness and less than 5% contamination
-* **\>0.9compl<0.05cont**: number of genomes with more than 90% completeness and less than 5% contamination
+* **\>0.5compl<0.1cont**: number of bins with more than 50% completeness and less than 10% contamination
+* **\>0.7compl<0.1cont**: number of bins with more than 70% completeness and less than 10% contamination
+* **\>0.9compl<0.1cont**: number of bins with more than 90% completeness and less than 10% contamination
+* **\>0.5compl<0.05cont**: number of bins with more than 50% completeness and less than 5% contamination
+* **\>0.7compl<0.05cont**: number of bins with more than 70% completeness and less than 5% contamination
+* **\>0.9compl<0.05cont**: number of bins with more than 90% completeness and less than 5% contamination
 
 ## evaluate.py
 ~~~BASH
