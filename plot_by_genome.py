@@ -90,8 +90,8 @@ def plot_by_genome2(summary_per_query, output_dir):
     plt.xlabel('Precision')
     plt.ylabel('Recall')
     plt.tight_layout()
-    fig.savefig(os.path.normpath(output_dir + '/precision_recall_per_genome.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.normpath(output_dir + '/precision_recall_per_genome.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.normpath(output_dir + '/precision_recall_per_bin.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.normpath(output_dir + '/precision_recall_per_bin.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
 def main():

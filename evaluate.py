@@ -4,13 +4,16 @@ import argparse
 import os
 import sys
 import errno
-import precision_recall_per_genome
+import collections
+import precision_recall_per_bin
 import precision_recall_average
 import precision_recall_by_bpcount
 import rand_index
 import genome_recovery
 import plot_by_genome
+import html_plots
 import matplotlib.pyplot as plt
+import pandas as pd
 from utils import exclude_genomes
 from utils import load_data
 from utils import argparse_parents
@@ -38,17 +41,17 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
         query = load_data.open_query(query_file)
 
         # PRECISION RECALL PER GENOME
-        bin_metrics = precision_recall_per_genome.compute_metrics(query, gold_standard)
+        bin_metrics = precision_recall_per_bin.compute_metrics(query, gold_standard)
         if genomes_file:
             bin_metrics = exclude_genomes.filter_data(bin_metrics, genomes_file, keyword)
         f = open(path + "/precision_recall.tsv", 'w')
-        precision_recall_per_genome.print_metrics(bin_metrics, f)
+        precision_recall_per_bin.print_metrics(bin_metrics, f)
         plot_by_genome.plot_by_genome(bin_metrics, path + '/genomes_sorted_by_recall', 'recall')
         plot_by_genome.plot_by_genome(bin_metrics, path + '/genomes_sorted_by_precision', 'precision')
         f.close()
 
         # AVG PRECISION RECALL
-        avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, std_error_precision, std_error_recall = \
+        avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, sem_precision, sem_recall = \
             precision_recall_average.compute_precision_and_recall(bin_metrics, filter_tail_percentage)
         f = open(path + "/precision_recall_avg.tsv", 'w')
         precision_recall_average.print_precision_recall_table_header(f)
@@ -57,8 +60,8 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
                                                         avg_recall,
                                                         std_deviation_precision,
                                                         std_deviation_recall,
-                                                        std_error_precision,
-                                                        std_error_recall,
+                                                        sem_precision,
+                                                        sem_recall,
                                                         f)
         f.close()
 
@@ -69,34 +72,34 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
         f.close()
 
         # (ADJUSTED) RAND INDEX
-        ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq, percentage_of_assigned_bps = rand_index.compute_metrics(query, gold_standard)
+        ri_by_seq, ri_by_bp, a_rand_index_by_bp, a_rand_index_by_seq, percent_assigned_bps = rand_index.compute_metrics(query, gold_standard)
         f = open(path + "/rand_index.tsv", 'w')
-        rand_index.print_rand_indices(ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq, percentage_of_assigned_bps, f)
+        rand_index.print_rand_indices(ri_by_seq, ri_by_bp, a_rand_index_by_bp, a_rand_index_by_seq, percent_assigned_bps, f)
         f.close()
 
         # GENOME RECOVERY
         genome_recovery_val = genome_recovery.calc_table(bin_metrics)
 
-        summary_per_query.append(({'binning_label': binning_label,
-                                   'avg_precision': avg_precision,
-                                   'std_deviation_precision': std_deviation_precision,
-                                   'std_error_precision': std_error_precision,
-                                   'avg_recall': avg_recall,
-                                   'std_deviation_recall': std_deviation_recall,
-                                   'std_error_recall': std_error_recall,
-                                   'precision': precision,
-                                   'recall': recall,
-                                   'ri_by_bp': ri_by_bp,
-                                   'ri_by_seq': ri_by_seq,
-                                   'ari_by_bp': ari_by_bp,
-                                   'ari_by_seq': ari_by_seq,
-                                   'percentage_of_assigned_bps': percentage_of_assigned_bps,
-                                   '_05compl_01cont': genome_recovery_val[5],
-                                   '_07compl_01cont': genome_recovery_val[3],
-                                   '_09compl_01cont': genome_recovery_val[1],
-                                   '_05compl_005cont': genome_recovery_val[4],
-                                   '_07compl_005cont': genome_recovery_val[2],
-                                   '_09compl_005cont': genome_recovery_val[0]},
+        summary_per_query.append((collections.OrderedDict([('binning_label', binning_label),
+                                   ('avg_precision', avg_precision),
+                                   ('std_deviation_precision', std_deviation_precision),
+                                   ('sem_precision', sem_precision),
+                                   ('avg_recall', avg_recall),
+                                   ('std_deviation_recall', std_deviation_recall),
+                                   ('sem_recall', sem_recall),
+                                   ('precision', precision),
+                                   ('recall', recall),
+                                   ('ri_by_bp', ri_by_bp),
+                                   ('ri_by_seq', ri_by_seq),
+                                   ('a_rand_index_by_bp', a_rand_index_by_bp),
+                                   ('a_rand_index_by_seq', a_rand_index_by_seq),
+                                   ('percent_assigned_bps', percent_assigned_bps),
+                                   ('_05compl_01cont', genome_recovery_val[5]),
+                                   ('_07compl_01cont', genome_recovery_val[3]),
+                                   ('_09compl_01cont', genome_recovery_val[1]),
+                                   ('_05compl_005cont', genome_recovery_val[4]),
+                                   ('_07compl_005cont', genome_recovery_val[2]),
+                                   ('_09compl_005cont', genome_recovery_val[0])]),
                                   bin_metrics))
     return summary_per_query
 
@@ -107,17 +110,17 @@ def convert_summary_to_tuples_of_strings(summary_per_query):
         tuples.append(((summary['binning_label']),
                       format(summary['avg_precision'], '.3f'),
                       format(summary['std_deviation_precision'], '.3f'),
-                      format(summary['std_error_precision'], '.3f'),
+                      format(summary['sem_precision'], '.3f'),
                       format(summary['avg_recall'], '.3f'),
                       format(summary['std_deviation_recall'], '.3f'),
-                      format(summary['std_error_recall'], '.3f'),
+                      format(summary['sem_recall'], '.3f'),
                       format(summary['precision'], '.3f'),
                       format(summary['recall'], '.3f'),
                       format(summary['ri_by_bp'], '.3f'),
                       format(summary['ri_by_seq'], '.3f'),
-                      format(summary['ari_by_bp'], '.3f'),
-                      format(summary['ari_by_seq'], '.3f'),
-                      format(summary['percentage_of_assigned_bps'], '.3f'),
+                      format(summary['a_rand_index_by_bp'], '.3f'),
+                      format(summary['a_rand_index_by_seq'], '.3f'),
+                      format(summary['percent_assigned_bps'], '.3f'),
                       str(summary['_05compl_01cont']),
                       str(summary['_07compl_01cont']),
                       str(summary['_09compl_01cont']),
@@ -142,7 +145,7 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
     plot_labels = []
     if plot_type == 'e':
         for summary in summary_per_query:
-            axs.errorbar(summary['avg_precision'], summary['avg_recall'], xerr=summary['std_error_precision'], yerr=summary['std_error_recall'],
+            axs.errorbar(summary['avg_precision'], summary['avg_recall'], xerr=summary['sem_precision'], yerr=summary['sem_recall'],
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
@@ -152,7 +155,7 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
             i += 1
     elif plot_type == 'p':
         for summary in summary_per_query:
-            axs.plot(summary['ari_by_bp'], summary['percentage_of_assigned_bps'], marker='o', color=colors_list[i])
+            axs.plot(summary['a_rand_index_by_bp'], summary['percent_assigned_bps'], marker='o', color=colors_list[i])
             plot_labels.append(summary['binning_label'])
             i += 1
 
@@ -261,6 +264,18 @@ def main():
     plot_adjusted_rand_index_vs_assigned_bps(summary_dict, args.output_dir)
     plot_by_genome.plot_by_genome2(summary_per_query, args.output_dir)
     compute_rankings(summary_dict, args.output_dir)
+
+    precision_recall_files = []
+    for query_file in args.bin_files:
+        tool_id = query_file.split('/')[-1]
+        precision_recall_files.append(os.path.join(args.output_dir, tool_id) + "/precision_recall.tsv")
+    df = pd.DataFrame.from_dict(summary_dict)
+    df.set_index('binning_label', inplace=True)
+    df.rename(columns={'binning_label': 'Tool'}, inplace=True)
+    html_plots.build_html(precision_recall_files,
+                          binning_labels,
+                          df,
+                          os.path.join(args.output_dir, "summary.html"))
 
 
 if __name__ == "__main__":

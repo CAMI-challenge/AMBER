@@ -32,8 +32,8 @@ DESCRIPTION_HEIGHT = 60
 A_WIDTH = 1200
 A_HEIGHT = 15
 
-COLOR_SCALE = 10
-COLORS = d3['Category10'][COLOR_SCALE]
+COLOR_SCALE = 20
+COLORS = d3['Category20'][COLOR_SCALE]
 
 ID_SUMMARY = "summary"
 ID_PRECISION_VS_RECALL_TOOLS = "precision_vs_recall_tools"
@@ -244,7 +244,7 @@ def create_precision_recall_all_genomes_scatter(paths, names):
 
 
 def save_html_file(path, layout):
-    html = file_html(layout, CDN, "Genome Binning Evaluation")
+    html = file_html(layout, CDN, "AMBER: Assessment of Metagenome BinnERs")
     file = open(path, "w+")
     file.write(html)
     file.close()
@@ -253,10 +253,14 @@ def save_html_file(path, layout):
 def build_html(precision_recall_paths, names, summary, html_output):
     element_column = list()
     path_with_names = list(zip(precision_recall_paths, names))
-    df = pd.DataFrame.from_csv(summary, sep='\t', header=0)
+
+    df = summary
+    # if this script is run directly (not from evaluate.py), summary is a file path
+    if isinstance(summary, str):
+        df = pd.DataFrame.from_csv(summary, sep='\t', header=0)
     df.insert(0, "Tool", df.index)
 
-    element_column.append(create_title_div("main", "Genome Binning Evaluation", " produced on {0} ".format(
+    element_column.append(create_title_div("main", "AMBER: Assessment of Metagenome BinnERs", " produced on {0} ".format(
         datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))))
     element_column.append(create_subtitle_div("contents", "Contents"))
 
@@ -270,12 +274,12 @@ def build_html(precision_recall_paths, names, summary, html_output):
     element_column.append(create_subtitle_div(ID_SUMMARY, "Summary"))
 
     def create_list(k, v):
-        return "<li><strong>{0}:</strong>{1}</li>".format(k, v)
+        return "<li><strong>{0}: </strong>{1}</li>".format(k, v)
 
     html_listing = list(map(lambda k: create_list(k, abbreviations[k]), abbreviations.keys()))
 
     element_column.append(
-        create_description("Table columns description: <ul>{0}</ul>".format(" ".join(html_listing)), height=None))
+        create_description("Table columns: <ul>{0}</ul>".format(" ".join(html_listing)), height=None))
 
     element_column.append(widgetbox(create_summary_table(df)))
 
@@ -310,7 +314,7 @@ def build_html(precision_recall_paths, names, summary, html_output):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Creates html based plots.")
+    parser = argparse.ArgumentParser(description="Create html-based plots.")
     parser.add_argument('-o', '--output_file', help="Directory to write the results to", required=True)
     parser.add_argument('-p', '--precision_recall_file', nargs='+', help='<Required> Set flag', required=True)
     parser.add_argument('-n', '--names', nargs='+', help='<Required> Set flag', required=True)

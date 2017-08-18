@@ -7,8 +7,8 @@ comparative visualizations for assessing multiple programs or parameter effects.
 used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic
 Interpretation](http://www.cami-challenge.org/).
 
-## Inputs
-As input, the main tool _evaluate.py_ of AMBER uses three files:
+## Input
+As input, AMBER's main tool _evaluate.py_ uses three files:
 1. a gold standard mapping of contigs or read IDs to genomes in the
 [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format);
 see [here](https://github.com/CAMI-challenge/genome_binning_evaluation/blob/master/test/gsa_mapping.binning) example (note: only columns SEQUENCEID and BINID are required)
@@ -26,9 +26,11 @@ Additional parameters may be specified - see below.
 
 * python &ge; 3.5
 * python-tk
-* numpy &ge; v1.13.0
-* biopython &ge; v1.69.0
-* matplotlib &ge; v2.0.2
+* numpy &ge; 1.13.0
+* biopython &ge; 1.69.0
+* matplotlib &ge; 2.0.2
+* bokeh &ge; 0.12.6
+* pandas &ge; 0.20.3
 * tox (only for automatic tests)
 * The examples below require a gold standard assembly. Please [download it](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz) to the _test_ directory.
 
@@ -107,8 +109,12 @@ MaxBin 2.0 0.948         0.095             0.016         0.799      0.364       
 CONCOCT    0.837         0.266             0.052         0.517      0.476          0.069      0.684     0.936  0.972            0.946             0.644              0.751               0.967                18                17                15                16                 16                 14
 MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724     0.825  0.976            0.965             0.674              0.860               0.917                17                16                12                17                 16                 12
 ~~~
-Additionally, directory _output_dir_ will contain figures **avg_precision_recall.png + .pdf** (average precision vs. average recall)
-and **ari_vs_assigned_bps.png + .pdf** (adjusted Rand index vs. percentage of assigned base pairs), and **rankings.txt** (binnings sorted by average precision, average recall, and average precision + recall).
+Directory _output_dir_ will contain:
+* **summary.html**: HTML page with results summary and interactive graphs
+* **avg_precision_recall.png + .pdf**: figure of average precision vs. average recall
+* **ari_vs_assigned_bps.png + .pdf**: figure of adjusted Rand index vs. percentage of assigned base pairs
+* **rankings.txt**: tools sorted by average precision, average recall, and sum of average precision and average recall
+
 In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ will be created with the following files:
 * **rand_index.tsv**: contains value of (adjusted) Rand index and percentage of assigned/binned bases. Rand index is both weighed and unweighed by base pairs
 * **precision_recall.tsv**: contains precision and recall per genome bin
@@ -164,11 +170,11 @@ CONCOCT    0.837     0.266             0.052         0.517  0.476          0.069
 MetaBAT    0.822     0.256             0.047         0.570  0.428          0.065
 ~~~
 
-## precision_recall_per_genome.py
+## precision_recall_per_bin.py
 ~~~BASH
-usage: precision_recall_per_genome.py [-h] -g GOLD_STANDARD_FILE
-                                      [-f FASTA_FILE]
-                                      bin_file
+usage: precision_recall_per_bin.py [-h] -g GOLD_STANDARD_FILE
+                                   [-f FASTA_FILE]
+                                   bin_file
 
 Compute table of precision and recall per genome bin
 
@@ -185,7 +191,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g test/gsa_mapping.binning \
+./precision_recall_per_bin.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2
 ~~~
@@ -221,7 +227,7 @@ optional arguments:
 
 The example computes the table of precision and recall and pipes it to utils/exclude_genomes.py.
 ~~~BASH
-./precision_recall_per_genome.py -g test/gsa_mapping.binning \
+./precision_recall_per_bin.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element"
@@ -229,7 +235,7 @@ test/naughty_carson_2 | \
 
 **Output:**
 
-The output the is the table from precision_recall_per_genome.py without the excluded genomes.
+The output the is the table from precision_recall_per_bin.py without the excluded genomes.
 
 ## precision_recall_average.py
 ~~~BASH
@@ -251,7 +257,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g test/gsa_mapping.binning \
+./precision_recall_per_bin.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element" | \
@@ -343,7 +349,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g test/gsa_mapping.binning \
+./precision_recall_per_bin.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./genome_recovery.py -l "MaxBin 2.0" -p 1
@@ -374,7 +380,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_genome.py -g test/gsa_mapping.binning \
+./precision_recall_per_bin.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
 ./plot_by_genome.py

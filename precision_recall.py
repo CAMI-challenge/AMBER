@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-import precision_recall_per_genome
+import precision_recall_per_bin
 import precision_recall_average
 from utils import exclude_genomes
 from utils import load_data
@@ -13,7 +13,7 @@ def evaluate_all(gold_standard, queries, labels, filter_tail_percentage, genomes
     labels_iterator = iter(labels)
     for query in queries:
 
-        bin_metrics = precision_recall_per_genome.compute_metrics(query, gold_standard)
+        bin_metrics = precision_recall_per_bin.compute_metrics(query, gold_standard)
 
         if genomes_file:
             bin_metrics = exclude_genomes.filter_data(bin_metrics, genomes_file, keyword)
