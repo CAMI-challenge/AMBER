@@ -233,7 +233,7 @@ def create_precision_recall_all_genomes_scatter(paths, names):
     def create_circles(df, plot, name, color):
         df = df[df["name"] == name]
         source = ColumnDataSource(data=df)
-        plot.circle(df["precision"], df["recall"], color=color, alpha=0.8, legend=name, source=source)
+        plot.circle("precision", "recall", color=color, alpha=0.8, legend=name, source=source)
         return plot
 
     for idx, name in enumerate(names):
