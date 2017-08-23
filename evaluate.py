@@ -176,6 +176,7 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
     plt.tight_layout()
     fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plt.close(fig)
 
 
 def plot_avg_precision_recall(summary_per_query, output_dir):

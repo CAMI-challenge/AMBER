@@ -50,6 +50,7 @@ def plot_by_genome(data, out_file=None, sort_by='recall'):
     else:
         plt.savefig(os.path.normpath(out_file + '.png'), dpi=100, format='png', bbox_inches='tight')
         plt.savefig(os.path.normpath(out_file + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
+    plt.close(fig)
 
 
 def plot_by_genome2(summary_per_query, output_dir):
@@ -92,6 +93,7 @@ def plot_by_genome2(summary_per_query, output_dir):
     plt.tight_layout()
     fig.savefig(os.path.normpath(output_dir + '/precision_recall_per_bin.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/precision_recall_per_bin.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plt.close(fig)
 
 
 def main():
