@@ -3,7 +3,7 @@
 import pandas as pd
 import bokeh.models.widgets.tables
 
-from bokeh.layouts import widgetbox, column
+from bokeh.layouts import widgetbox, column, layout
 from bokeh.models import DataTable
 from bokeh.palettes import d3
 from bokeh.embed import file_html
@@ -62,7 +62,7 @@ Scatter plot showing adjusted rand index vs percentage of assigned base pairs.
 def create_title_div(id, name, info):
     div = Div(text="""<h1 id="{0}">{1}</h1><p>{2}</p>""".format(id, name, info),
               width=DIV_WIDTH, height=DIV_HEIGHT)
-    return div
+    return [div]
 
 
 def _set_default_figure_properties(figure, x_label, y_label):
@@ -77,25 +77,25 @@ def _set_default_figure_properties(figure, x_label, y_label):
 def create_description(content, width=DESCRIPTION_WIDTH, height=DESCRIPTION_HEIGHT):
     div = Div(text="""<h3>Description:</h3><p>{0}</p>""".format(content),
               width=width, height=height)
-    return div
+    return [div]
 
 
 def create_subtitle_div(id, name):
     div = Div(text="""<h2 id="{0}">{1}</h2>""".format(id, name),
               width=DIV_WIDTH, height=DIV_HEIGHT)
-    return div
+    return [div]
 
 
 def create_subtitle_a(href, name):
     div = Div(text="""<a href=#{0} style='padding-left:30px'>{1}</h2>""".format(href, name),
               width=A_WIDTH, height=A_HEIGHT)
-    return div
+    return [div]
 
 
 def create_title_a(href, number, name):
     div = Div(text="""<a href=#{0}>{2}. {1}</h2>""".format(href, name, number),
               width=A_WIDTH, height=A_HEIGHT)
-    return div
+    return [div]
 
 
 def create_summary_table(df):
@@ -105,7 +105,7 @@ def create_summary_table(df):
                    height=TABLE_ELEMENT_HEIGHT,
                    reorderable=True,
                    selectable=True)
-    return dt
+    return [widgetbox(dt)]
 
 
 def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
@@ -154,7 +154,7 @@ def create_recall_precision_scatter(df):
                  yerr=[row["sem_recall"]], color=COLORS[i], point_kwargs={"legend": idx, "size": 10})
 
     p = _set_default_figure_properties(p, "Precision", "Recall")
-    return p
+    return [p]
 
 
 def create_rand_index_assigned_bps_scatter(df):
@@ -170,7 +170,7 @@ def create_rand_index_assigned_bps_scatter(df):
                  legend=idx)
 
     p = _set_default_figure_properties(p, "Average Rand Index by base pair", "Percent of Assigned base pairs")
-    return p
+    return [p]
 
 
 def create_precision_recall_plot(path, name, x_axis, y_axis):
@@ -206,7 +206,7 @@ def create_precision_recall_plot(path, name, x_axis, y_axis):
     """ % df.set_index("idx")["genome"].to_dict())
 
     p = _set_default_figure_properties(p, "Genome", "")
-    return p
+    return [p]
 
 
 def create_precision_recall_all_genomes_scatter(paths, names):
@@ -240,11 +240,11 @@ def create_precision_recall_all_genomes_scatter(paths, names):
         p = create_circles(df, p, name, COLORS[idx])
 
     p = _set_default_figure_properties(p, "Precision", "Recall")
-    return p
+    return [p]
 
 
-def save_html_file(path, layout):
-    html = file_html(layout, CDN, "AMBER: Assessment of Metagenome BinnERs")
+def save_html_file(path, elements):
+    html = file_html(layout(elements, sizing_mode='scale_width'), CDN, "AMBER: Assessment of Metagenome BinnERs")
     file = open(path, "w+")
     file.write(html)
     file.close()
@@ -281,7 +281,7 @@ def build_html(precision_recall_paths, names, summary, html_output):
     element_column.append(
         create_description("Table columns: <ul>{0}</ul>".format(" ".join(html_listing)), height=None))
 
-    element_column.append(widgetbox(create_summary_table(df)))
+    element_column.append(create_summary_table(df))
 
     element_column.append(create_subtitle_div(ID_PRECISION_VS_RECALL_TOOLS, "Average Precision vs. Average Recall"))
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_TOOLS))
@@ -302,15 +302,15 @@ def build_html(precision_recall_paths, names, summary, html_output):
     for table, name in path_with_names:
         tool_column = list()
         sort_by = "recall"
-        tool_column.append(create_subtitle_div(name + "1", "Sorted by {0} ".format(sort_by)))
-        tool_column.append(create_precision_recall_plot(table, name, x_axis="precision", y_axis=sort_by))
+        tool_column.append(*create_subtitle_div(name + "1", "Sorted by {0} ".format(sort_by)))
+        tool_column.append(*create_precision_recall_plot(table, name, x_axis="precision", y_axis=sort_by))
         sort_by = "precision"
-        tool_column.append(create_subtitle_div(name + "2", "Sorted by {0} ".format(sort_by)))
-        tool_column.append(create_precision_recall_plot(table, name, x_axis="recall", y_axis=sort_by))
+        tool_column.append(*create_subtitle_div(name + "2", "Sorted by {0} ".format(sort_by)))
+        tool_column.append(*create_precision_recall_plot(table, name, x_axis="recall", y_axis=sort_by))
         tabs.append(Panel(child=column(tool_column), title=name))
 
-    element_column.append(Tabs(tabs=tabs))
-    save_html_file(html_output, column(element_column))
+    element_column.append([Tabs(tabs=tabs)])
+    save_html_file(html_output, element_column)
 
 
 def main():
