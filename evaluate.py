@@ -28,7 +28,15 @@ def make_sure_path_exists(path):
             raise
 
 
-def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tail_percentage, genomes_file, keyword, output_dir):
+def evaluate_all(gold_standard_file,
+                 fasta_file,
+                 query_files,
+                 labels,
+                 filter_tail_percentage,
+                 genomes_file,
+                 keyword,
+                 map_by_recall,
+                 output_dir):
     gold_standard = load_data.get_genome_mapping(gold_standard_file, fasta_file)
     labels_iterator = iter(labels)
     summary_per_query = []
@@ -40,8 +48,8 @@ def evaluate_all(gold_standard_file, fasta_file, query_files, labels, filter_tai
 
         query = load_data.open_query(query_file)
 
-        # PRECISION RECALL PER GENOME
-        bin_metrics = precision_recall_per_bin.compute_metrics(query, gold_standard)
+        # PRECISION RECALL PER BIN
+        bin_metrics = precision_recall_per_bin.compute_metrics(query, gold_standard, map_by_recall)
         if genomes_file:
             bin_metrics = exclude_genomes.filter_data(bin_metrics, genomes_file, keyword)
         f = open(path + "/precision_recall.tsv", 'w')
@@ -245,6 +253,7 @@ def main():
     parser = argparse.ArgumentParser(description="Compute all metrics and figures for one or more binning files; output summary to screen and results per binning file to chosen directory",
                                      parents=[argparse_parents.PARSER_MULTI2])
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
+    parser.add_argument('-m', '--map_by_recall', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
     args = parser.parse_args()
     binning_labels = []
     if args.labels:
@@ -258,6 +267,7 @@ def main():
                                      args.filter,
                                      args.genomes_file,
                                      args.keyword,
+                                     args.map_by_recall,
                                      args.output_dir)
     summary_dict = [x[0] for x in summary_per_query]
     print_summary(convert_summary_to_tuples_of_strings(summary_dict))

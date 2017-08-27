@@ -8,12 +8,12 @@ from utils import load_data
 from utils import argparse_parents
 
 
-def evaluate_all(gold_standard, queries, labels, filter_tail_percentage, genomes_file, keyword):
+def evaluate_all(gold_standard, queries, labels, filter_tail_percentage, genomes_file, keyword, map_by_recall):
     precision_recall_average.print_precision_recall_table_header()
     labels_iterator = iter(labels)
     for query in queries:
 
-        bin_metrics = precision_recall_per_bin.compute_metrics(query, gold_standard)
+        bin_metrics = precision_recall_per_bin.compute_metrics(query, gold_standard, map_by_recall)
 
         if genomes_file:
             bin_metrics = exclude_genomes.filter_data(bin_metrics, genomes_file, keyword)
@@ -33,6 +33,7 @@ def evaluate_all(gold_standard, queries, labels, filter_tail_percentage, genomes
 def main():
     parser = argparse.ArgumentParser(description="Compute precision and recall, including standard deviation and standard error of the mean, for binning files",
                                      parents=[argparse_parents.PARSER_MULTI2])
+    parser.add_argument('-m', '--map_by_recall', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
     args = parser.parse_args()
     labels = []
     if args.labels:
@@ -46,7 +47,8 @@ def main():
                  labels,
                  args.filter,
                  args.genomes_file,
-                 args.keyword)
+                 args.keyword,
+                 args.map_by_recall)
 
 
 if __name__ == "__main__":

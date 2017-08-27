@@ -12,6 +12,7 @@ HELP_GENOMES_FILE = "File with list of genomes to be removed"
 HELP_LABEL = "Binning name"
 HELP_LABELS = "Comma-separated binning names"
 HELP_KEYWORD = "Keyword in second column of input for bins to be removed (no keyword=remove all in list)"
+HELP_MAP_BY_RECALL = "Map genomes to bins by maximizing recall"
 
 PARSER_GS = argparse.ArgumentParser(add_help=False)
 PARSER_GS.add_argument("bin_file", help=HELP_QUERY_FILE)

@@ -62,6 +62,7 @@ Additional parameters may be specified - see below.
 ~~~BASH
 usage: evaluate.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
                    [-p FILTER] [-r GENOMES_FILE] [-k KEYWORD] -o OUTPUT_DIR
+                   [-m]
                    bin_files [bin_files ...]
 
 Compute all metrics and figures for one or more binning files; output summary
@@ -88,6 +89,7 @@ optional arguments:
                         removed (no keyword=remove all in list)
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         Directory to write the results to
+  -m, --map_by_recall   Map genomes to bins by maximizing recall
 ~~~
 **Example:**
 ~~~BASH
@@ -127,7 +129,7 @@ In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and
 ~~~BASH
 usage: precision_recall.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE]
                            [-l LABELS] [-p FILTER] [-r GENOMES_FILE]
-                           [-k KEYWORD]
+                           [-k KEYWORD] [-m]
                            bin_files [bin_files ...]
 
 Compute precision and recall, including standard deviation and standard error
@@ -152,6 +154,7 @@ optional arguments:
   -k KEYWORD, --keyword KEYWORD
                         Keyword in second column of input for bins to be
                         removed (no keyword=remove all in list)
+  -m, --map_by_recall   Map genomes to bins by maximizing recall
 ~~~
 **Example:**
 ~~~BASH
@@ -172,8 +175,8 @@ MetaBAT    0.822     0.256             0.047         0.570  0.428          0.065
 
 ## precision_recall_per_bin.py
 ~~~BASH
-usage: precision_recall_per_bin.py [-h] -g GOLD_STANDARD_FILE
-                                   [-f FASTA_FILE]
+usage: precision_recall_per_bin.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE]
+                                   [-m]
                                    bin_file
 
 Compute table of precision and recall per genome bin
@@ -188,6 +191,7 @@ optional arguments:
   -f FASTA_FILE, --fasta_file FASTA_FILE
                         FASTA or FASTQ file with sequences of gold standard
                         (required if gold standard file misses column _LENGTH)
+  -m, --map_by_recall   Map genomes to bins by maximizing recall
 ~~~
 **Example:**
 ~~~BASH
