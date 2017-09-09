@@ -41,6 +41,7 @@ RH|P|C20873	1053046
 ~~~
 See [here](https://github.com/CAMI-challenge/genome_binning_evaluation/blob/master/test/gsa_mapping.binning)
 another example (note: only columns SEQUENCEID and BINID are required).
+
 2. One or more files with bin assignments for the sequences also in the
 [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format), with each file
 containing all the bin assignments from a binning program. A tool for converting FASTA files, such that each file represents a bin,
