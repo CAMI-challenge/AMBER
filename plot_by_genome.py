@@ -11,7 +11,7 @@ from utils import argparse_parents
 
 def create_colors_list():
     colors_list = []
-    for color in plt.cm.Set1(np.linspace(0, 1, 9)):
+    for color in plt.cm.tab10(np.linspace(0, 1, 10))[:-1]:
         colors_list.append(tuple(color))
     for color in plt.cm.Set2(np.linspace(0, 1, 8)):
         colors_list.append(tuple(color))
@@ -72,7 +72,7 @@ def plot_by_genome2(summary_per_query, output_dir):
         for metrics in summary[1]:
             precision.append(metrics['precision'])
             recall.append(metrics['recall'])
-        axs.scatter(precision, recall, marker='o', color=colors_list[i])
+        axs.scatter(precision, recall, marker='o', color=colors_list[i], s=[8] * len(precision))
         plot_labels.append(summary[0]['binning_label'])
         i += 1
 
@@ -87,10 +87,15 @@ def plot_by_genome2(summary_per_query, output_dir):
     vals = axs.get_yticks()
     axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
 
-    lgd = plt.legend(plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False)
-    plt.xlabel('Precision')
-    plt.ylabel('Recall')
+    plt.xlabel('Precision per bin')
+    plt.ylabel('Recall per bin')
     plt.tight_layout()
+    fig.savefig(os.path.normpath(output_dir + '/precision_recall_per_bin.eps'), dpi=100, format='eps', bbox_inches='tight')
+
+    lgd = plt.legend(plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False)
+    for handle in lgd.legendHandles:
+        handle.set_sizes([100.0])
+
     fig.savefig(os.path.normpath(output_dir + '/precision_recall_per_bin.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/precision_recall_per_bin.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close(fig)

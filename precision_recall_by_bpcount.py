@@ -12,7 +12,6 @@ def calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_l
     # now calculate precision looping bins
     true_positives_p = 0
     denominator_p = sum(bin_id_to_total_lengths.values())
-    false_positives_p = 0.0
 
     for predicted_bin, genome_assigns in list(bin_id_to_genome_id_to_total_length.items()):
         # get maximal genome assignment
@@ -23,7 +22,7 @@ def calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_l
 
         true_positives_p += maxAssign
 
-    # now calculate precision as TP/FP + TP
+    # now calculate precision as TP/(FP + TP)
     precision = float(true_positives_p) / float(denominator_p)
 
     # now calculate recall looping genomes

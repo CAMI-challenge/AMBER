@@ -11,7 +11,7 @@ HELP_FILTER = "Filter out [FILTER]%% smallest bins (default: 0)"
 HELP_GENOMES_FILE = "File with list of genomes to be removed"
 HELP_LABEL = "Binning name"
 HELP_LABELS = "Comma-separated binning names"
-HELP_KEYWORD = "Keyword in second column of input for bins to be removed (no keyword=remove all in list)"
+HELP_KEYWORD = "Keyword in the second column of file with list of genomes to be removed (no keyword=remove all genomes in list)"
 HELP_MAP_BY_RECALL = "Map genomes to bins by maximizing recall"
 
 PARSER_GS = argparse.ArgumentParser(add_help=False)
@@ -30,5 +30,5 @@ PARSER_MULTI2.add_argument("-g", "--gold_standard_file", help=HELP_GOLD_STANDARD
 PARSER_MULTI2.add_argument("-f", "--fasta_file", help=HELP_FASTA_FILE)
 PARSER_MULTI2.add_argument('-l', '--labels', help=HELP_LABELS, required=False)
 PARSER_MULTI2.add_argument('-p', '--filter', help=HELP_FILTER)
-PARSER_MULTI2.add_argument('-r', '--genomes_file', help=HELP_GENOMES_FILE, required=False)
+PARSER_MULTI2.add_argument('-r', '--remove_genomes', help=HELP_GENOMES_FILE, required=False)
 PARSER_MULTI2.add_argument('-k', '--keyword', help=HELP_KEYWORD, required=False)

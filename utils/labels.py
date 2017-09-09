@@ -16,6 +16,7 @@ RI_BY_SEQ = "rand_index_by_seq"
 ARI_BY_BP = "a_rand_index_by_bp"
 ARI_BY_SEQ = "a_rand_index_by_seq"
 PERCENTAGE_ASSIGNED_BPS = "percent_assigned_bps"
+ACCURACY = "accuracy"
 
 abbreviations = collections.OrderedDict([('avg_precision', 'precision averaged over genome bins'),
                  ('std_dev_precision', 'standard deviation of precision averaged over genome bins'),
@@ -30,6 +31,7 @@ abbreviations = collections.OrderedDict([('avg_precision', 'precision averaged o
                  ('a_rand_index_by_bp', 'adjusted Rand index weighed by base pairs'),
                  ('a_rand_index_by_seq', 'adjusted Rand index weighed by sequence counts'),
                  ('percent_assigned_bps', 'percentage of base pairs that were assigned to bins'),
+                 ('accuracy', 'accuracy'),
                  ('>0.5compl<0.1cont', 'number of bins with more than 50% completeness and less than 10% contamination'),
                  ('>0.7compl<0.1cont', 'number of bins with more than 70% completeness and less than 10% contamination'),
                  ('>0.9compl<0.1cont', 'number of bins with more than 90% completeness and less than 10% contamination'),

@@ -61,7 +61,7 @@ Additional parameters may be specified - see below.
 ## evaluate.py
 ~~~BASH
 usage: evaluate.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
-                   [-p FILTER] [-r GENOMES_FILE] [-k KEYWORD] -o OUTPUT_DIR
+                   [-p FILTER] [-r REMOVE_GENOMES] [-k KEYWORD] -o OUTPUT_DIR
                    [-m]
                    bin_files [bin_files ...]
 
@@ -82,11 +82,12 @@ optional arguments:
                         Comma-separated binning names
   -p FILTER, --filter FILTER
                         Filter out [FILTER]% smallest bins (default: 0)
-  -r GENOMES_FILE, --genomes_file GENOMES_FILE
+  -r REMOVE_GENOMES, --remove_genomes REMOVE_GENOMES
                         File with list of genomes to be removed
   -k KEYWORD, --keyword KEYWORD
-                        Keyword in second column of input for bins to be
-                        removed (no keyword=remove all in list)
+                        Keyword in the second column of file with list of
+                        genomes to be removed (no keyword=remove all genomes
+                        in list)
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         Directory to write the results to
   -m, --map_by_recall   Map genomes to bins by maximizing recall
@@ -114,7 +115,7 @@ MetaBAT    0.822         0.256             0.047         0.57       0.428       
 Directory _output_dir_ will contain:
 * **summary.html**: HTML page with results summary and interactive graphs
 * **avg_precision_recall.png + .pdf**: figure of average precision vs. average recall
-* **ari_vs_assigned_bps.png + .pdf**: figure of adjusted Rand index vs. percentage of assigned base pairs
+* **ari_vs_assigned_bps.png + .pdf**: figure of adjusted Rand index weighed by number of base pairs vs. percentage of assigned base pairs
 * **rankings.txt**: tools sorted by average precision, average recall, and sum of average precision and average recall
 
 In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ will be created with the following files:
@@ -128,7 +129,7 @@ In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and
 ## precision_recall.py
 ~~~BASH
 usage: precision_recall.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE]
-                           [-l LABELS] [-p FILTER] [-r GENOMES_FILE]
+                           [-l LABELS] [-p FILTER] [-r REMOVE_GENOMES]
                            [-k KEYWORD] [-m]
                            bin_files [bin_files ...]
 
@@ -149,11 +150,12 @@ optional arguments:
                         Comma-separated binning names
   -p FILTER, --filter FILTER
                         Filter out [FILTER]% smallest bins (default: 0)
-  -r GENOMES_FILE, --genomes_file GENOMES_FILE
+  -r REMOVE_GENOMES, --remove_genomes REMOVE_GENOMES
                         File with list of genomes to be removed
   -k KEYWORD, --keyword KEYWORD
-                        Keyword in second column of input for bins to be
-                        removed (no keyword=remove all in list)
+                        Keyword in the second column of file with list of
+                        genomes to be removed (no keyword=remove all genomes
+                        in list)
   -m, --map_by_recall   Map genomes to bins by maximizing recall
 ~~~
 **Example:**
@@ -211,7 +213,7 @@ evo_1035930.029 0.995223021915 1.0     2423708        2412130             241213
 
 ## utils/exclude_genomes.py
 ~~~BASH
-usage: exclude_genomes.py [-h] -r GENOMES_FILE [-k KEYWORD] [file]
+usage: exclude_genomes.py [-h] -r REMOVE_GENOMES [-k KEYWORD] [file]
 
 Exclude genome bins from table of precision and recall per genome. The table
 can be provided as file or via the standard input
@@ -221,11 +223,12 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -r GENOMES_FILE, --genomes_file GENOMES_FILE
+  -r REMOVE_GENOMES, --remove_genomes REMOVE_GENOMES
                         File with list of genomes to be removed
   -k KEYWORD, --keyword KEYWORD
-                        Keyword in second column of input for bins to be
-                        removed (no keyword=remove all in list)
+                        Keyword in the second column of file with list of
+                        genomes to be removed (no keyword=remove all genomes
+                        in list)
 ~~~
 **Example:**
 
@@ -458,6 +461,50 @@ RL|S1|C10560    evo_1286_AP.033 1385   contig_1_4_from_69981_to_1065637_total_99
 Note that only columns SEQUENCEID and BINID are required in a gold standard mapping file. The added
 optional column _LENGTH, however, eliminates the need for a FASTA or FASTQ file when
 evaluating binnings.
+
+## create_summary_pdf.py
+create_summary_pdf.py must be run after tool evaluate.py. The input directory of create_summary_pdf.py must
+be the output directory of evaluate.py.
+~~~BASH
+usage: create_summary_pdf.py [-h] [-c FIGURE_CODES] -i INPUT_DIR
+                             [-o OUTPUT_DIR] [-g GOLD_STANDARD_FILE]
+                             [-r REMOVE_GENOMES] [-k KEYWORD]
+
+Combine figures and table of completeness and contamination into file
+summary.pdf
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c FIGURE_CODES, --figure_codes FIGURE_CODES
+                        Comma-separated figure codes without spaces (1=average
+                        precision vs. average recall, 2=ari vs. %assigned bps,
+                        3=weighed precision vs. weighed recall, 4=table of
+                        contamination and completeness, 5=precision vs. recall
+                        per bin; default 1,2,3,4)
+  -i INPUT_DIR, --input_dir INPUT_DIR
+                        Directory to read file summary.tsv and figures from
+  -o OUTPUT_DIR, --output_dir OUTPUT_DIR
+                        Directory to write pdf and temporary files (if
+                        different from input_dir)
+  -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
+                        Gold standard - ground truth - file
+  -r REMOVE_GENOMES, --remove_genomes REMOVE_GENOMES
+                        File with list of genomes to be removed
+  -k KEYWORD, --keyword KEYWORD
+                        Keyword in the second column of file with list of
+                        genomes to be removed (no keyword=remove all genomes
+                        in list)
+~~~
+**Example:**
+~~~BASH
+./create_summary_pdf.py -i input_dir -c 1,2,3,4 
+~~~
+**Output:**
+File summary.pdf will be created in directory input_dir (or in output_dir, if provided).
+
+Providing a gold standard binning file is optional. It allows to insert a row with information of the gold
+standard in the table of contamination and completeness.
+
 
 ## Run the tool as a Biobox
 

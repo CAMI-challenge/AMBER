@@ -17,7 +17,7 @@ def compute_precision_and_recall(data, filter_tail_percentage):
     count_r = 0
 
     if filter_tail_percentage:
-        data = filter_tail.filter_tail(data, filter_tail_percentage)
+        filter_tail.filter_tail(data, filter_tail_percentage)
 
     # for each predicted bin (row of the table)
     for bin in data:

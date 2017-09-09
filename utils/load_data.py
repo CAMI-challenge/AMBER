@@ -3,8 +3,27 @@
 import os
 import gzip
 import mimetypes
+import sys
 from Bio import SeqIO
 import numpy as np
+import errno
+
+try:
+    import exclude_genomes
+except ImportError:
+    sys.path.append(os.path.dirname(__file__))
+    try:
+        import exclude_genomes
+    finally:
+        sys.path.remove(os.path.dirname(__file__))
+
+
+def make_sure_path_exists(path):
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
 
 
 class GoldStandard:
@@ -78,23 +97,26 @@ def read_lengths_from_fastx_file(fastx_file):
     return length
 
 
-def get_genome_mapping_without_lenghts(mapping_file):
-    """
-    @param mapping_file:
-    @type mapping_file: str | unicode
-
-    @return:
-    """
+def get_genome_mapping_without_lenghts(mapping_file, remove_genomes_file=None, keyword=None):
     gold_standard = GoldStandard()
     gold_standard.genome_id_to_list_of_contigs = {}
     gold_standard.sequence_id_to_genome_id = {}
 
+    filtering_genomes_to_keyword = {}
+    if remove_genomes_file:
+        filtering_genomes_to_keyword = exclude_genomes.load_unique_common(remove_genomes_file)
+
     with open(mapping_file, 'r') as read_handler:
         for sequence_id, genome_id, length in read_binning_file(read_handler):
+            if genome_id in filtering_genomes_to_keyword and (not keyword or filtering_genomes_to_keyword[genome_id] == keyword):
+                continue
             gold_standard.sequence_id_to_genome_id[sequence_id] = genome_id
             if genome_id not in gold_standard.genome_id_to_list_of_contigs:
                 gold_standard.genome_id_to_list_of_contigs[genome_id] = []
-                gold_standard.genome_id_to_list_of_contigs[genome_id].append(sequence_id)
+            gold_standard.genome_id_to_list_of_contigs[genome_id].append(sequence_id)
+
+    if len(gold_standard.genome_id_to_list_of_contigs) == 0:
+        sys.exit('All bins of the gold standard have been filtered out due to option --remove_genomes.')
 
     return gold_standard
 
@@ -119,7 +141,6 @@ def get_genome_mapping(mapping_file, fastx_file):
             if not fastx_file:
                 raise RuntimeError("Sequences' length could not be determined")
             sequence_length = read_lengths_from_fastx_file(fastx_file)
-            # print(sorted(sequence_length.keys()))
         for anonymous_contig_id, genome_id, length in read_binning_file(read_handler):
             total_length = length if is_length_column_av else sequence_length[anonymous_contig_id]
             gold_standard.sequence_id_to_lengths[anonymous_contig_id] = total_length

@@ -3,29 +3,22 @@
 import argparse
 import os
 import sys
-import errno
 import collections
 import precision_recall_per_bin
 import precision_recall_average
 import precision_recall_by_bpcount
 import rand_index
 import genome_recovery
+import accuracy
 import plot_by_genome
 import html_plots
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import pandas as pd
 from utils import exclude_genomes
 from utils import load_data
 from utils import argparse_parents
 from utils import labels
-
-
-def make_sure_path_exists(path):
-    try:
-        os.makedirs(path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            raise
 
 
 def evaluate_all(gold_standard_file,
@@ -44,7 +37,7 @@ def evaluate_all(gold_standard_file,
         tool_id = query_file.split('/')[-1]
         binning_label = next(labels_iterator) if len(labels) > 0 else tool_id
         path = os.path.join(output_dir, tool_id)
-        make_sure_path_exists(path)
+        load_data.make_sure_path_exists(path)
 
         query = load_data.open_query(query_file)
 
@@ -54,8 +47,9 @@ def evaluate_all(gold_standard_file,
             bin_metrics = exclude_genomes.filter_data(bin_metrics, genomes_file, keyword)
         f = open(path + "/precision_recall.tsv", 'w')
         precision_recall_per_bin.print_metrics(bin_metrics, f)
-        plot_by_genome.plot_by_genome(bin_metrics, path + '/genomes_sorted_by_recall', 'recall')
-        plot_by_genome.plot_by_genome(bin_metrics, path + '/genomes_sorted_by_precision', 'precision')
+        # slow code disabled
+        # plot_by_genome.plot_by_genome(bin_metrics, path + '/genomes_sorted_by_recall', 'recall')
+        # plot_by_genome.plot_by_genome(bin_metrics, path + '/genomes_sorted_by_precision', 'precision')
         f.close()
 
         # AVG PRECISION RECALL
@@ -88,6 +82,10 @@ def evaluate_all(gold_standard_file,
         # GENOME RECOVERY
         genome_recovery_val = genome_recovery.calc_table(bin_metrics)
 
+        # ACCURACY
+        acc = accuracy.compute_metrics(query, gold_standard)
+        #acc = 0.0
+
         summary_per_query.append((collections.OrderedDict([('binning_label', binning_label),
                                    ('avg_precision', avg_precision),
                                    ('std_deviation_precision', std_deviation_precision),
@@ -102,6 +100,7 @@ def evaluate_all(gold_standard_file,
                                    ('a_rand_index_by_bp', a_rand_index_by_bp),
                                    ('a_rand_index_by_seq', a_rand_index_by_seq),
                                    ('percent_assigned_bps', percent_assigned_bps),
+                                   ('accuracy', acc),
                                    ('_05compl_01cont', genome_recovery_val[5]),
                                    ('_07compl_01cont', genome_recovery_val[3]),
                                    ('_09compl_01cont', genome_recovery_val[1]),
@@ -129,6 +128,7 @@ def convert_summary_to_tuples_of_strings(summary_per_query):
                       format(summary['a_rand_index_by_bp'], '.3f'),
                       format(summary['a_rand_index_by_seq'], '.3f'),
                       format(summary['percent_assigned_bps'], '.3f'),
+                      format(summary['accuracy'], '.3f'),
                       str(summary['_05compl_01cont']),
                       str(summary['_07compl_01cont']),
                       str(summary['_09compl_01cont']),
@@ -136,6 +136,20 @@ def convert_summary_to_tuples_of_strings(summary_per_query):
                       str(summary['_07compl_005cont']),
                       str(summary['_09compl_005cont'])))
     return tuples
+
+
+def create_legend(summary_per_query, output_dir):
+    colors_iter = iter(plot_by_genome.create_colors_list())
+    labels = []
+    circles = []
+    for summary in summary_per_query:
+        labels.append(summary['binning_label'])
+        circles.append(Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=10, markerfacecolor=next(colors_iter)))
+
+    fig = plt.figure(figsize=(0.5, 0.5))
+    fig.legend(circles, labels, loc='center', frameon=False, ncol=3, handletextpad=0.1)
+    fig.savefig(os.path.normpath(output_dir + '/legend.eps'), dpi=100, format='eps', bbox_inches='tight')
+    plt.close(fig)
 
 
 def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, ylabel):
@@ -158,12 +172,18 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
                          ecolor=colors_list[i],
                          mec=colors_list[i],
                          mfc=colors_list[i],
-                         capsize=3)
+                         capsize=3,
+                         markersize=8)
+            plot_labels.append(summary['binning_label'])
+            i += 1
+    if plot_type == 'w':
+        for summary in summary_per_query:
+            axs.plot(summary['precision'], summary['recall'], marker='o', color=colors_list[i], markersize=10)
             plot_labels.append(summary['binning_label'])
             i += 1
     elif plot_type == 'p':
         for summary in summary_per_query:
-            axs.plot(summary['a_rand_index_by_bp'], summary['percent_assigned_bps'], marker='o', color=colors_list[i])
+            axs.plot(summary['a_rand_index_by_bp'], summary['percent_assigned_bps'], marker='o', color=colors_list[i], markersize=10)
             plot_labels.append(summary['binning_label'])
             i += 1
 
@@ -178,10 +198,12 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
     vals = axs.get_yticks()
     axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
 
-    lgd = plt.legend(plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.tight_layout()
+    fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.eps'), dpi=100, format='eps', bbox_inches='tight')
+    lgd = plt.legend(plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False)
+
     fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close(fig)
@@ -192,8 +214,17 @@ def plot_avg_precision_recall(summary_per_query, output_dir):
                  output_dir,
                  'e',
                  'avg_precision_recall',
-                 'Precision',
-                 'Recall')
+                 'Average precision',
+                 'Average recall')
+
+
+def plot_weighed_precision_recall(summary_per_query, output_dir):
+    plot_summary(summary_per_query,
+                 output_dir,
+                 'w',
+                 'weighed_precision_recall',
+                 'Weighed precision',
+                 'Weighed recall')
 
 
 def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
@@ -205,7 +236,11 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
                  'Percentage of assigned base pairs')
 
 
-def print_summary(summary_per_query, stream=sys.stdout):
+def print_summary(summary_per_query, output_dir=None):
+    if output_dir is None:
+        stream=sys.stdout
+    else:
+        stream = open(output_dir + "/summary.tsv", 'w')
     stream.write("%s\n" % "\t".join((labels.TOOL,
                                      labels.AVG_PRECISION,
                                      labels.STD_DEV_PRECISION,
@@ -220,6 +255,7 @@ def print_summary(summary_per_query, stream=sys.stdout):
                                      labels.ARI_BY_BP,
                                      labels.ARI_BY_SEQ,
                                      labels.PERCENTAGE_ASSIGNED_BPS,
+                                     labels.ACCURACY,
                                      ">0.5compl<0.1cont",
                                      ">0.7compl<0.1cont",
                                      ">0.9compl<0.1cont",
@@ -228,24 +264,29 @@ def print_summary(summary_per_query, stream=sys.stdout):
                                      ">0.9compl<0.05cont")))
     for summary in summary_per_query:
         stream.write("%s\n" % "\t".join(summary))
+    if output_dir is not None:
+        stream.close()
 
 
 def compute_rankings(summary_per_query, output_dir):
     f = open(os.path.normpath(output_dir + '/rankings.txt'), 'w')
-    f.write("Average precision\n")
+    f.write("Tool\tAverage precision\n")
     sorted_by = sorted(summary_per_query, key=lambda x: x['avg_precision'], reverse=True)
     for summary in sorted_by:
         f.write("%s \t %1.3f\n" % (summary['binning_label'], summary['avg_precision']))
 
     sorted_by = sorted(summary_per_query, key=lambda x: x['avg_recall'], reverse=True)
-    f.write("\nAverage recall\n")
+    f.write("\nTool\tAverage recall\n")
     for summary in sorted_by:
         f.write("%s \t %1.3f\n" % (summary['binning_label'], summary['avg_recall']))
 
     sorted_by = sorted(summary_per_query, key=lambda x: x['avg_precision'] + x['avg_recall'], reverse=True)
-    f.write("\nAverage precision + average recall\n")
+    f.write("\nTool\tAverage precision + Average recall\tAverage precision\tAverage recall\n")
     for summary in sorted_by:
-        f.write("%s \t %1.3f\n" % (summary['binning_label'], summary['avg_precision'] + summary['avg_recall']))
+        f.write("%s\t%1.3f\t%1.3f\t%1.3f\n" % (summary['binning_label'],
+                                               summary['avg_precision'] + summary['avg_recall'],
+                                               summary['avg_precision'],
+                                               summary['avg_recall']))
     f.close()
 
 
@@ -265,13 +306,17 @@ def main():
                                      args.bin_files,
                                      binning_labels,
                                      args.filter,
-                                     args.genomes_file,
+                                     args.remove_genomes,
                                      args.keyword,
                                      args.map_by_recall,
                                      args.output_dir)
     summary_dict = [x[0] for x in summary_per_query]
-    print_summary(convert_summary_to_tuples_of_strings(summary_dict))
+    summary_as_string = convert_summary_to_tuples_of_strings(summary_dict)
+    print_summary(summary_as_string)
+    print_summary(summary_as_string, args.output_dir)
+    create_legend(summary_dict, args.output_dir)
     plot_avg_precision_recall(summary_dict, args.output_dir)
+    plot_weighed_precision_recall(summary_dict, args.output_dir)
     plot_adjusted_rand_index_vs_assigned_bps(summary_dict, args.output_dir)
     plot_by_genome.plot_by_genome2(summary_per_query, args.output_dir)
     compute_rankings(summary_dict, args.output_dir)

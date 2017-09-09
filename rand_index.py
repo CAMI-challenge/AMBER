@@ -73,7 +73,7 @@ def combinations(bin_id_to_genome_id_to_counts, genome_id_to_bin_id_to_counts):
     bin_genome_comb = 0.0
     bin_comb = 0.0
     genome_comb = 0.0
-    num_bp = 0
+    total_counts = 0
     for bin_id in bin_id_to_genome_id_to_counts:
         for genome_id in bin_id_to_genome_id_to_counts[bin_id]:
             bin_genome_comb += choose2(bin_id_to_genome_id_to_counts[bin_id][genome_id])
@@ -81,14 +81,14 @@ def combinations(bin_id_to_genome_id_to_counts, genome_id_to_bin_id_to_counts):
         bin_totals = 0
         for genome_id in bin_id_to_genome_id_to_counts[bin_id]:
             bin_totals += bin_id_to_genome_id_to_counts[bin_id][genome_id]
-        num_bp += bin_totals
+        total_counts += bin_totals
         bin_comb += choose2(bin_totals)
     for genome_id in genome_id_to_bin_id_to_counts:
         genome_totals = 0
         for bin_id in genome_id_to_bin_id_to_counts[genome_id]:
             genome_totals += genome_id_to_bin_id_to_counts[genome_id][bin_id]
         genome_comb += choose2(genome_totals)
-    return bin_comb, genome_comb, bin_genome_comb, choose2(num_bp)
+    return bin_comb, genome_comb, bin_genome_comb, choose2(total_counts)
 
 
 def compute_adjusted_rand_index(bin_id_to_genome_id_to_counts, genome_id_to_bin_id_to_counts):
