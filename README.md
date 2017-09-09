@@ -7,21 +7,6 @@ comparative visualizations for assessing multiple programs or parameter effects.
 used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic
 Interpretation](http://www.cami-challenge.org/).
 
-## Input
-As input, AMBER's main tool _evaluate.py_ uses three files:
-1. a gold standard mapping of contigs or read IDs to genomes in the
-[CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format);
-see [here](https://github.com/CAMI-challenge/genome_binning_evaluation/blob/master/test/gsa_mapping.binning) example (note: only columns SEQUENCEID and BINID are required)
-2. one or more files with bin assignments for the sequences also in the
-[CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format), with each file
-containing all the bin assignments from the run of a binning program. A tool for converting FASTA files, such that each file represents a bin,
-is available (see _utils/convert_fasta_bins_to_biobox_format.py_ below)
-3. a FASTA or FASTQ file with the sequences for obtaining their lengths. Optionally, the lenghts may be added to the
-gold standard mapping file using tool _utils/add_length_column.py_ (see below). In this way,
-_evaluate.py_ no longer requires a FASTA or FASTQ file
-
-Additional parameters may be specified - see below.
-
 # Requirements
 
 * python &ge; 3.5
@@ -31,10 +16,40 @@ Additional parameters may be specified - see below.
 * matplotlib &ge; 2.0.2
 * bokeh &ge; 0.12.6
 * pandas &ge; 0.20.3
-* tox (only for automatic tests)
-* The examples below require a gold standard assembly. Please [download it](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz) to the _test_ directory.
+
+Optional:
+
+* tox, for automatic tests
+* LaTeX, for combining plots into a PDF file with tool create_summary_pdf.py
+* A gold standard assembly for the examples below. Please [download it](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz) to the _test_ directory.
 
 # User Guide
+
+## Input
+As input, AMBER's main tool _evaluate.py_ uses three files:
+1. A gold standard mapping of contigs or read IDs to genomes in the
+[CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format). Example:
+~~~BASH
+@Version:0.9.1
+@SampleID:gsa
+@@SEQUENCEID	BINID
+RH|P|C37126	Sample6_89
+RH|P|C3274	Sample9_91
+RH|P|C26099	1053046
+RH|P|C35075	1053046
+RH|P|C20873	1053046
+~~~
+See [here](https://github.com/CAMI-challenge/genome_binning_evaluation/blob/master/test/gsa_mapping.binning)
+another example (note: only columns SEQUENCEID and BINID are required).
+2. One or more files with bin assignments for the sequences also in the
+[CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format), with each file
+containing all the bin assignments from a binning program. A tool for converting FASTA files, such that each file represents a bin,
+is available (see _utils/convert_fasta_bins_to_biobox_format.py_ below).
+3. A FASTA or FASTQ file with the sequences for obtaining their lengths. Optionally, the lenghts may be added to the
+gold standard mapping file using tool _utils/add_length_column.py_ (see below). In this way,
+_evaluate.py_ no longer requires a FASTA or FASTQ file.
+
+Additional parameters may be specified - see below.
 
 ## List of metrics and abbreviations
 
@@ -58,7 +73,9 @@ Additional parameters may be specified - see below.
 * **\>0.7compl<0.05cont**: number of bins with more than 70% completeness and less than 5% contamination
 * **\>0.9compl<0.05cont**: number of bins with more than 90% completeness and less than 5% contamination
 
-## evaluate.py
+## Tools
+
+### evaluate.py
 ~~~BASH
 usage: evaluate.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
                    [-p FILTER] [-r REMOVE_GENOMES] [-k KEYWORD] -o OUTPUT_DIR
@@ -123,10 +140,10 @@ In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and
 * **precision_recall.tsv**: contains precision and recall per genome bin
 * **precision_recall_avg.tsv**: contains precision and recall averaged over genome bins. Includes standard deviation and standard error of the mean
 * **precision_recall_by_bpcount.tsv**: contains precision and recall weighed by base pairs
-* **genomes_sorted_by_precision.png + .pdf**: figure of precision and recall per genome with genomes sorted by precision
-* **genomes_sorted_by_recall.png + .pdf**: figure of precision and recall per genome with genomes sorted by recall
+<!---* **genomes_sorted_by_precision.png + .pdf**: figure of precision and recall per genome with genomes sorted by precision-->
+<!---* **genomes_sorted_by_recall.png + .pdf**: figure of precision and recall per genome with genomes sorted by recall-->
 
-## precision_recall.py
+### precision_recall.py
 ~~~BASH
 usage: precision_recall.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE]
                            [-l LABELS] [-p FILTER] [-r REMOVE_GENOMES]
@@ -175,7 +192,7 @@ CONCOCT    0.837     0.266             0.052         0.517  0.476          0.069
 MetaBAT    0.822     0.256             0.047         0.570  0.428          0.065
 ~~~
 
-## precision_recall_per_bin.py
+### precision_recall_per_bin.py
 ~~~BASH
 usage: precision_recall_per_bin.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE]
                                    [-m]
@@ -211,7 +228,7 @@ evo_1035930.029 0.995223021915 1.0     2423708        2412130             241213
 ...
 ~~~
 
-## utils/exclude_genomes.py
+### utils/exclude_genomes.py
 ~~~BASH
 usage: exclude_genomes.py [-h] -r REMOVE_GENOMES [-k KEYWORD] [file]
 
@@ -244,7 +261,7 @@ test/naughty_carson_2 | \
 
 The output the is the table from precision_recall_per_bin.py without the excluded genomes.
 
-## precision_recall_average.py
+### precision_recall_average.py
 ~~~BASH
 usage: precision_recall_average.py [-h] [-p FILTER] [-l LABEL] [file]
 
@@ -276,7 +293,7 @@ tool       precision std_dev_precision sem_precision recall std_dev_recall sem_r
 MaxBin 2.0 0.948     0.095             0.016         0.799  0.364          0.058
 ~~~
 
-## precision_recall_by_bpcount.py
+### precision_recall_by_bpcount.py
 ~~~BASH
 usage: precision_recall_by_bpcount.py [-h] -g GOLD_STANDARD_FILE
                                       [-f FASTA_FILE]
@@ -308,7 +325,7 @@ precision recall
 0.934     0.838
 ~~~
 
-## rand_index.py
+### rand_index.py
 ~~~BASH
 usage: rand_index.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] bin_file
 
@@ -338,7 +355,7 @@ rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq percen
 0.995            0.951             0.917              0.782               0.864
 ~~~
 
-## genome_recovery.py
+### genome_recovery.py
 ~~~BASH
 usage: genome_recovery.py [-h] [-p FILTER] [-l LABEL] [file]
 
@@ -368,7 +385,7 @@ MaxBin 2.0         >50% complete >70% complete >90% complete
 <5% contamination  23            23            21
 ~~~
 
-## plot_by_genome.py
+### plot_by_genome.py
 ~~~BASH
 usage: plot_by_genome.py [-h] [-s {recall,precision}] [-o OUT_FILE] [file]
 
@@ -395,7 +412,7 @@ test/naughty_carson_2 | \
 **Output:**
 Figure is shown on screen.
 
-## utils/convert_fasta_bins_to_biobox_format.py
+### utils/convert_fasta_bins_to_biobox_format.py
 ~~~BASH
 usage: convert_fasta_bins_to_biobox_format.py [-h] [-o OUTPUT_FILE]
                                               paths [paths ...]
@@ -427,7 +444,7 @@ Alternatively:
 **Output:**
 File bins.tsv is created in the working directory.
 
-## utils/add_length_column.py
+### utils/add_length_column.py
 ~~~BASH
 usage: add_length_column.py [-h] -g GOLD_STANDARD_FILE -f FASTA_FILE
 
@@ -462,7 +479,7 @@ Note that only columns SEQUENCEID and BINID are required in a gold standard mapp
 optional column _LENGTH, however, eliminates the need for a FASTA or FASTQ file when
 evaluating binnings.
 
-## create_summary_pdf.py
+### create_summary_pdf.py
 create_summary_pdf.py must be run after tool evaluate.py. The input directory of create_summary_pdf.py must
 be the output directory of evaluate.py.
 ~~~BASH
