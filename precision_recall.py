@@ -46,7 +46,7 @@ def main():
                  queries,
                  labels,
                  args.filter,
-                 args.genomes_file,
+                 args.remove_genomes,
                  args.keyword,
                  args.map_by_recall)
 
