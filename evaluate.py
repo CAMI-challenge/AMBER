@@ -214,8 +214,8 @@ def plot_avg_precision_recall(summary_per_query, output_dir):
                  output_dir,
                  'e',
                  'avg_precision_recall',
-                 'Average precision',
-                 'Average recall')
+                 'Average precision per bin',
+                 'Average recall per genome')
 
 
 def plot_weighed_precision_recall(summary_per_query, output_dir):
@@ -223,8 +223,8 @@ def plot_weighed_precision_recall(summary_per_query, output_dir):
                  output_dir,
                  'w',
                  'weighed_precision_recall',
-                 'Weighed precision',
-                 'Weighed recall')
+                 'Precision per base pair',
+                 'Recall per base pair')
 
 
 def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
@@ -232,7 +232,7 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
                  output_dir,
                  'p',
                  'ari_vs_assigned_bps',
-                 'Adjusted Rand index',
+                 'Adjusted Rand Index',
                  'Percentage of assigned base pairs')
 
 

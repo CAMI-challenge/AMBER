@@ -314,6 +314,7 @@ optional arguments:
                         FASTA or FASTQ file with sequences of gold standard
 ~~~
 **Example:**
+File CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz used in the example can be downloaded [here](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz).
 ~~~BASH
 ./utils/add_length_column.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz
@@ -323,20 +324,17 @@ optional arguments:
 @Version:0.9.1
 @SampleID:gsa
 
-@@SEQUENCEID    BINID           TAXID  _contig_id                                    _number_reads _LENGTH
-RL|S1|C10817    Sample18_57     45202  Sample18_57_from_2_to_20519_total_20518       44394         20518
-RL|S1|C11497    Sample22_57     10239  Sample22_57_from_4_to_37675_total_37672       18432         37672
-RL|S1|C6571     evo_1286_AP.033 1385   contig_1_4_from_3_to_69916_total_69914        30978         69914
-RL|S1|C10560    evo_1286_AP.033 1385   contig_1_4_from_69981_to_1065637_total_995657 443334        995657
+@@SEQUENCEID BINID           _LENGTH
+RL|S1|C10817 Sample18_57     20518
+RL|S1|C11497 Sample22_57     37672
+RL|S1|C6571  evo_1286_AP.033 69914
+RL|S1|C10560 evo_1286_AP.033 995657
 ...
 ~~~
-Note that only columns SEQUENCEID and BINID are required in a gold standard mapping file. The added
-optional column _LENGTH, however, eliminates the need for a FASTA or FASTQ file when
-evaluating binnings.
+Column _LENGTH in the gold standard mapping eliminates the need for a FASTA or FASTQ file in program evaluate.py.
 
 ### create_summary_pdf.py
-create_summary_pdf.py must be run after tool evaluate.py. The input directory of create_summary_pdf.py must
-be the output directory of evaluate.py.
+create_summary_pdf.py must be run after tool evaluate.py. The input directory of create_summary_pdf.py must be the output directory of evaluate.py.
 ~~~BASH
 usage: create_summary_pdf.py [-h] [-c FIGURE_CODES] -i INPUT_DIR
                              [-o OUTPUT_DIR] [-g GOLD_STANDARD_FILE]
@@ -374,5 +372,4 @@ optional arguments:
 **Output:**
 File summary.pdf will be created in directory input_dir (or in output_dir, if provided).
 
-Providing a gold standard binning file is optional. It allows to insert a row with information of the gold
-standard in the table of contamination and completeness.
+Providing a gold standard binning file is optional. It allows to insert a row with information of the gold standard in the table of contamination and completeness.
