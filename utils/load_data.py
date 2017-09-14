@@ -139,7 +139,7 @@ def get_genome_mapping(mapping_file, fastx_file):
         sequence_length = {}
         if not is_length_column_av:
             if not fastx_file:
-                raise RuntimeError("Sequences' length could not be determined")
+                exit("Sequences length could not be determined. Please provide a FASTA or FASTQ file using option -f or add column _LENGTH to gold standard.")
             sequence_length = read_lengths_from_fastx_file(fastx_file)
         for anonymous_contig_id, genome_id, length in read_binning_file(read_handler):
             total_length = length if is_length_column_av else sequence_length[anonymous_contig_id]

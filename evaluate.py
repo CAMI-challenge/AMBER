@@ -21,6 +21,18 @@ from utils import argparse_parents
 from utils import labels
 
 
+def get_labels(labels, bin_files):
+    if labels:
+        labels_list = [x.strip() for x in labels.split(',')]
+        if len(labels_list) != len(bin_files):
+            exit('Number of labels does not match the number of binning files. Please check parameter -l, --labels.')
+        return labels_list
+    tool_id = []
+    for bin_file in bin_files:
+        tool_id.append(bin_file.split('/')[-1])
+    return tool_id
+
+
 def evaluate_all(gold_standard_file,
                  fasta_file,
                  query_files,
@@ -35,7 +47,7 @@ def evaluate_all(gold_standard_file,
     summary_per_query = []
     for query_file in query_files:
         tool_id = query_file.split('/')[-1]
-        binning_label = next(labels_iterator) if len(labels) > 0 else tool_id
+        binning_label = next(labels_iterator)
         path = os.path.join(output_dir, tool_id)
         load_data.make_sure_path_exists(path)
 
@@ -296,11 +308,7 @@ def main():
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
     parser.add_argument('-m', '--map_by_recall', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
     args = parser.parse_args()
-    binning_labels = []
-    if args.labels:
-        binning_labels = [x.strip() for x in args.labels.split(',')]
-        if len(binning_labels) != len(args.bin_files):
-            parser.error('number of labels does not match the number of binning files')
+    binning_labels = get_labels(args.labels, args.bin_files)
     summary_per_query = evaluate_all(args.gold_standard_file,
                                      args.fasta_file,
                                      args.bin_files,
