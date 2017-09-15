@@ -18,6 +18,26 @@ Optional:
 * tox, for automatic tests
 * LaTeX, for combining plots into a PDF file with tool create_summary_pdf.py
 
+## Installation
+
+Download AMBER from:
+~~~BASH
+wget https://github.com/CAMI-challenge/AMBER/archive/master.zip -O amber.zip
+~~~
+Or clone it using git:
+~~~BASH
+git clone https://github.com/cami-challenge/amber
+~~~
+
+Install dependencies as follows (tested on Linux Ubuntu 16.04):
+
+~~~BASH
+sudo apt-get install python3-pip
+sudo apt-get install python3-tk
+pip3 install -r requirements/default.txt --user
+~~~
+You can also run [AMBER as a Biobox](#run-amber-as-a-biobox). 
+
 # User Guide
 
 ## Input
@@ -135,7 +155,7 @@ In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and
 
 ### For a complete list of tools, see [README_TOOLS.md](./README_TOOLS.md).
 
-## Run the tool as a Biobox
+## Run AMBER as a Biobox
 
 1. Build the container running the following command:
 
