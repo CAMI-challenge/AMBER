@@ -344,7 +344,7 @@ RL|S1|C10560 evo_1286_AP.033 995657
 Column _LENGTH in the gold standard mapping eliminates the need for a FASTA or FASTQ file in program evaluate.py.
 
 ### create_summary_pdf.py
-create_summary_pdf.py must be run after tool evaluate.py. The input directory of create_summary_pdf.py must be the output directory of evaluate.py.
+_create_summary_pdf.py_ must be run after tool _evaluate.py_. The input directory of _create_summary_pdf.py_ must be the output directory of _evaluate.py_.
 ~~~BASH
 usage: create_summary_pdf.py [-h] [-c FIGURE_CODES] -i INPUT_DIR
                              [-o OUTPUT_DIR] [-g GOLD_STANDARD_FILE]
