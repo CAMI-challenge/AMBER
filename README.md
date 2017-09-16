@@ -16,7 +16,7 @@ AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the compar
 Optional:
 
 * tox, for automatic tests
-* LaTeX, for combining plots into a PDF file with tool [_create_summary_pdf.py_](README_TOOLS.md#utilscreate_summary_pdfpy)
+* LaTeX, for combining plots into a PDF file with tool [_create_summary_pdf.py_](README_TOOLS.md#create_summary_pdfpy)
 
 ## Installation
 
