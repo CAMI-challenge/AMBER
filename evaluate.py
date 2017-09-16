@@ -92,11 +92,10 @@ def evaluate_all(gold_standard_file,
         f.close()
 
         # GENOME RECOVERY
-        genome_recovery_val = genome_recovery.calc_table(bin_metrics)
+        genome_recovery_val = genome_recovery.calc_table(bin_metrics, None, None)
 
         # ACCURACY
         acc = accuracy.compute_metrics(query, gold_standard)
-        #acc = 0.0
 
         summary_per_query.append((collections.OrderedDict([('binning_label', binning_label),
                                    ('avg_precision', avg_precision),
@@ -113,12 +112,12 @@ def evaluate_all(gold_standard_file,
                                    ('a_rand_index_by_seq', a_rand_index_by_seq),
                                    ('percent_assigned_bps', percent_assigned_bps),
                                    ('accuracy', acc),
-                                   ('_05compl_01cont', genome_recovery_val[5]),
-                                   ('_07compl_01cont', genome_recovery_val[3]),
-                                   ('_09compl_01cont', genome_recovery_val[1]),
-                                   ('_05compl_005cont', genome_recovery_val[4]),
-                                   ('_07compl_005cont', genome_recovery_val[2]),
-                                   ('_09compl_005cont', genome_recovery_val[0])]),
+                                   ('_05compl_01cont', genome_recovery_val[0][0]),
+                                   ('_07compl_01cont', genome_recovery_val[0][1]),
+                                   ('_09compl_01cont', genome_recovery_val[0][2]),
+                                   ('_05compl_005cont', genome_recovery_val[1][0]),
+                                   ('_07compl_005cont', genome_recovery_val[1][1]),
+                                   ('_09compl_005cont', genome_recovery_val[1][2])]),
                                   bin_metrics))
     return summary_per_query
 

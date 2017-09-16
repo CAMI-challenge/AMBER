@@ -16,11 +16,11 @@ AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the compar
 Optional:
 
 * tox, for automatic tests
-* LaTeX, for combining plots into a PDF file with tool create_summary_pdf.py
+* LaTeX, for combining plots into a PDF file with tool [_create_summary_pdf.py_](README_TOOLS.md#utilscreate_summary_pdfpy)
 
 ## Installation
 
-Download AMBER from:
+Download AMBER:
 ~~~BASH
 wget https://github.com/CAMI-challenge/AMBER/archive/master.zip -O amber.zip
 ~~~
@@ -41,7 +41,7 @@ You can also run [AMBER as a Biobox](#run-amber-as-a-biobox).
 # User Guide
 
 ## Input
-As input, AMBER's main tool _evaluate.py_ uses three files:
+As input, AMBER's main tool [_evaluate.py_](#evaluatepy) uses three files:
 1. A gold standard mapping of contigs or read IDs to genomes in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format). Columns are tab separated. Example:
 ~~~BASH
 @Version:0.9.1
@@ -56,7 +56,7 @@ RH|P|C20873  1053046    339258
 ~~~
 See [here](./test/gsa_mapping.binning) another example. Note: column _LENGTH is optional, but eliminates the need for a FASTA or FASTQ file (input 3 below).
 
-2. One or more files with bin assignments for the sequences also in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format), with each file containing all the bin assignments from a binning program. A tool for converting FASTA files, such that each file represents a bin, is available (see _utils/convert_fasta_bins_to_biobox_format.py_ below).
+2. One or more files with bin assignments for the sequences also in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format), with each file containing all the bin assignments from a binning program. A tool for converting FASTA files, such that each file represents a bin, is available (see [_utils/convert_fasta_bins_to_biobox_format.py_](README_TOOLS.md#utilsconvert_fasta_bins_to_biobox_formatpy)).
 3. A FASTA or FASTQ file with the sequences for obtaining their lengths. Optionally, the lenghts may be added to the gold standard mapping file at column _LENGTH using tool _utils/add_length_column.py_ (see [README_TOOLS.md](README_TOOLS.md#utilsadd_length_columnpy)). In this way, _evaluate.py_ no longer requires a FASTA or FASTQ file.
 
 Additional parameters may be specified - see below.

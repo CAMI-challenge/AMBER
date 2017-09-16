@@ -212,9 +212,13 @@ rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq percen
 
 ### genome_recovery.py
 ~~~BASH
-usage: genome_recovery.py [-h] [-p FILTER] [-l LABEL] [file]
+usage: genome_recovery.py [-h] [-p FILTER] [-l LABEL] [-x MIN_COMPLETENESS]
+                          [-y MAX_CONTAMINATION]
+                          [file]
 
-Compute number of genomes in ranges of completeness and contamination
+Calculate number of genome bins recovered with more than the specified
+thresholds of completeness and contamination. Default: >50%, >70%, >90%
+completeness vs. <10%, <5% contamination
 
 positional arguments:
   file                  File containing precision and recall for each genome
@@ -225,6 +229,12 @@ optional arguments:
                         Filter out [FILTER]% smallest bins (default: 0)
   -l LABEL, --label LABEL
                         Binning name
+  -x MIN_COMPLETENESS, --min_completeness MIN_COMPLETENESS
+                        Comma-separated list of min. completeness thresholds
+                        (default: 50,70,90)
+  -y MAX_CONTAMINATION, --max_contamination MAX_CONTAMINATION
+                        Comma-separated list of max. contamination thresholds
+                        (default: 10,5)
 ~~~
 **Example:**
 ~~~BASH
