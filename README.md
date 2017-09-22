@@ -160,13 +160,13 @@ In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and
 1. Build the container running the following command:
 
 ~~~BASH
-docker build  -t genome_binning_evaluation .
+docker build  -t amber .
 ~~~
 
 2. Run the container by specifying the executing the following command
 
 ~~~BASH
-docker run -v $(pwd)/input/gold_standard.fasta:/bbx/input/gold_standard.fasta -v $(pwd)/input/gsa_mapping.binning:/bbx/input/gsa_mapping.binning  -v  $(pwd)/input/test_query.binning:/bbx/input/test_query.binning  -v  $(pwd)/output:/bbx/output -v $(pwd)/input/biobox.yaml:/bbx/input/biobox.yaml genome_binning_evaluation default
+docker run -v $(pwd)/input/gold_standard.fasta:/bbx/input/gold_standard.fasta -v $(pwd)/input/gsa_mapping.binning:/bbx/input/gsa_mapping.binning  -v  $(pwd)/input/test_query.binning:/bbx/input/test_query.binning  -v  $(pwd)/output:/bbx/output -v $(pwd)/input/biobox.yaml:/bbx/input/biobox.yaml amber default
 ~~~
 
 where biobox.yaml contains the following values:
