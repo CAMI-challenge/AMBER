@@ -3,15 +3,14 @@
 import pandas as pd
 import bokeh.models.widgets.tables
 
-from bokeh.layouts import widgetbox, column, layout
+from bokeh.layouts import widgetbox, layout
 from bokeh.models import DataTable
 from bokeh.palettes import d3
 from bokeh.embed import file_html
 from bokeh.resources import CDN
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.models.widgets import Div
-from bokeh.models import FuncTickFormatter, HoverTool
-from bokeh.models.widgets import Panel, Tabs
+from bokeh.models import HoverTool
 import numpy as np
 import argparse
 from utils.labels import abbreviations
@@ -32,8 +31,8 @@ DESCRIPTION_HEIGHT = 60
 A_WIDTH = 1200
 A_HEIGHT = 15
 
-COLOR_SCALE = 20
-COLORS = d3['Category20'][COLOR_SCALE]
+COLORS_20 = d3['Category20'][20]
+COLORS_10 = d3['Category10'][10]
 
 ID_SUMMARY = "summary"
 ID_PRECISION_VS_RECALL_TOOLS = "precision_vs_recall_tools"
@@ -57,6 +56,13 @@ Precision vs. recall plots for every tool. The first plot is sorted by precision
 DESCRIPTION_ADJUSTED_RAND_INDEX_TOOLS = """
 Scatter plot showing adjusted rand index vs percentage of assigned base pairs.
 """
+
+
+def get_color(number_of_tools):
+    if number_of_tools > 10:
+        return COLORS_20
+    else:
+        return COLORS_10
 
 
 def create_title_div(id, name, info):
@@ -151,7 +157,8 @@ def create_recall_precision_scatter(df):
 
     for i, (idx, row) in zip(np.arange(len(df.index)), df.iterrows()):
         errorbar(p, [row["avg_precision"]], [row["avg_recall"]], xerr=[row["sem_precision"]],
-                 yerr=[row["sem_recall"]], color=COLORS[i], point_kwargs={"legend": idx, "size": 10})
+                 yerr=[row["sem_recall"]], color=get_color(len(df.index))[i], point_kwargs={"legend": idx, "size": 10},
+                 error_kwargs={"legend": idx})
 
     p = _set_default_figure_properties(p, "Precision", "Recall")
     return [p]
@@ -166,46 +173,10 @@ def create_rand_index_assigned_bps_scatter(df):
     p = figure(plot_width=SCATTER_ELEMENT_WIDTH, plot_height=SCATTER_ELEMENT_HEIGHT)
 
     for i, (idx, row) in zip(np.arange(len(df.index)), df.iterrows()):
-        p.circle(row["a_rand_index_by_bp"], row["percent_assigned_bps"], alpha=0.8, color=COLORS[i], size=10,
+        p.circle(row["a_rand_index_by_bp"], row["percent_assigned_bps"], alpha=0.8, color=get_color(len(df.index))[i], size=10,
                  legend=idx)
 
     p = _set_default_figure_properties(p, "Average Rand Index by base pair", "Percent of Assigned base pairs")
-    return [p]
-
-
-def create_precision_recall_plot(path, name, x_axis, y_axis):
-    """
-    Creates precision vs recall line and circle plot for a single tool.
-    The plot is either sorted by precision or recall.
-
-    :param path: Path to precision, recall summary.
-    :param x_axis: X axis label
-    :param y_axis: Y axis label
-    :return: figure
-    """
-    df = pd.DataFrame.from_csv(path, sep='\t', header=0)
-    df["idx"] = list(map(str, range(len(df))))
-    df["name"] = name
-    df["genome"] = df.index
-    df = df.sort_values(y_axis, ascending=True)
-
-    p = figure(x_range=list(df["idx"]), plot_width=SCATTER_ELEMENT_WIDTH, plot_height=SCATTER_ELEMENT_HEIGHT)
-    p.add_tools(HoverTool(tooltips=[
-        ("genome", "@genome")
-    ]))
-    p.title.text = 'Click on legend entries to hide the corresponding lines (sorted by ' + y_axis + ') '
-
-    source = ColumnDataSource(df)
-
-    p.line("idx", y_axis, source=source, alpha=0.8, color='blue', legend=" {0}".format(y_axis))
-    p.circle("idx", x_axis, source=source, alpha=0.8, color='red', size=6, legend=" {0}".format(x_axis))
-
-    p.xaxis.formatter = FuncTickFormatter(code="""
-    var labels = %s;
-    return labels[tick];
-    """ % df.set_index("idx")["genome"].to_dict())
-
-    p = _set_default_figure_properties(p, "Genome", "")
     return [p]
 
 
@@ -237,7 +208,7 @@ def create_precision_recall_all_genomes_scatter(paths, names):
         return plot
 
     for idx, name in enumerate(names):
-        p = create_circles(df, p, name, COLORS[idx])
+        p = create_circles(df, p, name, get_color(len(names))[idx])
 
     p = _set_default_figure_properties(p, "Precision", "Recall")
     return [p]
@@ -252,7 +223,6 @@ def save_html_file(path, elements):
 
 def build_html(precision_recall_paths, names, summary, html_output):
     element_column = list()
-    path_with_names = list(zip(precision_recall_paths, names))
 
     df = summary
     # if this script is run directly (not from evaluate.py), summary is a file path
@@ -269,7 +239,6 @@ def build_html(precision_recall_paths, names, summary, html_output):
     element_column.append(
         create_title_a(ID_RAND_INDEX_ASSIGNED_BPS, "3", "Adjusted Rand index vs. Percentage of Assigned base pairs"))
     element_column.append(create_title_a(ID_ALL_GENOMES, "4", "Precision vs. Recall all Genomes"))
-    element_column.append(create_title_a(ID_SINGLE_TOOL, "5", "Precision vs. Recall per tool"))
 
     element_column.append(create_subtitle_div(ID_SUMMARY, "Summary"))
 
@@ -296,31 +265,17 @@ def build_html(precision_recall_paths, names, summary, html_output):
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_GENOME))
     element_column.append(create_precision_recall_all_genomes_scatter(precision_recall_paths, names))
 
-    element_column.append(create_subtitle_div(ID_SINGLE_TOOL, "Precision vs. Recall per tool"))
-    element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_TOOL))
-    tabs = list()
-    for table, name in path_with_names:
-        tool_column = list()
-        sort_by = "recall"
-        tool_column.append(*create_subtitle_div(name + "1", "Sorted by {0} ".format(sort_by)))
-        tool_column.append(*create_precision_recall_plot(table, name, x_axis="precision", y_axis=sort_by))
-        sort_by = "precision"
-        tool_column.append(*create_subtitle_div(name + "2", "Sorted by {0} ".format(sort_by)))
-        tool_column.append(*create_precision_recall_plot(table, name, x_axis="recall", y_axis=sort_by))
-        tabs.append(Panel(child=column(tool_column), title=name))
-
-    element_column.append([Tabs(tabs=tabs)])
     save_html_file(html_output, element_column)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Create html-based plots.")
     parser.add_argument('-o', '--output_file', help="Directory to write the results to", required=True)
-    parser.add_argument('-p', '--precision_recall_file', nargs='+', help='<Required> Set flag', required=True)
+    parser.add_argument('-p', '--precision_recall_files', nargs='+', help='<Required> Set flag', required=True)
     parser.add_argument('-n', '--names', nargs='+', help='<Required> Set flag', required=True)
     parser.add_argument('-s', '--summary', help='Summary of all metrics', required=True)
     args = parser.parse_args()
-    build_html(args.precision_recall_file, args.names, args.summary, args.output_file)
+    build_html(args.precision_recall_files, args.names, args.summary, args.output_file)
 
 if __name__ == "__main__":
     main()
