@@ -17,13 +17,12 @@ properties:
     - labels
     - predictions
     properties:
-      sequences:
+      fasta:
         type: object
         required:
         - value
         - type
         properties:
-          id: {}
           type:
             enum:
             - contig

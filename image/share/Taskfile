@@ -1,2 +1,2 @@
-default: evaluate.py -g ${LABELS} -f ${FASTA} ${PREDICTIONS} -o ${OUTPUT} > ${OUTPUT_FILE}
+default: evaluate.py -g ${LABELS} -l "query"  -f ${FASTA} ${PREDICTIONS} -o ${OUTPUT} > ${OUTPUT_FILE}
 precision_recall_per_bin: precision_recall_per_bin.py -g ${LABELS} -f ${FASTA} ${PREDICTIONS} > ${OUTPUT_FILE}

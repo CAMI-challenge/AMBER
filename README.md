@@ -157,16 +157,11 @@ In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and
 
 ## Run AMBER as a Biobox
 
-1. Build the container running the following command:
+
+Run the amber docker image by specifying the executing the following command
 
 ~~~BASH
-docker build  -t genome_binning_evaluation .
-~~~
-
-2. Run the container by specifying the executing the following command
-
-~~~BASH
-docker run -v $(pwd)/input/gold_standard.fasta:/bbx/input/gold_standard.fasta -v $(pwd)/input/gsa_mapping.binning:/bbx/input/gsa_mapping.binning  -v  $(pwd)/input/test_query.binning:/bbx/input/test_query.binning  -v  $(pwd)/output:/bbx/output -v $(pwd)/input/biobox.yaml:/bbx/input/biobox.yaml genome_binning_evaluation default
+docker run -v $(pwd)/input/gold_standard.fasta:/bbx/input/gold_standard.fasta -v $(pwd)/input/gsa_mapping.binning:/bbx/input/gsa_mapping.binning  -v  $(pwd)/input/test_query.binning:/bbx/input/test_query.binning  -v  $(pwd)/output:/bbx/output -v $(pwd)/input/biobox.yaml:/bbx/input/biobox.yaml cami/amber:latest default
 ~~~
 
 where biobox.yaml contains the following values:
@@ -187,7 +182,7 @@ arguments:
 
 # Developer Guide
 
-We are using [tox]((https://tox.readthedocs.io/en/latest/)) for project automation.
+We are using [tox](https://tox.readthedocs.io/en/latest/) for project automation.
 
 ### Tests
 
@@ -195,4 +190,10 @@ If you want to run tests, just type _tox_ in the project's root directory:
 
 ~~~BASH
 tox
+~~~  
+
+By running tox you can use all libraries that amber depends on by running 
+
+~~~BASH
+source  <project_directory>/.tox/py35/bin/activate
 ~~~

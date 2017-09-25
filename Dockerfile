@@ -1,12 +1,11 @@
 FROM bioboxes/biobox-minimal-base
 
-RUN apt update
-RUN apt install -y python python-pip python-dev 
+ADD image /usr/local
+RUN install.sh
 ADD *.py /usr/local/bin/ 
 ADD utils /usr/local/bin/utils
 ADD requirements /requirements
-RUN pip install -r /requirements/default.txt
-ADD image /usr/local
+RUN pip3 install -r /requirements/default.txt
 
 ENV BIOBOX_EXEC /usr/local/bin/evaluate.sh
 ENV TASKFILE /usr/local/share/Taskfile
