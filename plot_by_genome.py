@@ -5,19 +5,9 @@ import argparse
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import plots
 from utils import load_data
 from utils import argparse_parents
-
-
-def create_colors_list():
-    colors_list = []
-    for color in plt.cm.tab10(np.linspace(0, 1, 10))[:-1]:
-        colors_list.append(tuple(color))
-    for color in plt.cm.Set2(np.linspace(0, 1, 8)):
-        colors_list.append(tuple(color))
-    for color in plt.cm.Set3(np.linspace(0, 1, 12)):
-        colors_list.append(tuple(color))
-    return colors_list
 
 
 def plot_by_genome(data, out_file=None, sort_by='recall'):
@@ -54,7 +44,7 @@ def plot_by_genome(data, out_file=None, sort_by='recall'):
 
 
 def plot_by_genome2(summary_per_query, output_dir):
-    colors_list = create_colors_list()
+    colors_list = plots.create_colors_list()
     if len(summary_per_query) > len(colors_list):
         raise RuntimeError("Plot only supports 29 colors")
 
@@ -87,8 +77,11 @@ def plot_by_genome2(summary_per_query, output_dir):
     vals = axs.get_yticks()
     axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
 
+    # AMBER manuscript notation
+    # plt.xlabel('Precision per bin $p_i$')
+    # plt.ylabel('Recall per genome $r_i$')
     plt.xlabel('Precision per bin')
-    plt.ylabel('Recall per bin')
+    plt.ylabel('Recall per genome')
     plt.tight_layout()
     fig.savefig(os.path.normpath(output_dir + '/precision_recall_per_bin.eps'), dpi=100, format='eps', bbox_inches='tight')
 

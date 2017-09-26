@@ -12,6 +12,7 @@ import genome_recovery
 import accuracy
 import plot_by_genome
 import html_plots
+import plots
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import pandas as pd
@@ -150,7 +151,7 @@ def convert_summary_to_tuples_of_strings(summary_per_query):
 
 
 def create_legend(summary_per_query, output_dir):
-    colors_iter = iter(plot_by_genome.create_colors_list())
+    colors_iter = iter(plots.create_colors_list())
     labels = []
     circles = []
     for summary in summary_per_query:
@@ -161,90 +162,6 @@ def create_legend(summary_per_query, output_dir):
     fig.legend(circles, labels, loc='center', frameon=False, ncol=3, handletextpad=0.1)
     fig.savefig(os.path.normpath(output_dir + '/legend.eps'), dpi=100, format='eps', bbox_inches='tight')
     plt.close(fig)
-
-
-def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, ylabel):
-    colors_list = plot_by_genome.create_colors_list()
-    if len(summary_per_query) > len(colors_list):
-        raise RuntimeError("Plot only supports 29 colors")
-
-    fig, axs = plt.subplots(figsize=(6, 5))
-
-    # force axis to be from 0 to 100%
-    axs.set_xlim([0.0, 1.0])
-    axs.set_ylim([0.0, 1.0])
-
-    i = 0
-    plot_labels = []
-    if plot_type == 'e':
-        for summary in summary_per_query:
-            axs.errorbar(summary['avg_precision'], summary['avg_recall'], xerr=summary['sem_precision'], yerr=summary['sem_recall'],
-                         fmt='o',
-                         ecolor=colors_list[i],
-                         mec=colors_list[i],
-                         mfc=colors_list[i],
-                         capsize=3,
-                         markersize=8)
-            plot_labels.append(summary['binning_label'])
-            i += 1
-    if plot_type == 'w':
-        for summary in summary_per_query:
-            axs.plot(summary['precision'], summary['recall'], marker='o', color=colors_list[i], markersize=10)
-            plot_labels.append(summary['binning_label'])
-            i += 1
-    elif plot_type == 'p':
-        for summary in summary_per_query:
-            axs.plot(summary['a_rand_index_by_bp'], summary['percent_assigned_bps'], marker='o', color=colors_list[i], markersize=10)
-            plot_labels.append(summary['binning_label'])
-            i += 1
-
-    # turn on grid
-    axs.minorticks_on()
-    axs.grid(which='major', linestyle='-', linewidth='0.5')
-    axs.grid(which='minor', linestyle=':', linewidth='0.5')
-
-    # transform plot_labels to percentages
-    vals = axs.get_xticks()
-    axs.set_xticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
-    vals = axs.get_yticks()
-    axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
-
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.tight_layout()
-    fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.eps'), dpi=100, format='eps', bbox_inches='tight')
-    lgd = plt.legend(plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False)
-
-    fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
-    plt.close(fig)
-
-
-def plot_avg_precision_recall(summary_per_query, output_dir):
-    plot_summary(summary_per_query,
-                 output_dir,
-                 'e',
-                 'avg_precision_recall',
-                 'Average precision per bin',
-                 'Average recall per genome')
-
-
-def plot_weighed_precision_recall(summary_per_query, output_dir):
-    plot_summary(summary_per_query,
-                 output_dir,
-                 'w',
-                 'weighed_precision_recall',
-                 'Precision per base pair',
-                 'Recall per base pair')
-
-
-def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
-    plot_summary(summary_per_query,
-                 output_dir,
-                 'p',
-                 'ari_vs_assigned_bps',
-                 'Adjusted Rand Index',
-                 'Percentage of assigned base pairs')
 
 
 def print_summary(summary_per_query, output_dir=None):
@@ -322,9 +239,9 @@ def main():
     print_summary(summary_as_string)
     print_summary(summary_as_string, args.output_dir)
     create_legend(summary_dict, args.output_dir)
-    plot_avg_precision_recall(summary_dict, args.output_dir)
-    plot_weighed_precision_recall(summary_dict, args.output_dir)
-    plot_adjusted_rand_index_vs_assigned_bps(summary_dict, args.output_dir)
+    plots.plot_avg_precision_recall(summary_dict, args.output_dir)
+    plots.plot_weighed_precision_recall(summary_dict, args.output_dir)
+    plots.plot_adjusted_rand_index_vs_assigned_bps(summary_dict, args.output_dir)
     plot_by_genome.plot_by_genome2(summary_per_query, args.output_dir)
     compute_rankings(summary_dict, args.output_dir)
 
