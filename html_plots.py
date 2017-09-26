@@ -3,8 +3,9 @@
 import pandas as pd
 import bokeh.models.widgets.tables
 
+from functools import partial
 from bokeh.layouts import widgetbox, layout
-from bokeh.models import DataTable
+from bokeh.models import DataTable, widgets
 from bokeh.palettes import d3
 from bokeh.embed import file_html
 from bokeh.resources import CDN
@@ -33,6 +34,84 @@ A_HEIGHT = 15
 
 COLORS_20 = d3['Category20'][20]
 COLORS_10 = d3['Category10'][10]
+
+COMPL_0_5 = '_05compl'
+COMPL_0_9 = '_09compl'
+COMPL_0_7 = '_07compl'
+CONT_0_1 = '_01cont'
+CONT_0_05 = '_005cont'
+
+
+CONTAMINATION_COMPLETENESS_COLUMNS = [
+                    '{}{}'.format(COMPL_0_5, CONT_0_1),
+                    '{}{}'.format(COMPL_0_7, CONT_0_1),
+                    '{}{}'.format(COMPL_0_9, CONT_0_1),
+                    '{}{}'.format(COMPL_0_5, CONT_0_05),
+                    '{}{}'.format(COMPL_0_7, CONT_0_05),
+                    '{}{}'.format(COMPL_0_9, CONT_0_05)]
+
+
+FILE_COMPL_0_5 = '>0.5compl'
+FILE_COMPL_0_9 = '>0.9compl'
+FILE_COMPL_0_7 = '>0.7compl'
+FILE_CONT_0_1 = '<0.1cont'
+FILE_CONT_0_05 = '<0.05cont'
+
+#This array is used when the columns of the file are parsed
+CONTAMINATION_COMPLETENESS_COLUMNS_FILE = ['{}{}'.format(FILE_COMPL_0_5, FILE_CONT_0_1),
+                                           '{}{}'.format(FILE_COMPL_0_7, FILE_CONT_0_1),
+                                           '{}{}'.format(FILE_COMPL_0_9, FILE_CONT_0_1),
+                                           '{}{}'.format(FILE_COMPL_0_5, FILE_CONT_0_05),
+                                           '{}{}'.format(FILE_COMPL_0_7, FILE_CONT_0_05),
+                                           '{}{}'.format(FILE_COMPL_0_9, FILE_CONT_0_05)]
+
+COL_DESCRIPTION = "description"
+COL_TITLE = "title"
+COL_FILE_ID = "file_id"
+
+
+COMPLETION_COL_0_9 = {
+    COL_DESCRIPTION: "number of bins with more than 90% completeness",
+    COL_TITLE : ">90% completeness",
+}
+
+
+COMPLETION_COL_0_7 = {
+    COL_DESCRIPTION: "number of bins with more than 70% completeness",
+    COL_TITLE : ">70% completeness",
+    COL_FILE_ID: '>0.7compl'
+}
+
+
+COMPLETION_COL_0_5 = {
+    COL_DESCRIPTION : "number of bins with more than 50% completeness",
+    COL_TITLE : ">50% completeness",
+    COL_FILE_ID: '>0.5compl'
+}
+
+
+DESCRIPTION_COMPLETENESS_COL = {
+    COMPL_0_5: COMPLETION_COL_0_5,
+    FILE_COMPL_0_5: COMPLETION_COL_0_5,
+    COMPL_0_7: COMPLETION_COL_0_7,
+    FILE_COMPL_0_7: COMPLETION_COL_0_7,
+    COMPL_0_9: COMPLETION_COL_0_9,
+    FILE_COMPL_0_9: COMPLETION_COL_0_9
+}
+
+
+DESCRIPTION_CONTAMINATION_ROW = {
+    CONT_0_1: {
+        COL_DESCRIPTION: "number of bins with less than 10% contamination",
+        COL_TITLE: "<10% contamination",
+        COL_FILE_ID:  '<0.1cont'
+    },
+    CONT_0_05: {
+        COL_DESCRIPTION: "number of bins with less than 5% contamination",
+        COL_TITLE: "<05% contamination",
+        COL_FILE_ID: '<0.05cont'
+    }
+}
 
 ID_SUMMARY = "summary"
 ID_PRECISION_VS_RECALL_TOOLS = "precision_vs_recall_tools"
@@ -80,9 +159,8 @@ def _set_default_figure_properties(figure, x_label, y_label):
     return figure
 
 
-def create_description(content, width=DESCRIPTION_WIDTH, height=DESCRIPTION_HEIGHT):
-    div = Div(text="""<h3>Description:</h3><p>{0}</p>""".format(content),
-              width=width, height=height)
+def create_description(content):
+    div = Div(text="""<h3>Description:</h3><p>{0}</p>""".format(content))
     return [div]
 
 
@@ -104,14 +182,47 @@ def create_title_a(href, number, name):
     return [div]
 
 
-def create_summary_table(df):
+def create_contamination_completeness_table(df):
+    from collections import OrderedDict
+    contamination_completenes_row_arr = []
+
+    for index, row in df.iterrows():
+        list(filter(lambda x: CONT_0_1 in x, row.index))
+
+        def get_row_for_contamination(row, contamination):
+            cols = OrderedDict()
+            cols['Tool'] = "{} {}".format(row.name, DESCRIPTION_CONTAMINATION_ROW[contamination][COL_TITLE])
+            cols[COMPL_0_5] = row["{}{}".format(COMPL_0_5, contamination)]
+            cols[COMPL_0_7] = row["{}{}".format(COMPL_0_7, contamination)]
+            cols[COMPL_0_9] = row["{}{}".format(COMPL_0_9, contamination)]
+            return cols
+
+        contamination_completenes_row_arr.append(get_row_for_contamination(row, CONT_0_1))
+        contamination_completenes_row_arr.append(get_row_for_contamination(row, CONT_0_05))
+    df = pd.DataFrame(contamination_completenes_row_arr)
+
+    def create_table_column(field):
+        if field=="Tool":
+            return widgets.TableColumn(title=field, field=field)
+        else:
+            return widgets.TableColumn(title=DESCRIPTION_COMPLETENESS_COL[field][COL_TITLE], field=field)
+
     dt = DataTable(source=bokeh.models.ColumnDataSource(df),
-                   columns=list(map(lambda x: bokeh.models.widgets.TableColumn(title=x, field=x), df.columns.values)),
+                   columns=list(map(lambda x: create_table_column(x), df.columns.values)),
                    width=TABLE_ELEMENT_WIDTH,
-                   height=TABLE_ELEMENT_HEIGHT,
                    reorderable=True,
                    selectable=True)
-    return [widgetbox(dt)]
+    return [widgetbox(dt, sizing_mode="scale_both")]
+
+
+def create_summary_table(df):
+    dt = DataTable(source=bokeh.models.ColumnDataSource(df),
+                   columns=list(map(lambda x: widgets.TableColumn(title=x, field=x), df.columns.values)),
+                   width=TABLE_ELEMENT_WIDTH,
+                   reorderable=True,
+                   sizing_mode="scale_both",
+                   selectable=True)
+    return [widgetbox(dt, sizing_mode="scale_both")]
 
 
 def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
@@ -221,15 +332,18 @@ def save_html_file(path, elements):
     file.close()
 
 
-def build_html(precision_recall_paths, names, summary, html_output):
+def build_html_summary_path(precision_recall_paths, names, summary, html_output):
+    summary_df = pd.DataFrame.from_csv(summary, sep='\t', header=0)
+    summary_df = summary_df.rename(index=str, columns=dict(zip(CONTAMINATION_COMPLETENESS_COLUMNS_FILE,
+                                                  CONTAMINATION_COMPLETENESS_COLUMNS)))
+    build_html(precision_recall_paths, names, summary_df, html_output, CONTAMINATION_COMPLETENESS_COLUMNS)
+
+
+def build_html(precision_recall_paths, names, summary, html_output,
+               contamination_completeness_cols=CONTAMINATION_COMPLETENESS_COLUMNS):
     element_column = list()
 
-    df = summary
-    # if this script is run directly (not from evaluate.py), summary is a file path
-    if isinstance(summary, str):
-        df = pd.DataFrame.from_csv(summary, sep='\t', header=0)
-    df.insert(0, "Tool", df.index)
-
+    summary.insert(0, "Tool", summary.index)
     element_column.append(create_title_div("main", "AMBER: Assessment of Metagenome BinnERs", " produced on {0} ".format(
         datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))))
     element_column.append(create_subtitle_div("contents", "Contents"))
@@ -242,24 +356,42 @@ def build_html(precision_recall_paths, names, summary, html_output):
 
     element_column.append(create_subtitle_div(ID_SUMMARY, "Summary"))
 
-    def create_list(k, v):
+    def create_entry(k, v):
         return "<li><strong>{0}: </strong>{1}</li>".format(k, v)
 
-    html_listing = list(map(lambda k: create_list(k, abbreviations[k]), abbreviations.keys()))
+    html_listing = list(map(lambda k: create_entry(k, abbreviations[k]),
+                            list(filter(lambda k: k not in CONTAMINATION_COMPLETENESS_COLUMNS_FILE, abbreviations.keys()))))
 
     element_column.append(
-        create_description("Table columns: <ul>{0}</ul>".format(" ".join(html_listing)), height=None))
+        create_description("Table that sums up multiple metrics <br>"
+            "Table columns: <ul>{0}</ul>".format(" ".join(html_listing))))
+    df_without_contam_complete = summary.drop(contamination_completeness_cols, axis=1)
+    element_column.append(create_summary_table(df_without_contam_complete))
 
-    element_column.append(create_summary_table(df))
+    completion_contamination_col = map(lambda k: create_entry(DESCRIPTION_COMPLETENESS_COL[k][COL_TITLE],
+                                                              DESCRIPTION_COMPLETENESS_COL[k][COL_DESCRIPTION]),
+                                                              DESCRIPTION_COMPLETENESS_COL.keys())
+
+    completion_contamination_row = map(lambda k:
+                                       create_entry(DESCRIPTION_CONTAMINATION_ROW[k][COL_TITLE],
+                                                    DESCRIPTION_CONTAMINATION_ROW[k][COL_DESCRIPTION]),
+                                                    DESCRIPTION_CONTAMINATION_ROW.keys())
+
+    element_column.append(
+        create_description("Contamination vs. Completeness matrix with multiple thresholds: <br>"
+                           "Table columns: <ul>{0}</ul> "
+                           "Table rows: <ul>{1}</ul>".format(" ".join(completion_contamination_col),
+                                                             " ".join(completion_contamination_row))))
+    element_column.append(create_contamination_completeness_table(summary[contamination_completeness_cols]))
 
     element_column.append(create_subtitle_div(ID_PRECISION_VS_RECALL_TOOLS, "Average Precision vs. Average Recall"))
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_TOOLS))
-    element_column.append(create_recall_precision_scatter(df))
+    element_column.append(create_recall_precision_scatter(summary))
 
     element_column.append(
         create_subtitle_div(ID_RAND_INDEX_ASSIGNED_BPS, "Adjusted Rand Index vs. Percentage of Assigned base pairs"))
     element_column.append(create_description(DESCRIPTION_ADJUSTED_RAND_INDEX_TOOLS))
-    element_column.append(create_rand_index_assigned_bps_scatter(df))
+    element_column.append(create_rand_index_assigned_bps_scatter(summary))
 
     element_column.append(create_subtitle_div(ID_ALL_GENOMES, "Precision vs. Recall per Genome"))
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_GENOME))
@@ -275,7 +407,7 @@ def main():
     parser.add_argument('-n', '--names', nargs='+', help='<Required> Set flag', required=True)
     parser.add_argument('-s', '--summary', help='Summary of all metrics', required=True)
     args = parser.parse_args()
-    build_html(args.precision_recall_files, args.names, args.summary, args.output_file)
+    build_html_summary_path(args.precision_recall_files, args.names, args.summary, args.output_file)
 
 if __name__ == "__main__":
     main()
