@@ -196,3 +196,9 @@ By running tox you can use all libraries that amber depends on by running
 ~~~BASH
 source  <project_directory>/.tox/py35/bin/activate
 ~~~
+
+### Update GitHub page
+
+In order to update **https://cami-challenge.github.io/AMBER**
+modify the file index.html.
+
