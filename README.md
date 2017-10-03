@@ -6,7 +6,6 @@ AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the compar
 # Requirements
 
 * python &ge; 3.5
-* python-tk
 * numpy &ge; 1.13.0
 * biopython &ge; 1.69.0
 * matplotlib &ge; 2.0.2
@@ -33,7 +32,7 @@ Install dependencies as follows (tested on Linux Ubuntu 16.04):
 
 ~~~BASH
 sudo apt-get install python3-pip
-sudo apt-get install python3-tk
+cd AMBER/
 pip3 install -r requirements/default.txt --user
 ~~~
 You can also run [AMBER as a Biobox](#run-amber-as-a-biobox). 
@@ -69,8 +68,8 @@ Additional parameters may be specified - see below.
 * **avg_recall**: recall averaged over genome bins
 * **std_dev_recall**: standard deviation of recall averaged over genome bins
 * **sem_recall**: standard error of the mean of recall averaged over genome bins
-* **precision**: precision weighed by base pairs
-* **recall**: recall weighed by base pairs
+* **precision**: average precision per base pair
+* **recall**: average recall per base pair
 * **rand_index_by_bp**: Rand index weighed by base pairs
 * **rand_index_by_seq**: Rand index weighed by sequence counts
 * **a_rand_index_by_bp**: adjusted Rand index weighed by base pairs

@@ -13,6 +13,8 @@ import accuracy
 import plot_by_genome
 import html_plots
 import plots
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import pandas as pd

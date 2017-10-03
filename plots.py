@@ -2,6 +2,8 @@
 
 import argparse
 import os
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from utils import load_data
@@ -40,7 +42,7 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
 
     fig, axs = plt.subplots(figsize=(6, 5))
 
-    # force axis to be from 0 to 100%
+    # force axes to be from 0 to 100%
     axs.set_xlim([0.0, 1.0])
     axs.set_ylim([0.0, 1.0])
 
