@@ -48,10 +48,17 @@ COMPL_0_7 = '_07compl'
 CONT_0_1 = '_01cont'
 CONT_0_05 = '_005cont'
 
-SEM_PRECISION="sem_precision"
-SEM_RECALL="sem_recall"
-STD_DEV_RECALL="std_dev_recall"
-STD_DEV_PRECISION="std_dev_precision"
+SEM_PRECISION_FILE= "sem_precision"
+SEM_RECALL_FILE= "sem_recall"
+STD_DEV_RECALL_FILE= "std_dev_recall"
+STD_DEV_PRECISION_FILE= "std_dev_precision"
+
+SEM_PRECISION= SEM_PRECISION_FILE
+SEM_RECALL= SEM_RECALL_FILE
+STD_DEV_RECALL= "std_deviation_recall"
+STD_DEV_PRECISION= "std_deviation_precision"
+
+NO_COLOR_COLUMNS_FILE = [SEM_PRECISION_FILE, SEM_RECALL_FILE, STD_DEV_PRECISION_FILE, STD_DEV_RECALL_FILE]
 
 NO_COLOR_COLUMNS = [SEM_PRECISION, SEM_RECALL, STD_DEV_PRECISION, STD_DEV_RECALL]
 
@@ -224,43 +231,46 @@ def create_contamination_completeness_table(df):
     return [widgetbox(dt, sizing_mode="scale_both")]
 
 
-def create_summary_heatmap(df):
+def create_summary_heatmap(df, std_dev_sem_columns):
     df = df.set_index('Tool')
     tools = list(df.index)
     metrics = list(reversed(list(df.columns)))
 
-    for column in NO_COLOR_COLUMNS:
+    # unweighted columns should be at the right side
+    for column in std_dev_sem_columns:
         metrics.append(metrics.pop(metrics.index(column)))
 
     df = df[metrics]
 
     UNWEIGHTED_NUMBER = 1.1
     WEIGHTING_COLUMN = 'rate_extended'
-    DEFAULT_TOOL_HEIGHT = 180
+    DEFAULT_TOOL_HEIGHT = 35
+    COLORBARL_HEIGHT = 150
+    ALPHA_COLOR=0.85
 
     df.columns.name = 'Metrics'
     df = pd.DataFrame(df.stack(), columns=['rate']).reset_index()
     df['rate'] = df['rate'].map('{:,.6f}'.format)
     df[WEIGHTING_COLUMN] = df['rate']
 
-    for column in NO_COLOR_COLUMNS:
+    for column in std_dev_sem_columns:
         df.loc[df.Metrics == column, WEIGHTING_COLUMN] = UNWEIGHTED_NUMBER
 
     mapper = LinearColorMapper(palette=HEATMAP_COLORS, low=0, high=UNWEIGHTED_NUMBER)
     source = ColumnDataSource(df)
 
     p = figure(x_range=metrics, y_range=tools,
-               x_axis_location="above", plot_width=800, plot_height=len(tools) * DEFAULT_TOOL_HEIGHT,
+               x_axis_location="above", plot_width=800, plot_height=len(tools) * DEFAULT_TOOL_HEIGHT + COLORBARL_HEIGHT,
                tools="hover,save,box_zoom,reset,wheel_zoom", toolbar_location='below')
 
     p = _set_default_figure_properties(p, "Metrics", "Tools")
-    p.xaxis.major_label_orientation = pi / 3
+    p.xaxis.major_label_orientation = pi / 2.5
 
     p.rect(x="Metrics", y="Tool",
            width=1,
            height=1,
            source=source,
-           alpha=0.8,
+           alpha=ALPHA_COLOR,
            fill_color={'field': WEIGHTING_COLUMN, 'transform': mapper},
            line_color="black")
 
@@ -285,7 +295,9 @@ def create_summary_heatmap(df):
     color_bar = ColorBar(color_mapper=mapper,
                          major_label_text_font_size="15pt",
                          ticker=BasicTicker(desired_num_ticks=len(HEATMAP_COLORS)),
-                         scale_alpha=0.8,
+                         scale_alpha=ALPHA_COLOR,
+                         major_label_text_align="right",
+                         major_label_text_baseline="middle",
                          bar_line_color="black",
                          formatter=tickFormatter,
                          label_standoff=13,
@@ -413,11 +425,11 @@ def build_html_summary_path(precision_recall_paths, names, summary, html_output)
     summary_df = pd.DataFrame.from_csv(summary, sep='\t', header=0)
     summary_df = summary_df.rename(index=str, columns=dict(zip(CONTAMINATION_COMPLETENESS_COLUMNS_FILE,
                                                                CONTAMINATION_COMPLETENESS_COLUMNS)))
-    build_html(precision_recall_paths, names, summary_df, html_output, CONTAMINATION_COMPLETENESS_COLUMNS)
+    build_html(precision_recall_paths, names, summary_df, html_output, CONTAMINATION_COMPLETENESS_COLUMNS, NO_COLOR_COLUMNS_FILE)
 
 
 def build_html(precision_recall_paths, names, summary, html_output,
-               contamination_completeness_cols=CONTAMINATION_COMPLETENESS_COLUMNS):
+               contamination_completeness_cols=CONTAMINATION_COMPLETENESS_COLUMNS, std_dev_sem_columns=NO_COLOR_COLUMNS):
     element_column = list()
 
     summary.insert(0, "Tool", summary.index)
@@ -446,7 +458,7 @@ def build_html(precision_recall_paths, names, summary, html_output,
                            "<ul>{0}</ul>".format(" ".join(html_listing))))
     df_without_contam_complete = summary.drop(contamination_completeness_cols, axis=1)
 
-    element_column.append(create_summary_heatmap(df_without_contam_complete))
+    element_column.append(create_summary_heatmap(df_without_contam_complete, std_dev_sem_columns))
 
     completion_contamination_col = map(lambda k: create_entry(DESCRIPTION_COMPLETENESS_COL[k][COL_TITLE],
                                                               DESCRIPTION_COMPLETENESS_COL[k][COL_DESCRIPTION]),
