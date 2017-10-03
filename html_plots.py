@@ -3,15 +3,21 @@
 import pandas as pd
 import bokeh.models.widgets.tables
 
-from functools import partial
+from bokeh.models.mappers import LinearColorMapper
 from bokeh.layouts import widgetbox, layout
-from bokeh.models import DataTable, widgets
-from bokeh.palettes import d3
+from bokeh import palettes
+from math import pi
 from bokeh.embed import file_html
 from bokeh.resources import CDN
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.models.widgets import Div
-from bokeh.models import HoverTool
+from bokeh.models import (ColorBar,
+                          Text,
+                          BasicTicker,
+                          HoverTool,
+                          FuncTickFormatter,
+                          DataTable,
+                          widgets)
 import numpy as np
 import argparse
 from utils.labels import abbreviations
@@ -32,8 +38,9 @@ DESCRIPTION_HEIGHT = 60
 A_WIDTH = 1200
 A_HEIGHT = 15
 
-COLORS_20 = d3['Category20'][20]
-COLORS_10 = d3['Category10'][10]
+COLORS_20 = palettes.d3['Category20'][20]
+COLORS_10 = palettes.d3['Category10'][10]
+HEATMAP_COLORS = palettes.RdYlBu[10] + ['white']
 
 COMPL_0_5 = '_05compl'
 COMPL_0_9 = '_09compl'
@@ -41,15 +48,20 @@ COMPL_0_7 = '_07compl'
 CONT_0_1 = '_01cont'
 CONT_0_05 = '_005cont'
 
+SEM_PRECISION="sem_precision"
+SEM_RECALL="sem_recall"
+STD_DEV_RECALL="std_dev_recall"
+STD_DEV_PRECISION="std_dev_precision"
+
+NO_COLOR_COLUMNS = [SEM_PRECISION, SEM_RECALL, STD_DEV_PRECISION, STD_DEV_RECALL]
 
 CONTAMINATION_COMPLETENESS_COLUMNS = [
-                    '{}{}'.format(COMPL_0_5, CONT_0_1),
-                    '{}{}'.format(COMPL_0_7, CONT_0_1),
-                    '{}{}'.format(COMPL_0_9, CONT_0_1),
-                    '{}{}'.format(COMPL_0_5, CONT_0_05),
-                    '{}{}'.format(COMPL_0_7, CONT_0_05),
-                    '{}{}'.format(COMPL_0_9, CONT_0_05)]
-
+    '{}{}'.format(COMPL_0_5, CONT_0_1),
+    '{}{}'.format(COMPL_0_7, CONT_0_1),
+    '{}{}'.format(COMPL_0_9, CONT_0_1),
+    '{}{}'.format(COMPL_0_5, CONT_0_05),
+    '{}{}'.format(COMPL_0_7, CONT_0_05),
+    '{}{}'.format(COMPL_0_9, CONT_0_05)]
 
 FILE_COMPL_0_5 = '>0.5compl'
 FILE_COMPL_0_9 = '>0.9compl'
@@ -57,7 +69,7 @@ FILE_COMPL_0_7 = '>0.7compl'
 FILE_CONT_0_1 = '<0.1cont'
 FILE_CONT_0_05 = '<0.05cont'
 
-#This array is used when the columns of the file are parsed
+# This array is used when the columns of the file are parsed
 CONTAMINATION_COMPLETENESS_COLUMNS_FILE = ['{}{}'.format(FILE_COMPL_0_5, FILE_CONT_0_1),
                                            '{}{}'.format(FILE_COMPL_0_7, FILE_CONT_0_1),
                                            '{}{}'.format(FILE_COMPL_0_9, FILE_CONT_0_1),
@@ -69,26 +81,22 @@ COL_DESCRIPTION = "description"
 COL_TITLE = "title"
 COL_FILE_ID = "file_id"
 
-
 COMPLETION_COL_0_9 = {
     COL_DESCRIPTION: "number of bins with more than 90% completeness",
-    COL_TITLE : ">90% completeness",
+    COL_TITLE: ">90% completeness",
 }
-
 
 COMPLETION_COL_0_7 = {
     COL_DESCRIPTION: "number of bins with more than 70% completeness",
-    COL_TITLE : ">70% completeness",
+    COL_TITLE: ">70% completeness",
     COL_FILE_ID: '>0.7compl'
 }
 
-
 COMPLETION_COL_0_5 = {
-    COL_DESCRIPTION : "number of bins with more than 50% completeness",
-    COL_TITLE : ">50% completeness",
+    COL_DESCRIPTION: "number of bins with more than 50% completeness",
+    COL_TITLE: ">50% completeness",
     COL_FILE_ID: '>0.5compl'
 }
-
 
 DESCRIPTION_COMPLETENESS_COL = {
     COMPL_0_5: COMPLETION_COL_0_5,
@@ -99,12 +107,11 @@ DESCRIPTION_COMPLETENESS_COL = {
     FILE_COMPL_0_9: COMPLETION_COL_0_9
 }
 
-
 DESCRIPTION_CONTAMINATION_ROW = {
     CONT_0_1: {
         COL_DESCRIPTION: "number of bins with less than 10% contamination",
         COL_TITLE: "<10% contamination",
-        COL_FILE_ID:  '<0.1cont'
+        COL_FILE_ID: '<0.1cont'
     },
     CONT_0_05: {
         COL_DESCRIPTION: "number of bins with less than 5% contamination",
@@ -153,6 +160,8 @@ def create_title_div(id, name, info):
 def _set_default_figure_properties(figure, x_label, y_label):
     figure.legend.click_policy = "hide"
     figure.legend.location = "top_right"
+    figure.axis.axis_label_text_font_size = "15pt"
+    figure.axis.major_label_text_font_size = "15pt"
     figure.xaxis.axis_label = x_label
     figure.yaxis.axis_label = y_label
     figure.xaxis.major_label_orientation = "vertical"
@@ -202,7 +211,7 @@ def create_contamination_completeness_table(df):
     df = pd.DataFrame(contamination_completenes_row_arr)
 
     def create_table_column(field):
-        if field=="Tool":
+        if field == "Tool":
             return widgets.TableColumn(title=field, field=field)
         else:
             return widgets.TableColumn(title=DESCRIPTION_COMPLETENESS_COL[field][COL_TITLE], field=field)
@@ -215,14 +224,81 @@ def create_contamination_completeness_table(df):
     return [widgetbox(dt, sizing_mode="scale_both")]
 
 
-def create_summary_table(df):
-    dt = DataTable(source=bokeh.models.ColumnDataSource(df),
-                   columns=list(map(lambda x: widgets.TableColumn(title=x, field=x), df.columns.values)),
-                   width=TABLE_ELEMENT_WIDTH,
-                   reorderable=True,
-                   sizing_mode="scale_both",
-                   selectable=True)
-    return [widgetbox(dt, sizing_mode="scale_both")]
+def create_summary_heatmap(df):
+    df = df.set_index('Tool')
+    tools = list(df.index)
+    metrics = list(reversed(list(df.columns)))
+
+    for column in NO_COLOR_COLUMNS:
+        metrics.append(metrics.pop(metrics.index(column)))
+
+    df = df[metrics]
+
+    UNWEIGHTED_NUMBER = 1.1
+    WEIGHTING_COLUMN = 'rate_extended'
+    DEFAULT_TOOL_HEIGHT = 180
+
+    df.columns.name = 'Metrics'
+    df = pd.DataFrame(df.stack(), columns=['rate']).reset_index()
+    df['rate'] = df['rate'].map('{:,.6f}'.format)
+    df[WEIGHTING_COLUMN] = df['rate']
+
+    for column in NO_COLOR_COLUMNS:
+        df.loc[df.Metrics == column, WEIGHTING_COLUMN] = UNWEIGHTED_NUMBER
+
+    mapper = LinearColorMapper(palette=HEATMAP_COLORS, low=0, high=UNWEIGHTED_NUMBER)
+    source = ColumnDataSource(df)
+
+    p = figure(x_range=metrics, y_range=tools,
+               x_axis_location="above", plot_width=800, plot_height=len(tools) * DEFAULT_TOOL_HEIGHT,
+               tools="hover,save,box_zoom,reset,wheel_zoom", toolbar_location='below')
+
+    p = _set_default_figure_properties(p, "Metrics", "Tools")
+    p.xaxis.major_label_orientation = pi / 3
+
+    p.rect(x="Metrics", y="Tool",
+           width=1,
+           height=1,
+           source=source,
+           alpha=0.8,
+           fill_color={'field': WEIGHTING_COLUMN, 'transform': mapper},
+           line_color="black")
+
+    glyph = Text(x="Metrics", y="Tool", text_align="center", text_baseline="middle", text="rate", text_color="black")
+    p.add_glyph(source, glyph)
+
+    tickFormatter = FuncTickFormatter(code="""
+    if(tick==1){
+        return tick + " (good)"
+    } else if(tick==0){
+        return tick + " (bad)"
+    } else if(tick==1.1){
+        return "Unweighted"
+    } else {
+        return tick.toLocaleString(
+  undefined, // use a string like 'en-US' to override browser locale
+  { minimumFractionDigits: 2 }
+);
+    }
+    """)
+
+    color_bar = ColorBar(color_mapper=mapper,
+                         major_label_text_font_size="15pt",
+                         ticker=BasicTicker(desired_num_ticks=len(HEATMAP_COLORS)),
+                         scale_alpha=0.8,
+                         bar_line_color="black",
+                         formatter=tickFormatter,
+                         label_standoff=13,
+                         orientation="horizontal",
+                         location=(-250, 0))
+
+    p.add_layout(color_bar, 'above')
+    p.select_one(HoverTool).tooltips = [
+        ('Metric', '@Metrics'),
+        ('Tool', '@Tool'),
+        ('Value', '@rate'),
+    ]
+    return [p]
 
 
 def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
@@ -264,7 +340,7 @@ def create_recall_precision_scatter(df):
     :param df: Dataframe
     :return: bokeh figure
     """
-    p = figure(x_range=[0, 1], y_range=[0 ,1], plot_width=SCATTER_ELEMENT_WIDTH, plot_height=SCATTER_ELEMENT_HEIGHT)
+    p = figure(x_range=[0, 1], y_range=[0, 1], plot_width=SCATTER_ELEMENT_WIDTH, plot_height=SCATTER_ELEMENT_HEIGHT)
 
     for i, (idx, row) in zip(np.arange(len(df.index)), df.iterrows()):
         errorbar(p, [row["avg_precision"]], [row["avg_recall"]], xerr=[row["sem_precision"]],
@@ -284,7 +360,8 @@ def create_rand_index_assigned_bps_scatter(df):
     p = figure(plot_width=SCATTER_ELEMENT_WIDTH, plot_height=SCATTER_ELEMENT_HEIGHT)
 
     for i, (idx, row) in zip(np.arange(len(df.index)), df.iterrows()):
-        p.circle(row["a_rand_index_by_bp"], row["percent_assigned_bps"], alpha=0.8, color=get_color(len(df.index))[i], size=10,
+        p.circle(row["a_rand_index_by_bp"], row["percent_assigned_bps"], alpha=0.8, color=get_color(len(df.index))[i],
+                 size=10,
                  legend=idx)
 
     p = _set_default_figure_properties(p, "Average Rand Index by base pair", "Percent of Assigned base pairs")
@@ -335,7 +412,7 @@ def save_html_file(path, elements):
 def build_html_summary_path(precision_recall_paths, names, summary, html_output):
     summary_df = pd.DataFrame.from_csv(summary, sep='\t', header=0)
     summary_df = summary_df.rename(index=str, columns=dict(zip(CONTAMINATION_COMPLETENESS_COLUMNS_FILE,
-                                                  CONTAMINATION_COMPLETENESS_COLUMNS)))
+                                                               CONTAMINATION_COMPLETENESS_COLUMNS)))
     build_html(precision_recall_paths, names, summary_df, html_output, CONTAMINATION_COMPLETENESS_COLUMNS)
 
 
@@ -344,8 +421,9 @@ def build_html(precision_recall_paths, names, summary, html_output,
     element_column = list()
 
     summary.insert(0, "Tool", summary.index)
-    element_column.append(create_title_div("main", "AMBER: Assessment of Metagenome BinnERs", " produced on {0} ".format(
-        datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))))
+    element_column.append(
+        create_title_div("main", "AMBER: Assessment of Metagenome BinnERs", " produced on {0} ".format(
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))))
     element_column.append(create_subtitle_div("contents", "Contents"))
 
     element_column.append(create_title_a(ID_SUMMARY, "1", "Summary"))
@@ -360,22 +438,24 @@ def build_html(precision_recall_paths, names, summary, html_output,
         return "<li><strong>{0}: </strong>{1}</li>".format(k, v)
 
     html_listing = list(map(lambda k: create_entry(k, abbreviations[k]),
-                            list(filter(lambda k: k not in CONTAMINATION_COMPLETENESS_COLUMNS_FILE, abbreviations.keys()))))
+                            list(filter(lambda k: k not in CONTAMINATION_COMPLETENESS_COLUMNS_FILE,
+                                        abbreviations.keys()))))
 
     element_column.append(
         create_description("Table that sums up multiple metrics <br>"
-            "Table columns: <ul>{0}</ul>".format(" ".join(html_listing))))
+                           "<ul>{0}</ul>".format(" ".join(html_listing))))
     df_without_contam_complete = summary.drop(contamination_completeness_cols, axis=1)
-    element_column.append(create_summary_table(df_without_contam_complete))
+
+    element_column.append(create_summary_heatmap(df_without_contam_complete))
 
     completion_contamination_col = map(lambda k: create_entry(DESCRIPTION_COMPLETENESS_COL[k][COL_TITLE],
                                                               DESCRIPTION_COMPLETENESS_COL[k][COL_DESCRIPTION]),
-                                                              DESCRIPTION_COMPLETENESS_COL.keys())
+                                       DESCRIPTION_COMPLETENESS_COL.keys())
 
     completion_contamination_row = map(lambda k:
                                        create_entry(DESCRIPTION_CONTAMINATION_ROW[k][COL_TITLE],
                                                     DESCRIPTION_CONTAMINATION_ROW[k][COL_DESCRIPTION]),
-                                                    DESCRIPTION_CONTAMINATION_ROW.keys())
+                                       DESCRIPTION_CONTAMINATION_ROW.keys())
 
     element_column.append(
         create_description("Contamination vs. Completeness matrix with multiple thresholds: <br>"
@@ -408,6 +488,7 @@ def main():
     parser.add_argument('-s', '--summary', help='Summary of all metrics', required=True)
     args = parser.parse_args()
     build_html_summary_path(args.precision_recall_files, args.names, args.summary, args.output_file)
+
 
 if __name__ == "__main__":
     main()
