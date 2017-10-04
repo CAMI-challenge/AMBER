@@ -3,6 +3,9 @@
 # Introduction
 AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the comparative assessment of genome reconstructions from metagenome benchmark datasets. It provides performance metrics, results rankings, and comparative visualizations for assessing multiple programs or parameter effects. The provided metrics were used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic Interpretation](http://www.cami-challenge.org/).
 
+AMBER produces among other files interactive plots. 
+Example: **https://cami-challenge.github.io/AMBER/**
+
 # Requirements
 
 * python &ge; 3.5
@@ -196,3 +199,9 @@ By running tox you can use all libraries that amber depends on by running
 ~~~BASH
 source  <project_directory>/.tox/py35/bin/activate
 ~~~
+
+### Update GitHub page
+
+In order to update **https://cami-challenge.github.io/AMBER**
+modify the file index.html.
+
