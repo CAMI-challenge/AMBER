@@ -40,7 +40,7 @@ A_HEIGHT = 15
 
 COLORS_20 = palettes.d3['Category20'][20]
 COLORS_10 = palettes.d3['Category10'][10]
-HEATMAP_COLORS = palettes.RdYlBu[10] + ['white']
+HEATMAP_COLORS = list(reversed(palettes.RdYlBu[10])) + ['white']
 
 COMPL_0_5 = '_05compl'
 COMPL_0_9 = '_09compl'
@@ -250,7 +250,7 @@ def create_summary_heatmap(df, std_dev_sem_columns):
 
     df.columns.name = 'Metrics'
     df = pd.DataFrame(df.stack(), columns=['rate']).reset_index()
-    df['rate'] = df['rate'].map('{:,.6f}'.format)
+    df['rate'] = df['rate'].map('{:,.5f}'.format)
     df[WEIGHTING_COLUMN] = df['rate']
 
     for column in std_dev_sem_columns:
@@ -260,7 +260,7 @@ def create_summary_heatmap(df, std_dev_sem_columns):
     source = ColumnDataSource(df)
 
     p = figure(x_range=metrics, y_range=tools,
-               x_axis_location="above", plot_width=800, plot_height=len(tools) * DEFAULT_TOOL_HEIGHT + COLORBARL_HEIGHT,
+               x_axis_location="above", plot_height=len(tools) * DEFAULT_TOOL_HEIGHT + COLORBARL_HEIGHT,
                tools="hover,save,box_zoom,reset,wheel_zoom", toolbar_location='below')
 
     p = _set_default_figure_properties(p, "Metrics", "Tools")
@@ -274,7 +274,9 @@ def create_summary_heatmap(df, std_dev_sem_columns):
            fill_color={'field': WEIGHTING_COLUMN, 'transform': mapper},
            line_color="black")
 
-    glyph = Text(x="Metrics", y="Tool", text_align="center", text_baseline="middle", text="rate", text_color="black")
+    glyph = Text(x="Metrics", y="Tool", text_align="center",
+                 text_font_size="10pt",
+                 text_baseline="middle", text="rate", text_color="black")
     p.add_glyph(source, glyph)
 
     tickFormatter = FuncTickFormatter(code="""
@@ -293,7 +295,7 @@ def create_summary_heatmap(df, std_dev_sem_columns):
     """)
 
     color_bar = ColorBar(color_mapper=mapper,
-                         major_label_text_font_size="15pt",
+                         major_label_text_font_size="12pt",
                          ticker=BasicTicker(desired_num_ticks=len(HEATMAP_COLORS)),
                          scale_alpha=ALPHA_COLOR,
                          major_label_text_align="right",
