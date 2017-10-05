@@ -260,7 +260,7 @@ def create_summary_heatmap(df, std_dev_sem_columns):
     source = ColumnDataSource(df)
 
     p = figure(x_range=metrics, y_range=tools,
-               x_axis_location="above", plot_width=800, plot_height=len(tools) * DEFAULT_TOOL_HEIGHT + COLORBARL_HEIGHT,
+               x_axis_location="above", plot_height=len(tools) * DEFAULT_TOOL_HEIGHT + COLORBARL_HEIGHT,
                tools="hover,save,box_zoom,reset,wheel_zoom", toolbar_location='below')
 
     p = _set_default_figure_properties(p, "Metrics", "Tools")
