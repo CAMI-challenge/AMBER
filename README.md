@@ -8,12 +8,7 @@ Example: **https://cami-challenge.github.io/AMBER/**
 
 # Requirements
 
-* python &ge; 3.5
-* numpy &ge; 1.13.0
-* biopython &ge; 1.69.0
-* matplotlib &ge; 2.0.2
-* bokeh &ge; 0.12.6
-* pandas &ge; 0.20.3
+See [default.txt](requirements/default.txt) for all dependencies.
 
 Optional:
 
