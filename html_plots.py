@@ -232,7 +232,7 @@ def create_contamination_completeness_table(df):
 
 
 def create_summary_heatmap(df, std_dev_sem_columns):
-    df = df.set_index('Tool')
+    df = df.set_index('Tool').iloc[::-1]
     tools = list(df.index)
     metrics = list(reversed(list(df.columns)))
 
@@ -245,7 +245,7 @@ def create_summary_heatmap(df, std_dev_sem_columns):
     UNWEIGHTED_NUMBER = 1.1
     WEIGHTING_COLUMN = 'rate_extended'
     DEFAULT_TOOL_HEIGHT = 9
-    COLORBARL_HEIGHT = 150
+    COLORBAR_HEIGHT = 150
     ALPHA_COLOR=0.85
 
     df.columns.name = 'Metrics'
@@ -260,7 +260,7 @@ def create_summary_heatmap(df, std_dev_sem_columns):
     source = ColumnDataSource(df)
 
     p = figure(x_range=metrics, y_range=tools,
-               x_axis_location="above", plot_height=len(tools) * DEFAULT_TOOL_HEIGHT + COLORBARL_HEIGHT,
+               x_axis_location="above", plot_height=len(tools) * DEFAULT_TOOL_HEIGHT + COLORBAR_HEIGHT,
                tools="hover,save,box_zoom,reset,wheel_zoom", toolbar_location='below')
 
     p = _set_default_figure_properties(p, "Metrics", "Tools")
