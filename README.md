@@ -33,7 +33,7 @@ sudo apt install python3-pip
 and running then 
 
 ~~~BASH
-pip3 install -e git://github.com/CAMI-challenge/AMBER.git@tag --user
+pip3 install  https://github.com/CAMI-challenge/AMBER/archive/tag.tar.gz 
 ~~~
 
 where **tag** is the release number you can find on the [releases page](https://github.com/CAMI-challenge/AMBER/releases)
@@ -218,11 +218,11 @@ If the dev branch is merged into the master branch
 The tool can now be installed by using the master branch 
 
 ~~~BASH
-pip install https://github.com/CAMI-challenge/AMBER/archive/master.zip
+pip3 install https://github.com/CAMI-challenge/AMBER/archive/master.zip
 ~~~
 
 or a specific tag
 
 ~~~BASH
-pip install -e git://github.com/CAMI-challenge/AMBER.git@tag
+pip3 install https://github.com/CAMI-challenge/AMBER/archive/tag.tar.gz 
 ~~~
