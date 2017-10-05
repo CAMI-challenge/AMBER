@@ -26,7 +26,7 @@ import datetime
 SCATTER_ELEMENT_WIDTH = 1500
 SCATTER_ELEMENT_HEIGHT = 500
 
-TABLE_ELEMENT_WIDTH = 1500
+TABLE_ELEMENT_WIDTH = 750
 TABLE_ELEMENT_HEIGHT = 300
 
 DIV_WIDTH = 1200
@@ -219,7 +219,7 @@ def create_contamination_completeness_table(df):
 
     def create_table_column(field):
         if field == "Tool":
-            return widgets.TableColumn(title=field, field=field)
+            return widgets.TableColumn(title=field, field=field, width=600)
         else:
             return widgets.TableColumn(title=DESCRIPTION_COMPLETENESS_COL[field][COL_TITLE], field=field)
 
@@ -228,11 +228,11 @@ def create_contamination_completeness_table(df):
                    width=TABLE_ELEMENT_WIDTH,
                    reorderable=True,
                    selectable=True)
-    return [widgetbox(dt, sizing_mode="scale_both")]
+    return [widgetbox(dt)]
 
 
 def create_summary_heatmap(df, std_dev_sem_columns):
-    df = df.set_index('Tool')
+    df = df.set_index('Tool').iloc[::-1]
     tools = list(df.index)
     metrics = list(reversed(list(df.columns)))
 
@@ -244,8 +244,8 @@ def create_summary_heatmap(df, std_dev_sem_columns):
 
     UNWEIGHTED_NUMBER = 1.1
     WEIGHTING_COLUMN = 'rate_extended'
-    DEFAULT_TOOL_HEIGHT = 35
-    COLORBARL_HEIGHT = 150
+    DEFAULT_TOOL_HEIGHT = 10
+    COLORBAR_HEIGHT = 150
     ALPHA_COLOR=0.85
 
     df.columns.name = 'Metrics'
@@ -260,7 +260,7 @@ def create_summary_heatmap(df, std_dev_sem_columns):
     source = ColumnDataSource(df)
 
     p = figure(x_range=metrics, y_range=tools,
-               x_axis_location="above", plot_height=len(tools) * DEFAULT_TOOL_HEIGHT + COLORBARL_HEIGHT,
+               x_axis_location="above", plot_height=len(tools) * DEFAULT_TOOL_HEIGHT + COLORBAR_HEIGHT,
                tools="hover,save,box_zoom,reset,wheel_zoom", toolbar_location='below')
 
     p = _set_default_figure_properties(p, "Metrics", "Tools")
