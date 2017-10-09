@@ -70,7 +70,7 @@ def create_pdf(input_dir, output_dir, plots):
         texfile.write('{}{}'.format(r'\begin{document}', '\n'))
         texfile.write('{}{}'.format(r'\begin{figure}[!ht]', '\n'))
         texfile.write('{}{}'.format(r'\centering', '\n'))
-        texfile.write('{}{}'.format(r'\includegraphics[scale=0.75]{ignore/legend}\\', '\n'))
+        texfile.write('{}{}'.format(r'\includegraphics[scale=0.75]{' + input_dir + '/legend}\\', '\n'))
         texfile.write('{}{}'.format(r'\ffigbox', '\n'))
         texfile.write('{}{}'.format(r'{', '\n'))
         i = 1
