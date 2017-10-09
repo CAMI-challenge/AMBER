@@ -1,4 +1,4 @@
-FROM bioboxes/biobox-minimal-base
+#!/usr/bin/env bash
 
 apt update
 apt-get install -y wget libssl-dev openssl build-essential 

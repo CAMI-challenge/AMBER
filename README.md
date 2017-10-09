@@ -8,12 +8,7 @@ Example: **https://cami-challenge.github.io/AMBER/**
 
 # Requirements
 
-* python &ge; 3.5
-* numpy &ge; 1.13.0
-* biopython &ge; 1.69.0
-* matplotlib &ge; 2.0.2
-* bokeh &ge; 0.12.6
-* pandas &ge; 0.20.3
+See [default.txt](requirements/default.txt) for all dependencies.
 
 Optional:
 
@@ -22,22 +17,22 @@ Optional:
 
 ## Installation
 
-Download AMBER:
-~~~BASH
-wget https://github.com/CAMI-challenge/AMBER/archive/master.zip -O amber.zip
-~~~
-Or clone it using git:
-~~~BASH
-git clone https://github.com/cami-challenge/amber
-~~~
+Install AMBER by installing pip first 
 
-Install dependencies as follows (tested on Linux Ubuntu 16.04):
+For Example on Ubuntu 16.04:
 
 ~~~BASH
-sudo apt-get install python3-pip
-cd AMBER/
-pip3 install -r requirements/default.txt --user
+sudo apt install python3-pip
 ~~~
+
+and running then 
+
+~~~BASH
+pip3 install  https://github.com/CAMI-challenge/AMBER/archive/tag.tar.gz 
+~~~
+
+where **tag** is the release number you can find on the [releases page](https://github.com/CAMI-challenge/AMBER/releases)
+
 You can also run [AMBER as a Biobox](#run-amber-as-a-biobox). 
 
 # User Guide
@@ -90,7 +85,7 @@ Additional parameters may be specified - see below.
 
 ### evaluate.py
 ~~~BASH
-usage: evaluate.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
+usage: amber.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
                    [-p FILTER] [-r REMOVE_GENOMES] [-k KEYWORD] -o OUTPUT_DIR
                    [-m]
                    bin_files [bin_files ...]
@@ -124,7 +119,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./evaluate.py -g test/gsa_mapping.binning \
+./amber.py -g test/gsa_mapping.binning \
 -l "MaxBin 2.0, CONCOCT, MetaBAT" \
 -p 1 \
 -r test/unique_common.tsv \
@@ -192,7 +187,7 @@ If you want to run tests, just type _tox_ in the project's root directory:
 
 ~~~BASH
 tox
-~~~  
+~~~
 
 By running tox you can use all libraries that amber depends on by running 
 
@@ -205,3 +200,24 @@ source  <project_directory>/.tox/py35/bin/activate
 In order to update **https://cami-challenge.github.io/AMBER**
 modify the file index.html.
 
+### Make a Release
+
+If the dev branch is merged into the master branch
+
+1. Update the [version.py](version.py) according to (semantic versioning)[semver.org] on the dev branch.
+
+2. Merge the dev branch into the master branch.
+
+3. Make a release on GitHub with the same version number provided in [version.py](version.py) 
+
+The tool can now be installed by using the master branch 
+
+~~~BASH
+pip3 install https://github.com/CAMI-challenge/AMBER/archive/master.zip
+~~~
+
+or a specific tag
+
+~~~BASH
+pip3 install https://github.com/CAMI-challenge/AMBER/archive/tag.tar.gz 
+~~~
