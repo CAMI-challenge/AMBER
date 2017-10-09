@@ -3,8 +3,7 @@
 # Introduction
 AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the comparative assessment of genome reconstructions from metagenome benchmark datasets. It provides performance metrics, results rankings, and comparative visualizations for assessing multiple programs or parameter effects. The provided metrics were used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic Interpretation](http://www.cami-challenge.org/).
 
-AMBER produces among other files interactive plots. 
-Example: **https://cami-challenge.github.io/AMBER/**
+AMBER produces print-ready and interactive plots. See a produced example page at **https://cami-challenge.github.io/AMBER/**
 
 # Requirements
 
@@ -17,28 +16,26 @@ Optional:
 
 ## Installation
 
-Install AMBER by installing pip first 
-
-For Example on Ubuntu 16.04:
+Install pip first (tested on Linux Ubuntu 16.04):
 
 ~~~BASH
 sudo apt install python3-pip
 ~~~
 
-and running then 
+Then run:
 
 ~~~BASH
-pip3 install  https://github.com/CAMI-challenge/AMBER/archive/tag.tar.gz 
+pip3 install https://github.com/CAMI-challenge/AMBER/archive/tag.tar.gz 
 ~~~
 
-where **tag** is the release number you can find on the [releases page](https://github.com/CAMI-challenge/AMBER/releases)
+where **tag** is the release number you can find on the [releases page](https://github.com/CAMI-challenge/AMBER/releases).
 
 You can also run [AMBER as a Biobox](#run-amber-as-a-biobox). 
 
 # User Guide
 
 ## Input
-As input, AMBER's main tool [_evaluate.py_](#evaluatepy) uses three files:
+As input, AMBER's main tool [_amber.py_](#evaluatepy) uses three files:
 1. A gold standard mapping of contigs or read IDs to genomes in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format). Columns are tab separated. Example:
 ~~~BASH
 @Version:0.9.1
@@ -86,9 +83,9 @@ Additional parameters may be specified - see below.
 ### evaluate.py
 ~~~BASH
 usage: amber.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
-                   [-p FILTER] [-r REMOVE_GENOMES] [-k KEYWORD] -o OUTPUT_DIR
-                   [-m]
-                   bin_files [bin_files ...]
+                [-p FILTER] [-r REMOVE_GENOMES] [-k KEYWORD] -o OUTPUT_DIR
+                [-m]
+                bin_files [bin_files ...]
 
 Compute all metrics and figures for one or more binning files; output summary
 to screen and results per binning file to chosen directory
@@ -137,8 +134,10 @@ CONCOCT    0.837         0.266             0.052         0.517      0.476       
 MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724     0.825  0.976            0.965             0.674              0.860               0.917                0.664    17                16                12                17                 16                 12
 ~~~
 Directory _output_dir_ will contain:
+* **summary.tsv**: contains the same table as the output above with tab-separated values
 * **summary.html**: HTML page with results summary and interactive graphs
 * **avg_precision_recall.png + .pdf**: figure of average precision vs. average recall
+* **precision_recall_per_bp.png + .pdf**: figure of precision vs. recall per base pair
 * **ari_vs_assigned_bps.png + .pdf**: figure of adjusted Rand index weighed by number of base pairs vs. percentage of assigned base pairs
 * **rankings.txt**: tools sorted by average precision, average recall, and sum of average precision and average recall
 
@@ -155,13 +154,13 @@ In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and
 ## Run AMBER as a Biobox
 
 
-Run the amber docker image by specifying the executing the following command
+Run the AMBER docker image with the command:
 
 ~~~BASH
 docker run -v $(pwd)/input/gold_standard.fasta:/bbx/input/gold_standard.fasta -v $(pwd)/input/gsa_mapping.binning:/bbx/input/gsa_mapping.binning  -v  $(pwd)/input/test_query.binning:/bbx/input/test_query.binning  -v  $(pwd)/output:/bbx/output -v $(pwd)/input/biobox.yaml:/bbx/input/biobox.yaml cami/amber:latest default
 ~~~
 
-where biobox.yaml contains the following values:
+where biobox.yaml contains the following:
 
 ~~~YAML
 version: 0.11.0
@@ -189,7 +188,7 @@ If you want to run tests, just type _tox_ in the project's root directory:
 tox
 ~~~
 
-By running tox you can use all libraries that amber depends on by running 
+You can use all libraries that AMBER depends on by activating tox's virtual environment with the command: 
 
 ~~~BASH
 source  <project_directory>/.tox/py35/bin/activate
@@ -197,20 +196,19 @@ source  <project_directory>/.tox/py35/bin/activate
 
 ### Update GitHub page
 
-In order to update **https://cami-challenge.github.io/AMBER**
-modify the file index.html.
+In order to update **https://cami-challenge.github.io/AMBER**, modify file index.html.
 
 ### Make a Release
 
-If the dev branch is merged into the master branch
+If the dev branch is merged into the master branch:
 
-1. Update the [version.py](version.py) according to (semantic versioning)[semver.org] on the dev branch.
+1. Update [version.py](version.py) according to [semantic versioning](semver.org) on the dev branch.
 
 2. Merge the dev branch into the master branch.
 
-3. Make a release on GitHub with the same version number provided in [version.py](version.py) 
+3. Make a release on GitHub with the same version number provided in [version.py](version.py) .
 
-The tool can now be installed by using the master branch 
+The tool can now be installed by using the master branch
 
 ~~~BASH
 pip3 install https://github.com/CAMI-challenge/AMBER/archive/master.zip

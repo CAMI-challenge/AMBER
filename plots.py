@@ -105,7 +105,7 @@ def plot_weighed_precision_recall(summary_per_query, output_dir):
     plot_summary(summary_per_query,
                  output_dir,
                  'w',
-                 'weighed_precision_recall',
+                 'precision_recall_per_bp',
                  'Precision per base pair', # 'Precision per base pair $\overline{p}_{bp}$',
                  'Recall per base pair') # 'Recall per base pair $\overline{r}_{bp}$')
 

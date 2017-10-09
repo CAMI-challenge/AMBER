@@ -128,18 +128,19 @@ DESCRIPTION_CONTAMINATION_ROW = {
 }
 
 ID_SUMMARY = "summary"
+ID_CONTAMINATION_COMPLETENESS = "contamination_completeness"
 ID_PRECISION_VS_RECALL_TOOLS = "precision_vs_recall_tools"
 ID_RAND_INDEX_ASSIGNED_BPS = "rand_index_assigned_bps"
 ID_ALL_GENOMES = "all_genomes"
 ID_SINGLE_TOOL = "single_tool"
 
 DESCRIPTION_PRECISION_RECALL_TOOLS = """
-Scatter plot showing average precision vs average recall including standard error
+Scatter plot showing the average precision per bin vs. the average recall per genome including the standard error
 of the mean.
 """
 
 DESCRIPTION_PRECISION_RECALL_GENOME = """
-Scatter plot showing precision vs recall per genome per tool.
+Scatter plot showing precision vs. recall per genome per tool.
 """
 
 DESCRIPTION_PRECISION_RECALL_TOOL = """
@@ -361,7 +362,7 @@ def create_recall_precision_scatter(df):
                  yerr=[row["sem_recall"]], color=get_color(len(df.index))[i], point_kwargs={"legend": idx, "size": 10},
                  error_kwargs={"legend": idx})
 
-    p = _set_default_figure_properties(p, "Precision", "Recall")
+    p = _set_default_figure_properties(p, "Average precision per bin", "Average recall per genome")
     return [p]
 
 
@@ -378,7 +379,7 @@ def create_rand_index_assigned_bps_scatter(df):
                  size=10,
                  legend=idx)
 
-    p = _set_default_figure_properties(p, "Average Rand Index by base pair", "Percent of Assigned base pairs")
+    p = _set_default_figure_properties(p, "Average Rand Index by base pair", "Percentage of assigned base pairs")
     return [p]
 
 
@@ -441,10 +442,11 @@ def build_html(precision_recall_paths, names, summary, html_output,
     element_column.append(create_subtitle_div("contents", "Contents"))
 
     element_column.append(create_title_a(ID_SUMMARY, "1", "Summary"))
-    element_column.append(create_title_a(ID_PRECISION_VS_RECALL_TOOLS, "2", "Precision vs. Recall all Tools"))
+    element_column.append(create_title_a(ID_CONTAMINATION_COMPLETENESS, "2", "Contamination and completeness"))
+    element_column.append(create_title_a(ID_PRECISION_VS_RECALL_TOOLS, "3", "Average precision per bin vs. average recall per genome"))
     element_column.append(
-        create_title_a(ID_RAND_INDEX_ASSIGNED_BPS, "3", "Adjusted Rand index vs. Percentage of Assigned base pairs"))
-    element_column.append(create_title_a(ID_ALL_GENOMES, "4", "Precision vs. Recall all Genomes"))
+        create_title_a(ID_RAND_INDEX_ASSIGNED_BPS, "4", "Adjusted Rand Index vs. percentage of assigned base pairs"))
+    element_column.append(create_title_a(ID_ALL_GENOMES, "5", "Precision vs. recall of all genome bins"))
 
     element_column.append(create_subtitle_div(ID_SUMMARY, "Summary"))
 
@@ -456,8 +458,7 @@ def build_html(precision_recall_paths, names, summary, html_output,
                                         abbreviations.keys()))))
 
     element_column.append(
-        create_description("Table that sums up multiple metrics <br>"
-                           "<ul>{0}</ul>".format(" ".join(html_listing))))
+        create_description("<ul>{0}</ul>".format(" ".join(html_listing))))
     df_without_contam_complete = summary.drop(contamination_completeness_cols, axis=1)
 
     element_column.append(create_summary_heatmap(df_without_contam_complete, std_dev_sem_columns))
@@ -471,23 +472,24 @@ def build_html(precision_recall_paths, names, summary, html_output,
                                                     DESCRIPTION_CONTAMINATION_ROW[k][COL_DESCRIPTION]),
                                        DESCRIPTION_CONTAMINATION_ROW.keys())
 
+    element_column.append(create_subtitle_div(ID_CONTAMINATION_COMPLETENESS, "Contamination and completeness"))
+
     element_column.append(
-        create_description("Contamination vs. Completeness matrix with multiple thresholds: <br>"
-                           "Table columns: <ul>{0}</ul> "
+        create_description("Table columns: <ul>{0}</ul> "
                            "Table rows: <ul>{1}</ul>".format(" ".join(completion_contamination_col),
                                                              " ".join(completion_contamination_row))))
     element_column.append(create_contamination_completeness_table(summary[contamination_completeness_cols]))
 
-    element_column.append(create_subtitle_div(ID_PRECISION_VS_RECALL_TOOLS, "Average Precision vs. Average Recall"))
+    element_column.append(create_subtitle_div(ID_PRECISION_VS_RECALL_TOOLS, "Average precision per bin vs. average recall per genome"))
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_TOOLS))
     element_column.append(create_recall_precision_scatter(summary))
 
     element_column.append(
-        create_subtitle_div(ID_RAND_INDEX_ASSIGNED_BPS, "Adjusted Rand Index vs. Percentage of Assigned base pairs"))
+        create_subtitle_div(ID_RAND_INDEX_ASSIGNED_BPS, "Adjusted Rand Index vs. percentage of assigned base pairs"))
     element_column.append(create_description(DESCRIPTION_ADJUSTED_RAND_INDEX_TOOLS))
     element_column.append(create_rand_index_assigned_bps_scatter(summary))
 
-    element_column.append(create_subtitle_div(ID_ALL_GENOMES, "Precision vs. Recall per Genome"))
+    element_column.append(create_subtitle_div(ID_ALL_GENOMES, "Precision vs. recall of all genome bins"))
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_GENOME))
     element_column.append(create_precision_recall_all_genomes_scatter(precision_recall_paths, names))
 
@@ -495,7 +497,7 @@ def build_html(precision_recall_paths, names, summary, html_output,
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Create html-based plots.")
+    parser = argparse.ArgumentParser(description="Create HTML-based plots.")
     parser.add_argument('-o', '--output_file', help="Directory to write the results to", required=True)
     parser.add_argument('-p', '--precision_recall_files', nargs='+', help='<Required> Set flag', required=True)
     parser.add_argument('-n', '--names', nargs='+', help='<Required> Set flag', required=True)
