@@ -3,7 +3,7 @@
 # Introduction
 AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the comparative assessment of genome reconstructions from metagenome benchmark datasets. It provides performance metrics, results rankings, and comparative visualizations for assessing multiple programs or parameter effects. The provided metrics were used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic Interpretation](http://www.cami-challenge.org/).
 
-AMBER produces print-ready and interactive plots. See a produced example page at **https://cami-challenge.github.io/AMBER/**
+AMBER produces print-ready and interactive plots. See a produced example page at *https://cami-challenge.github.io/AMBER/*
 
 # Requirements
 
