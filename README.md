@@ -196,7 +196,7 @@ source  <project_directory>/.tox/py35/bin/activate
 
 ### Update GitHub page
 
-In order to update **https://cami-challenge.github.io/AMBER**, modify file index.html.
+In order to update *https://cami-challenge.github.io/AMBER*, modify file index.html.
 
 ### Make a Release
 
