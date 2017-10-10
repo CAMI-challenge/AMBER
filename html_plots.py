@@ -379,7 +379,7 @@ def create_rand_index_assigned_bps_scatter(df):
                  size=10,
                  legend=idx)
 
-    p = _set_default_figure_properties(p, "Average Rand Index by base pair", "Percentage of assigned base pairs")
+    p = _set_default_figure_properties(p, "Adjusted Rand Index by base pair", "Percentage of assigned base pairs")
     return [p]
 
 
