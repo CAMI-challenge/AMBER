@@ -369,6 +369,7 @@ def create_scatter(df, x, y, x_title, y_title):
                  legend=idx)
 
     p = _set_default_figure_properties(p, x_title, y_title)
+
     return [p]
 
 
