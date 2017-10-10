@@ -483,7 +483,7 @@ def build_html(precision_recall_paths, names, summary, html_output,
         create_subtitle_div(ID_RAND_INDEX_ASSIGNED_BPS, "Adjusted Rand Index vs. percentage of assigned base pairs"))
     element_column.append(create_description(DESCRIPTION_ADJUSTED_RAND_INDEX_TOOLS))
     element_column.append(create_scatter(summary, "a_rand_index_by_bp", "percent_assigned_bps",
-                                         "Average Rand Index by base pair", "Percentage of assigned base pairs"))
+                                         "Adjusted Rand Index by base pair", "Percentage of assigned base pairs"))
 
     element_column.append(create_subtitle_div(ID_ALL_GENOMES, "Precision vs. recall of all genome bins"))
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_GENOME))
