@@ -171,7 +171,7 @@ def _set_default_figure_properties(figure, x_label, y_label):
     figure.legend.click_policy = "hide"
     figure.legend.location = "top_right"
     figure.axis.axis_label_text_font_size = "15pt"
-    figure.axis.major_label_text_font_size = "15pt"
+    figure.axis.major_label_text_font_size = "13pt"
     figure.xaxis.axis_label = x_label
     figure.yaxis.axis_label = y_label
     figure.xaxis.major_label_orientation = "vertical"
@@ -350,10 +350,15 @@ def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
             y_err_y.append((py - err, py + err))
         fig.multi_line(y_err_x, y_err_y, color=color, **error_kwargs)
 
+
 def create_scatter(df, x, y, x_title, y_title):
     """
-    Creates average rand index vs percent of assigned base pairs plot with error bars for all tools.
+    Creates scatter plot.
     :param df: Dataframe
+    :param x: column name for x variable
+    :param y: column name for y variable
+    :param x_title: Title for x axis
+    :param y_title: Title for y axis
     :return: bokeh figure
     """
     p = figure(plot_width=SCATTER_ELEMENT_WIDTH, plot_height=SCATTER_ELEMENT_HEIGHT)
@@ -365,6 +370,7 @@ def create_scatter(df, x, y, x_title, y_title):
 
     p = _set_default_figure_properties(p, x_title, y_title)
     return [p]
+
 
 def create_precision_recall_all_genomes_scatter(paths, names):
     """
