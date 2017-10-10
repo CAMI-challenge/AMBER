@@ -19,6 +19,7 @@ from bokeh.models import (ColorBar,
                           DataTable,
                           widgets)
 import numpy as np
+from version import __version__
 import argparse
 from utils.labels import abbreviations
 import datetime
@@ -419,8 +420,8 @@ def build_html(precision_recall_paths, names, summary, html_output,
 
     summary.insert(0, "Tool", summary.index)
     element_column.append(
-        create_title_div("main", "AMBER: Assessment of Metagenome BinnERs", " produced on {0} ".format(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))))
+        create_title_div("main", "AMBER: Assessment of Metagenome BinnERs", " produced on {0} with AMBER version {1} ".format(
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), __version__)))
     element_column.append(create_subtitle_div("contents", "Contents"))
 
     element_column.append(create_title_a(ID_SUMMARY, "1", "Summary"))
