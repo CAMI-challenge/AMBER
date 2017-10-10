@@ -19,6 +19,7 @@ from bokeh.models import (ColorBar,
                           DataTable,
                           widgets)
 import numpy as np
+from version import __version__
 import argparse
 from utils.labels import abbreviations
 import datetime
@@ -130,6 +131,7 @@ DESCRIPTION_CONTAMINATION_ROW = {
 ID_SUMMARY = "summary"
 ID_CONTAMINATION_COMPLETENESS = "contamination_completeness"
 ID_PRECISION_VS_RECALL_TOOLS = "precision_vs_recall_tools"
+ID_PRECISION_VS_RECALL_TOOLS_BASE_PAIR = "precision_vs_recall_tools_base_pair"
 ID_RAND_INDEX_ASSIGNED_BPS = "rand_index_assigned_bps"
 ID_ALL_GENOMES = "all_genomes"
 ID_SINGLE_TOOL = "single_tool"
@@ -139,12 +141,12 @@ Scatter plot showing the average precision per bin vs. the average recall per ge
 of the mean.
 """
 
-DESCRIPTION_PRECISION_RECALL_GENOME = """
-Scatter plot showing precision vs. recall per genome per tool.
+DESCRIPTION_PRECISION_RECALL_TOOLS_BASE_PAIR = """
+Scatter plot showing the average precision vs. the average recall per base pair.
 """
 
-DESCRIPTION_PRECISION_RECALL_TOOL = """
-Precision vs. recall plots for every tool. The first plot is sorted by precision and the second one by recall.
+DESCRIPTION_PRECISION_RECALL_GENOME = """
+Scatter plot showing precision vs. recall per genome per tool.
 """
 
 DESCRIPTION_ADJUSTED_RAND_INDEX_TOOLS = """
@@ -169,7 +171,7 @@ def _set_default_figure_properties(figure, x_label, y_label):
     figure.legend.click_policy = "hide"
     figure.legend.location = "top_right"
     figure.axis.axis_label_text_font_size = "15pt"
-    figure.axis.major_label_text_font_size = "15pt"
+    figure.axis.major_label_text_font_size = "13pt"
     figure.xaxis.axis_label = x_label
     figure.yaxis.axis_label = y_label
     figure.xaxis.major_label_orientation = "vertical"
@@ -349,37 +351,25 @@ def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
         fig.multi_line(y_err_x, y_err_y, color=color, **error_kwargs)
 
 
-def create_recall_precision_scatter(df):
+def create_scatter(df, x, y, x_title, y_title):
     """
-    Creates average precision vs average recall plot with error bars for all tools.
+    Creates scatter plot.
     :param df: Dataframe
-    :return: bokeh figure
-    """
-    p = figure(x_range=[0, 1], y_range=[0, 1], plot_width=SCATTER_ELEMENT_WIDTH, plot_height=SCATTER_ELEMENT_HEIGHT)
-
-    for i, (idx, row) in zip(np.arange(len(df.index)), df.iterrows()):
-        errorbar(p, [row["avg_precision"]], [row["avg_recall"]], xerr=[row["sem_precision"]],
-                 yerr=[row["sem_recall"]], color=get_color(len(df.index))[i], point_kwargs={"legend": idx, "size": 10},
-                 error_kwargs={"legend": idx})
-
-    p = _set_default_figure_properties(p, "Average precision per bin", "Average recall per genome")
-    return [p]
-
-
-def create_rand_index_assigned_bps_scatter(df):
-    """
-    Creates average rand index vs percent of assigned base pairs plot with error bars for all tools.
-    :param df: Dataframe
+    :param x: column name for x variable
+    :param y: column name for y variable
+    :param x_title: Title for x axis
+    :param y_title: Title for y axis
     :return: bokeh figure
     """
     p = figure(plot_width=SCATTER_ELEMENT_WIDTH, plot_height=SCATTER_ELEMENT_HEIGHT)
 
     for i, (idx, row) in zip(np.arange(len(df.index)), df.iterrows()):
-        p.circle(row["a_rand_index_by_bp"], row["percent_assigned_bps"], alpha=0.8, color=get_color(len(df.index))[i],
+        p.circle(row[x], row[y], alpha=0.8, color=get_color(len(df.index))[i],
                  size=10,
                  legend=idx)
 
-    p = _set_default_figure_properties(p, "Adjusted Rand Index by base pair", "Percentage of assigned base pairs")
+    p = _set_default_figure_properties(p, x_title, y_title)
+
     return [p]
 
 
@@ -437,16 +427,17 @@ def build_html(precision_recall_paths, names, summary, html_output,
 
     summary.insert(0, "Tool", summary.index)
     element_column.append(
-        create_title_div("main", "AMBER: Assessment of Metagenome BinnERs", " produced on {0} ".format(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))))
+        create_title_div("main", "AMBER: Assessment of Metagenome BinnERs", " produced on {0} with AMBER version {1} ".format(
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), __version__)))
     element_column.append(create_subtitle_div("contents", "Contents"))
 
     element_column.append(create_title_a(ID_SUMMARY, "1", "Summary"))
     element_column.append(create_title_a(ID_CONTAMINATION_COMPLETENESS, "2", "Contamination and completeness"))
     element_column.append(create_title_a(ID_PRECISION_VS_RECALL_TOOLS, "3", "Average precision per bin vs. average recall per genome"))
+    element_column.append(create_title_a(ID_PRECISION_VS_RECALL_TOOLS_BASE_PAIR, "4", "Average precision vs. average recall per base pair"))
     element_column.append(
-        create_title_a(ID_RAND_INDEX_ASSIGNED_BPS, "4", "Adjusted Rand Index vs. percentage of assigned base pairs"))
-    element_column.append(create_title_a(ID_ALL_GENOMES, "5", "Precision vs. recall of all genome bins"))
+        create_title_a(ID_RAND_INDEX_ASSIGNED_BPS, "5", "Adjusted Rand Index vs. percentage of assigned base pairs"))
+    element_column.append(create_title_a(ID_ALL_GENOMES, "6", "Precision vs. recall of all genome bins"))
 
     element_column.append(create_subtitle_div(ID_SUMMARY, "Summary"))
 
@@ -482,12 +473,17 @@ def build_html(precision_recall_paths, names, summary, html_output,
 
     element_column.append(create_subtitle_div(ID_PRECISION_VS_RECALL_TOOLS, "Average precision per bin vs. average recall per genome"))
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_TOOLS))
-    element_column.append(create_recall_precision_scatter(summary))
+    element_column.append(create_scatter(summary, "avg_precision", "avg_recall", "Average precision per bin", "Average recall per genome"))
+
+    element_column.append(create_subtitle_div(ID_PRECISION_VS_RECALL_TOOLS_BASE_PAIR, "Average precision per base pair vs. average recall per base pair"))
+    element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_TOOLS_BASE_PAIR))
+    element_column.append(create_scatter(summary, "precision", "recall", "Average precision per base pair", "Average recall per base pair"))
 
     element_column.append(
         create_subtitle_div(ID_RAND_INDEX_ASSIGNED_BPS, "Adjusted Rand Index vs. percentage of assigned base pairs"))
     element_column.append(create_description(DESCRIPTION_ADJUSTED_RAND_INDEX_TOOLS))
-    element_column.append(create_rand_index_assigned_bps_scatter(summary))
+    element_column.append(create_scatter(summary, "a_rand_index_by_bp", "percent_assigned_bps",
+                                         "Average Rand Index by base pair", "Percentage of assigned base pairs"))
 
     element_column.append(create_subtitle_div(ID_ALL_GENOMES, "Precision vs. recall of all genome bins"))
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_GENOME))
