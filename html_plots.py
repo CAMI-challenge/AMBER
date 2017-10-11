@@ -245,7 +245,7 @@ def create_summary_heatmap(df, std_dev_sem_columns):
 
     df = df[metrics]
 
-    UNWEIGHTED_NUMBER = 1.1
+    UNWEIGHTED_NUMBER = 1.10001
     WEIGHTING_COLUMN = 'rate_extended'
     DEFAULT_TOOL_HEIGHT = 10
     COLORBAR_HEIGHT = 150
