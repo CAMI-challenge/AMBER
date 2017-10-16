@@ -30,6 +30,13 @@ pip3 install https://github.com/CAMI-challenge/AMBER/archive/tag.tar.gz
 
 where **tag** is the release number you can find on the [releases page](https://github.com/CAMI-challenge/AMBER/releases).
 
+Make sure to add AMBER to your PATH:
+
+~~~BASH
+echo 'PATH=$PATH:${HOME}/.local/bin' >> ~/.bashrc
+source ~/.bashrc
+~~~
+
 You can also run [AMBER as a Biobox](#run-amber-as-a-biobox). 
 
 # User Guide
