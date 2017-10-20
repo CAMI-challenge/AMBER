@@ -48,11 +48,17 @@ def evaluate_all(gold_standard_file,
     gold_standard = load_data.get_genome_mapping(gold_standard_file, fasta_file)
     labels_iterator = iter(labels)
     summary_per_query = []
+    bin_metrics_per_query = []
+    count = 0
     for query_file in query_files:
         tool_id = query_file.split('/')[-1]
         binning_label = next(labels_iterator)
         path = os.path.join(output_dir, tool_id)
         load_data.make_sure_path_exists(path)
+
+        f = open(path + "/label.txt", 'w')
+        f.write("#({}){}".format(count, binning_label))
+        f.close()
 
         query = load_data.open_query(query_file)
 
@@ -100,29 +106,30 @@ def evaluate_all(gold_standard_file,
         # ACCURACY
         acc = accuracy.compute_metrics(query, gold_standard)
 
-        summary_per_query.append((collections.OrderedDict([('binning_label', binning_label),
-                                   ('avg_precision', avg_precision),
-                                   ('std_deviation_precision', std_deviation_precision),
-                                   ('sem_precision', sem_precision),
-                                   ('avg_recall', avg_recall),
-                                   ('std_deviation_recall', std_deviation_recall),
-                                   ('sem_recall', sem_recall),
-                                   ('precision', precision),
-                                   ('recall', recall),
-                                   ('ri_by_bp', ri_by_bp),
-                                   ('ri_by_seq', ri_by_seq),
-                                   ('a_rand_index_by_bp', a_rand_index_by_bp),
-                                   ('a_rand_index_by_seq', a_rand_index_by_seq),
-                                   ('percent_assigned_bps', percent_assigned_bps),
-                                   ('accuracy', acc),
-                                   ('_05compl_01cont', genome_recovery_val[0][0]),
-                                   ('_07compl_01cont', genome_recovery_val[0][1]),
-                                   ('_09compl_01cont', genome_recovery_val[0][2]),
-                                   ('_05compl_005cont', genome_recovery_val[1][0]),
-                                   ('_07compl_005cont', genome_recovery_val[1][1]),
-                                   ('_09compl_005cont', genome_recovery_val[1][2])]),
-                                  bin_metrics))
-    return summary_per_query
+        summary_per_query.append(collections.OrderedDict([('binning_label', binning_label),
+                                                          ('avg_precision', avg_precision),
+                                                          ('std_deviation_precision', std_deviation_precision),
+                                                          ('sem_precision', sem_precision),
+                                                          ('avg_recall', avg_recall),
+                                                          ('std_deviation_recall', std_deviation_recall),
+                                                          ('sem_recall', sem_recall),
+                                                          ('precision', precision),
+                                                          ('recall', recall),
+                                                          ('ri_by_bp', ri_by_bp),
+                                                          ('ri_by_seq', ri_by_seq),
+                                                          ('a_rand_index_by_bp', a_rand_index_by_bp),
+                                                          ('a_rand_index_by_seq', a_rand_index_by_seq),
+                                                          ('percent_assigned_bps', percent_assigned_bps),
+                                                          ('accuracy', acc),
+                                                          ('_05compl_01cont', genome_recovery_val[0][0]),
+                                                          ('_07compl_01cont', genome_recovery_val[0][1]),
+                                                          ('_09compl_01cont', genome_recovery_val[0][2]),
+                                                          ('_05compl_005cont', genome_recovery_val[1][0]),
+                                                          ('_07compl_005cont', genome_recovery_val[1][1]),
+                                                          ('_09compl_005cont', genome_recovery_val[1][2])]))
+        bin_metrics_per_query.append(bin_metrics)
+        count += 1
+    return summary_per_query, bin_metrics_per_query
 
 
 def convert_summary_to_tuples_of_strings(summary_per_query):
@@ -161,7 +168,7 @@ def create_legend(summary_per_query, output_dir):
         circles.append(Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=10, markerfacecolor=next(colors_iter)))
 
     fig = plt.figure(figsize=(0.5, 0.5))
-    fig.legend(circles, labels, loc='center', frameon=False, ncol=3, handletextpad=0.1)
+    fig.legend(circles, labels, loc='center', frameon=False, ncol=5, handletextpad=0.1)
     fig.savefig(os.path.normpath(output_dir + '/legend.eps'), dpi=100, format='eps', bbox_inches='tight')
     plt.close(fig)
 
@@ -227,31 +234,34 @@ def main():
     parser.add_argument('-m', '--map_by_recall', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
     args = parser.parse_args()
     binning_labels = get_labels(args.labels, args.bin_files)
-    summary_per_query = evaluate_all(args.gold_standard_file,
-                                     args.fasta_file,
-                                     args.bin_files,
-                                     binning_labels,
-                                     args.filter,
-                                     args.remove_genomes,
-                                     args.keyword,
-                                     args.map_by_recall,
-                                     args.output_dir)
-    summary_dict = [x[0] for x in summary_per_query]
-    summary_as_string = convert_summary_to_tuples_of_strings(summary_dict)
+    summary_per_query, bin_metrics_per_query = evaluate_all(args.gold_standard_file,
+                                                            args.fasta_file,
+                                                            args.bin_files,
+                                                            binning_labels,
+                                                            args.filter,
+                                                            args.remove_genomes,
+                                                            args.keyword,
+                                                            args.map_by_recall,
+                                                            args.output_dir)
+    summary_as_string = convert_summary_to_tuples_of_strings(summary_per_query)
     print_summary(summary_as_string)
     print_summary(summary_as_string, args.output_dir)
-    create_legend(summary_dict, args.output_dir)
-    plots.plot_avg_precision_recall(summary_dict, args.output_dir)
-    plots.plot_weighed_precision_recall(summary_dict, args.output_dir)
-    plots.plot_adjusted_rand_index_vs_assigned_bps(summary_dict, args.output_dir)
-    plot_by_genome.plot_by_genome2(summary_per_query, args.output_dir)
-    compute_rankings(summary_dict, args.output_dir)
+    create_legend(summary_per_query, args.output_dir)
+    plots.plot_avg_precision_recall(summary_per_query, args.output_dir)
+    plots.plot_weighed_precision_recall(summary_per_query, args.output_dir)
+    plots.plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, args.output_dir)
+
+    plots.plot_boxplot(bin_metrics_per_query, binning_labels, 'precision', args.output_dir)
+    plots.plot_boxplot(bin_metrics_per_query, binning_labels, 'recall', args.output_dir)
+
+    plot_by_genome.plot_by_genome2(bin_metrics_per_query, binning_labels, args.output_dir)
+    compute_rankings(summary_per_query, args.output_dir)
 
     precision_recall_files = []
     for query_file in args.bin_files:
         tool_id = query_file.split('/')[-1]
         precision_recall_files.append(os.path.join(args.output_dir, tool_id) + "/precision_recall.tsv")
-    df = pd.DataFrame.from_dict(summary_dict)
+    df = pd.DataFrame.from_dict(summary_per_query)
     df.set_index('binning_label', inplace=True)
     df.rename(columns={'binning_label': 'Tool'}, inplace=True)
     html_plots.build_html(precision_recall_files,

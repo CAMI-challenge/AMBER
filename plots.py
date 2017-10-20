@@ -6,6 +6,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import math
+import re
 from utils import load_data
 
 
@@ -33,6 +35,76 @@ def load_results(files):
             table.append(results_dict)
         f.close()
     return table
+
+
+def scan_dir(output_dir):
+    p_order = re.compile('^#\([0-9]+\)')
+    order = []
+    data_list = []
+    binning_labels = []
+    for path in [d for d in (os.path.join(output_dir, d1) for d1 in os.listdir(output_dir)) if os.path.isdir(d)]:
+        f = open(path + '/precision_recall.tsv', 'r')
+        data_list.append(load_data.load_tsv_table(f))
+
+        # load label and order
+        f = open(path + '/label.txt', 'r')
+        line = f.readline().rstrip('\n')
+        match = p_order.match(line)
+        match_string = match.group()
+        order.append(int(match_string[2:match.end() - 1]))
+        binning_labels.append(line[match.end():])
+        f.close()
+
+    return data_list, binning_labels, order
+
+
+def plot_boxplot(data_list, binning_labels, metric_name, output_dir, order=None):
+    precision_all = []
+    for metrics in data_list:
+        precision = []
+        for metric in metrics:
+            if not math.isnan(metric[metric_name]):
+                precision.append(metric[metric_name])
+        precision_all.append(precision)
+
+    if order:
+        # sort binning_labels and precision_all by order
+        enum_order = [(v, k) for k, v in enumerate(order)]
+        enum_order = sorted(enum_order, key=lambda x: x[0])
+        binning_labels = [binning_labels[i[1]] for i in enum_order]
+        precision_all = [precision_all[i[1]] for i in enum_order]
+
+    fig, axs = plt.subplots(figsize=(6, 5))
+
+    medianprops = dict(linewidth=2.5, color='gold')
+    bplot = axs.boxplot(precision_all, notch=0, vert=0, patch_artist=True, labels=binning_labels, medianprops=medianprops, sym='k.')
+    colors_iter = iter(create_colors_list())
+
+    # turn on grid
+    axs.grid(which='major', linestyle='-', linewidth='0.5', color='lightgrey')
+
+    # force axes to be from 0 to 100%
+    axs.set_xlim([-0.01, 1.01])
+
+    # transform plot_labels to percentages
+    vals = axs.get_xticks()
+    axs.set_xticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
+
+    for box in bplot['boxes']:
+        box.set(facecolor=next(colors_iter), linewidth=0.1)
+    plt.ylim(plt.ylim()[::-1])
+
+    if metric_name == 'precision':
+        axs.set_xlabel(metric_name.title() + ' per bin')
+    else:
+        axs.set_xlabel(metric_name.title() + ' per genome')
+
+    fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
+    fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.png'), dpi=100, format='png', bbox_inches='tight')
+    fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.eps'), dpi=100, format='eps', bbox_inches='tight')
+    axs.get_yaxis().set_ticks([])
+    fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '_wo_legend.eps'), dpi=100, format='eps', bbox_inches='tight')
+    plt.close(fig)
 
 
 def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, ylabel):
@@ -97,7 +169,7 @@ def plot_avg_precision_recall(summary_per_query, output_dir):
                  output_dir,
                  'e',
                  'avg_precision_recall',
-                 'Average precision per bin', #'Trucated average precision per bin $\overline{p}_{99}$',
+                 'Average precision per bin', #'Truncated average precision per bin $\overline{p}_{99}$',
                  'Average recall per genome') #'Average recall per genome $\overline{r}$')
 
 
@@ -106,8 +178,8 @@ def plot_weighed_precision_recall(summary_per_query, output_dir):
                  output_dir,
                  'w',
                  'precision_recall_per_bp',
-                 'Precision per base pair', # 'Precision per base pair $\overline{p}_{bp}$',
-                 'Recall per base pair') # 'Recall per base pair $\overline{r}_{bp}$')
+                 'Average precision per base pair', # 'Average precision per base pair $\overline{p}_{bp}$',
+                 'Average recall per base pair') # 'Average recall per base pair $\overline{r}_{bp}$')
 
 
 def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
