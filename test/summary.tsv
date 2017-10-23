@@ -1,2 +1,2 @@
-tool	avg_precision	std_dev_precision	sem_precision	avg_recall	std_dev_recall	sem_recall	precision	recall	rand_index_by_bp	rand_index_by_seq	a_rand_index_by_bp	a_rand_index_by_seq	percent_assigned_bps	>0.5compl<0.1cont	>0.7compl<0.1cont	>0.9compl<0.1cont	>0.5compl<0.05cont	>0.7compl<0.05cont	>0.9compl<0.05cont
+tool	avg_precision	std_dev_precision	sem_precision	avg_recall	std_dev_recall	sem_recall	avg_precision_per_bp	avg_recall_per_bp	rand_index_by_bp	rand_index_by_seq	a_rand_index_by_bp	a_rand_index_by_seq	percent_assigned_bps	>0.5compl<0.1cont	>0.7compl<0.1cont	>0.9compl<0.1cont	>0.5compl<0.05cont	>0.7compl<0.05cont	>0.9compl<0.05cont
 goofy_hypatia_2	0.764	0.308	0.053	0.378	0.468	0.057	0.684	0.936	0.972	0.946	0.644	0.751	0.967	18	17	15	16	16	14
