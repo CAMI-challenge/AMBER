@@ -102,7 +102,12 @@ def plot_boxplot(data_list, binning_labels, metric_name, output_dir, order=None)
     fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.png'), dpi=100, format='png', bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.eps'), dpi=100, format='eps', bbox_inches='tight')
-    axs.get_yaxis().set_ticks([])
+
+    # remove labels but keep grid
+    axs.get_yaxis().set_ticklabels([])
+    for tic in axs.yaxis.get_major_ticks():
+        tic.tick1On = tic.tick2On = False
+        tic.label1On = tic.label2On = False
     fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '_wo_legend.eps'), dpi=100, format='eps', bbox_inches='tight')
     plt.close(fig)
 
@@ -133,7 +138,7 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
             i += 1
     if plot_type == 'w':
         for summary in summary_per_query:
-            axs.plot(float(summary['precision']), float(summary['recall']), marker='o', color=colors_list[i], markersize=10)
+            axs.plot(float(summary['avg_precision_per_bp']), float(summary['avg_recall_per_bp']), marker='o', color=colors_list[i], markersize=10)
             plot_labels.append(summary['binning_label'])
             i += 1
     elif plot_type == 'p':
@@ -177,7 +182,7 @@ def plot_weighed_precision_recall(summary_per_query, output_dir):
     plot_summary(summary_per_query,
                  output_dir,
                  'w',
-                 'precision_recall_per_bp',
+                 'avg_precision_recall_per_bp',
                  'Average precision per base pair', # 'Average precision per base pair $\overline{p}_{bp}$',
                  'Average recall per base pair') # 'Average recall per base pair $\overline{r}_{bp}$')
 

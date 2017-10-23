@@ -7,7 +7,7 @@ from utils import argparse_parents
 
 PLOTS = ['avg_precision_recall',
          'ari_vs_assigned_bps',
-         'precision_recall_per_bp',
+         'avg_precision_recall_per_bp',
          'completeness_contamination_table',
          'precision_recall_per_bin']
 

@@ -3,8 +3,8 @@
 import collections
 
 TOOL = "tool"
-PRECISION = "precision"
-RECALL = "recall"
+PRECISION = "avg_precision_per_bp"
+RECALL = "avg_recall_per_bp"
 AVG_PRECISION = "avg_precision"
 STD_DEV_PRECISION = "std_dev_precision"
 SEM_PRECISION = "sem_precision"
@@ -24,8 +24,8 @@ abbreviations = collections.OrderedDict([('avg_precision', 'precision averaged o
                  ('avg_recall', 'recall averaged over genome bins'),
                  ('std_dev_recall', 'standard deviation of recall averaged over genome bins'),
                  ('sem_recall', 'standard error of the mean of recall averaged over genome bins'),
-                 ('precision', 'average precision per base pair'),
-                 ('recall', 'average recall per base pair'),
+                 ('avg_precision_per_bp', 'average precision per base pair'),
+                 ('avg_recall_per_bp', 'average recall per base pair'),
                  ('rand_index_by_bp', 'Rand index weighed by base pairs'),
                  ('rand_index_by_seq', 'Rand index weighed by sequence counts'),
                  ('a_rand_index_by_bp', 'adjusted Rand index weighed by base pairs'),

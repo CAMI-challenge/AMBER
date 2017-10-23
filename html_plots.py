@@ -115,6 +115,12 @@ DESCRIPTION_COMPLETENESS_COL = {
     FILE_COMPL_0_9: COMPLETION_COL_0_9
 }
 
+DESCRIPTION_COMPLETENESS_COL_X = {
+    FILE_COMPL_0_5: COMPLETION_COL_0_5,
+    FILE_COMPL_0_7: COMPLETION_COL_0_7,
+    FILE_COMPL_0_9: COMPLETION_COL_0_9
+}
+
 DESCRIPTION_CONTAMINATION_ROW = {
     CONT_0_1: {
         COL_DESCRIPTION: "number of bins with less than 10% contamination",
@@ -454,9 +460,9 @@ def build_html(precision_recall_paths, names, summary, html_output,
 
     element_column.append(create_summary_heatmap(df_without_contam_complete, std_dev_sem_columns))
 
-    completion_contamination_col = map(lambda k: create_entry(DESCRIPTION_COMPLETENESS_COL[k][COL_TITLE],
-                                                              DESCRIPTION_COMPLETENESS_COL[k][COL_DESCRIPTION]),
-                                       DESCRIPTION_COMPLETENESS_COL.keys())
+    completion_contamination_col = map(lambda k: create_entry(DESCRIPTION_COMPLETENESS_COL_X[k][COL_TITLE],
+                                                              DESCRIPTION_COMPLETENESS_COL_X[k][COL_DESCRIPTION]),
+                                       DESCRIPTION_COMPLETENESS_COL_X.keys())
 
     completion_contamination_row = map(lambda k:
                                        create_entry(DESCRIPTION_CONTAMINATION_ROW[k][COL_TITLE],
@@ -477,7 +483,7 @@ def build_html(precision_recall_paths, names, summary, html_output,
 
     element_column.append(create_subtitle_div(ID_PRECISION_VS_RECALL_TOOLS_BASE_PAIR, "Average precision per base pair vs. average recall per base pair"))
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_TOOLS_BASE_PAIR))
-    element_column.append(create_scatter(summary, "precision", "recall", "Average precision per base pair", "Average recall per base pair"))
+    element_column.append(create_scatter(summary, "avg_precision_per_bp", "avg_recall_per_bp", "Average precision per base pair", "Average recall per base pair"))
 
     element_column.append(
         create_subtitle_div(ID_RAND_INDEX_ASSIGNED_BPS, "Adjusted Rand Index vs. percentage of assigned base pairs"))
