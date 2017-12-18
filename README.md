@@ -134,9 +134,9 @@ test/elated_franklin_0 \
 **Output:**
 ~~~BASH
 tool       avg_purity std_dev_purity sem_purity avg_completeness std_dev_completeness sem_completeness avg_purity_per_bp avg_completeness_per_bp rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq percent_assigned_bps accuracy >0.5compl<0.1cont >0.7compl<0.1cont >0.9compl<0.1cont >0.5compl<0.05cont >0.7compl<0.05cont >0.9compl<0.05cont
-MaxBin 2.0 0.948         0.095             0.016         0.799      0.364          0.058      0.934                0.838             0.995            0.951             0.917              0.782               0.864                0.807    28                28                24                23                 23                 21
-CONCOCT    0.837         0.266             0.052         0.517      0.476          0.069      0.684                0.936             0.972            0.946             0.644              0.751               0.967                0.661    18                17                15                16                 16                 14
-MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724                0.825             0.976            0.965             0.674              0.860               0.917                0.664    17                16                12                17                 16                 12
+MaxBin 2.0 0.948      0.095          0.016      0.799            0.364                0.058            0.934             0.838                   0.995            0.951             0.917              0.782               0.864                0.807    28                28                24                23                 23                 21
+CONCOCT    0.837      0.266          0.052      0.517            0.476                0.069            0.684             0.936                   0.972            0.946             0.644              0.751               0.967                0.661    18                17                15                16                 16                 14
+MetaBAT    0.822      0.256          0.047      0.57             0.428                0.065            0.724             0.825                   0.976            0.965             0.674              0.860               0.917                0.664    17                16                12                17                 16                 12
 ~~~
 Directory _output_dir_ will contain:
 * **summary.tsv**: contains the same table as the output above with tab-separated values

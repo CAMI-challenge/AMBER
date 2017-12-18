@@ -101,12 +101,10 @@ def plot_boxplot(data_list, binning_labels, metric_name, output_dir, order=None)
         box.set(facecolor=next(colors_iter), linewidth=0.1)
     plt.ylim(plt.ylim()[::-1])
 
-    if metric_name == 'precision':
-        axs.set_xlabel('Purity per bin $p_{x}$ (%)' if LEGEND2 else 'Purity per bin $p$ (%)', fontsize=14)
-        metric_name = 'purity'
+    if metric_name == 'purity':
+        axs.set_xlabel('Purity per bin $p$ (%)' if LEGEND2 else 'Purity per bin (%)', fontsize=14)
     else:
-        axs.set_xlabel('Completeness per genome $r_{x}$ (%)' if LEGEND2 else 'Completeness per genome $r$ (%)', fontsize=14)
-        metric_name = 'completeness'
+        axs.set_xlabel('Completeness per genome $r$ (%)' if LEGEND2 else 'Completeness per genome (%)', fontsize=14)
 
     fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.png'), dpi=100, format='png', bbox_inches='tight')
