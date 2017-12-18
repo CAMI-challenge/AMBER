@@ -20,8 +20,8 @@ def calc_table(metrics, min_completeness, max_contamination):
 
     genome_recovery = np.zeros((len(max_contamination), len(min_completeness)), dtype=int)
     for metric in metrics:
-        precision = float(metric['precision'])
-        recall = float(metric['recall'])
+        precision = float(metric['purity'])
+        recall = float(metric['completeness'])
         if np.isnan(precision):
             continue
         contamination = 1 - precision

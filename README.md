@@ -25,7 +25,7 @@ sudo apt install python3-pip
 Then run:
 
 ~~~BASH
-pip3 install https://github.com/CAMI-challenge/AMBER/archive/v0.6.1.tar.gz 
+pip3 install https://github.com/CAMI-challenge/AMBER/archive/v0.6.2.tar.gz 
 ~~~
 
 Make sure to add AMBER to your PATH:
@@ -62,14 +62,14 @@ Additional parameters may be specified - see below.
 
 ## List of metrics and abbreviations
 
-* **avg_precision**: precision averaged over genome bins
-* **std_dev_precision**: standard deviation of precision averaged over genome bins
-* **sem_precision**: standard error of the mean of precision averaged over genome bins
-* **avg_recall**: recall averaged over genome bins
-* **std_dev_recall**: standard deviation of recall averaged over genome bins
-* **sem_recall**: standard error of the mean of recall averaged over genome bins
-* **avg_precision_per_bp**: average precision per base pair
-* **avg_recall_per_bp**: average recall per base pair
+* **avg_purity**: purity averaged over genome bins
+* **std_dev_purity**: standard deviation of purity averaged over genome bins
+* **sem_purity**: standard error of the mean of purity averaged over genome bins
+* **avg_completeness**: completeness averaged over genome bins
+* **std_dev_completeness**: standard deviation of completeness averaged over genome bins
+* **sem_completeness**: standard error of the mean of completeness averaged over genome bins
+* **avg_purity_per_bp**: average purity per base pair
+* **avg_completeness_per_bp**: average completeness per base pair
 * **rand_index_by_bp**: Rand index weighed by base pairs
 * **rand_index_by_seq**: Rand index weighed by sequence counts
 * **a_rand_index_by_bp**: adjusted Rand index weighed by base pairs
@@ -117,7 +117,7 @@ optional arguments:
                         in list)
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         Directory to write the results to
-  -m, --map_by_recall   Map genomes to bins by maximizing recall
+  -m, --map_by_completeness   Map genomes to bins by maximizing completeness
 ~~~
 **Example:**
 ~~~BASH
@@ -133,7 +133,7 @@ test/elated_franklin_0 \
 ~~~
 **Output:**
 ~~~BASH
-tool       avg_precision std_dev_precision sem_precision avg_recall std_dev_recall sem_recall avg_precision_per_bp avg_recall_per_bp rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq percent_assigned_bps accuracy >0.5compl<0.1cont >0.7compl<0.1cont >0.9compl<0.1cont >0.5compl<0.05cont >0.7compl<0.05cont >0.9compl<0.05cont
+tool       avg_purity std_dev_purity sem_purity avg_completeness std_dev_completeness sem_completeness avg_purity_per_bp avg_completeness_per_bp rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq percent_assigned_bps accuracy >0.5compl<0.1cont >0.7compl<0.1cont >0.9compl<0.1cont >0.5compl<0.05cont >0.7compl<0.05cont >0.9compl<0.05cont
 MaxBin 2.0 0.948         0.095             0.016         0.799      0.364          0.058      0.934                0.838             0.995            0.951             0.917              0.782               0.864                0.807    28                28                24                23                 23                 21
 CONCOCT    0.837         0.266             0.052         0.517      0.476          0.069      0.684                0.936             0.972            0.946             0.644              0.751               0.967                0.661    18                17                15                16                 16                 14
 MetaBAT    0.822         0.256             0.047         0.57       0.428          0.065      0.724                0.825             0.976            0.965             0.674              0.860               0.917                0.664    17                16                12                17                 16                 12
@@ -141,18 +141,18 @@ MetaBAT    0.822         0.256             0.047         0.57       0.428       
 Directory _output_dir_ will contain:
 * **summary.tsv**: contains the same table as the output above with tab-separated values
 * **summary.html**: HTML page with results summary and interactive graphs
-* **avg_precision_recall.png + .pdf**: figure of average precision vs. average recall
-* **avg_precision_recall_per_bp.png + .pdf**: figure of precision vs. recall per base pair
+* **avg_purity_completeness.png + .pdf**: figure of average purity vs. average completeness
+* **avg_purity_completeness_per_bp.png + .pdf**: figure of purity vs. completeness per base pair
 * **ari_vs_assigned_bps.png + .pdf**: figure of adjusted Rand index weighed by number of base pairs vs. percentage of assigned base pairs
-* **rankings.txt**: tools sorted by average precision, average recall, and sum of average precision and average recall
+* **rankings.txt**: tools sorted by average purity, average completeness, and sum of average purity and average completeness
 
 In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ will be created with the following files:
 * **rand_index.tsv**: contains value of (adjusted) Rand index and percentage of assigned/binned bases. Rand index is both weighed and unweighed by base pairs
-* **precision_recall.tsv**: contains precision and recall per genome bin
-* **precision_recall_avg.tsv**: contains precision and recall averaged over genome bins. Includes standard deviation and standard error of the mean
-* **precision_recall_by_bpcount.tsv**: contains precision and recall weighed by base pairs
-<!---* **genomes_sorted_by_precision.png + .pdf**: figure of precision and recall per genome with genomes sorted by precision-->
-<!---* **genomes_sorted_by_recall.png + .pdf**: figure of precision and recall per genome with genomes sorted by recall-->
+* **purity_completeness.tsv**: contains purity and completeness per genome bin
+* **purity_completeness_avg.tsv**: contains purity and completeness averaged over genome bins. Includes standard deviation and standard error of the mean
+* **purity_completeness_by_bpcount.tsv**: contains purity and completeness weighed by base pairs
+<!---* **genomes_sorted_by_purity.png + .pdf**: figure of purity and completeness per genome with genomes sorted by purity-->
+<!---* **genomes_sorted_by_completeness.png + .pdf**: figure of purity and completeness per genome with genomes sorted by completeness-->
 
 ### For a complete list of tools, see [README_TOOLS.md](./README_TOOLS.md).
 

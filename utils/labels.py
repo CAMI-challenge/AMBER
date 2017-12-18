@@ -3,14 +3,14 @@
 import collections
 
 TOOL = "tool"
-PRECISION = "avg_precision_per_bp"
-RECALL = "avg_recall_per_bp"
-AVG_PRECISION = "avg_precision"
-STD_DEV_PRECISION = "std_dev_precision"
-SEM_PRECISION = "sem_precision"
-AVG_RECALL = "avg_recall"
-STD_DEV_RECALL = "std_dev_recall"
-SEM_RECALL = "sem_recall"
+PRECISION = "avg_purity_per_bp"
+RECALL = "avg_completeness_per_bp"
+AVG_PRECISION = "avg_purity"
+STD_DEV_PRECISION = "std_dev_purity"
+SEM_PRECISION = "sem_purity"
+AVG_RECALL = "avg_completeness"
+STD_DEV_RECALL = "std_dev_completeness"
+SEM_RECALL = "sem_completeness"
 RI_BY_BP = "rand_index_by_bp"
 RI_BY_SEQ = "rand_index_by_seq"
 ARI_BY_BP = "a_rand_index_by_bp"
@@ -18,14 +18,14 @@ ARI_BY_SEQ = "a_rand_index_by_seq"
 PERCENTAGE_ASSIGNED_BPS = "percent_assigned_bps"
 ACCURACY = "accuracy"
 
-abbreviations = collections.OrderedDict([('avg_precision', 'precision averaged over genome bins'),
-                 ('std_dev_precision', 'standard deviation of precision averaged over genome bins'),
-                 ('sem_precision', 'standard error of the mean of precision averaged over genome bins'),
-                 ('avg_recall', 'recall averaged over genome bins'),
-                 ('std_dev_recall', 'standard deviation of recall averaged over genome bins'),
-                 ('sem_recall', 'standard error of the mean of recall averaged over genome bins'),
-                 ('avg_precision_per_bp', 'average precision per base pair'),
-                 ('avg_recall_per_bp', 'average recall per base pair'),
+abbreviations = collections.OrderedDict([(AVG_PRECISION, 'purity averaged over genome bins'),
+                 (STD_DEV_PRECISION, 'standard deviation of purity averaged over genome bins'),
+                 (SEM_PRECISION, 'standard error of the mean of purity averaged over genome bins'),
+                 (AVG_RECALL, 'completeness averaged over genome bins'),
+                 (STD_DEV_RECALL, 'standard deviation of completeness averaged over genome bins'),
+                 (SEM_RECALL, 'standard error of the mean of completeness averaged over genome bins'),
+                 (PRECISION, 'average purity per base pair'),
+                 (RECALL, 'average completeness per base pair'),
                  ('rand_index_by_bp', 'Rand index weighed by base pairs'),
                  ('rand_index_by_seq', 'Rand index weighed by sequence counts'),
                  ('a_rand_index_by_bp', 'adjusted Rand index weighed by base pairs'),

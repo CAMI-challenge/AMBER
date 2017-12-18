@@ -24,14 +24,14 @@ def compute_precision_and_recall(data, filter_tail_percentage):
         # compute the average recall over all bins if the mapped genome size > 0
         real_size = float(bin['real_size'])
         if real_size > 0:
-            recall = float(bin['recall'])
+            recall = float(bin['completeness'])
             count_r += 1
             current_avg = avg_recall
             avg_recall = (recall - current_avg) / count_r + current_avg
 
         # compute the average precision over all bins
-        if not np.isnan(bin['precision']):
-            precision = bin['precision']
+        if not np.isnan(bin['purity']):
+            precision = bin['purity']
             count_p += 1
             current_avg = avg_precision
             avg_precision = (precision - current_avg) / count_p + current_avg
@@ -41,10 +41,10 @@ def compute_precision_and_recall(data, filter_tail_percentage):
     for bin in data:
         real_size = float(bin['real_size'])
         if real_size > 0:
-            recall = float(bin['recall'])
+            recall = float(bin['completeness'])
             sum_diffs_recall += math.pow(recall - avg_recall, 2)
-        if not np.isnan(bin['precision']):
-            precision = bin['precision']
+        if not np.isnan(bin['purity']):
+            precision = bin['purity']
             sum_diffs_precision += math.pow(precision - avg_precision, 2)
 
     std_deviation_precision = math.sqrt(sum_diffs_precision / count_p)

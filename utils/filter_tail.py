@@ -13,7 +13,7 @@ def filter_tail(data, percentage):
         predicted_size = int(float(bin['predicted_size']))
         cumsum_of_predicted_sizes += predicted_size
         if float(cumsum_of_predicted_sizes) / float(sum_of_predicted_sizes) <= value:
-            bin['precision'] = np.nan
+            bin['purity'] = np.nan
         else:
             break
     return data

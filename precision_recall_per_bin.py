@@ -101,21 +101,21 @@ def compute_precision_recall(gold_standard,
         precision = float(bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id]) / float(bin_id_to_total_lengths[predicted_bin])
         recall = float(bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id]) / float(gold_standard.genome_id_to_total_length[best_genome_id])
         bin_metrics.append({'mapped_genome': best_genome_id,
-                            'precision': precision,
-                            'recall': recall,
+                            'purity': precision,
+                            'completeness': recall,
                             'predicted_size': bin_id_to_total_lengths[predicted_bin],
                             'correctly_predicted': bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id],
                             'real_size': gold_standard.genome_id_to_total_length[best_genome_id]})
     for genome_id in gold_standard.genome_id_to_list_of_contigs:
         if genome_id not in mapped:
             bin_metrics.append({'mapped_genome': genome_id,
-                                'precision': np.nan,
-                                'recall': .0,
+                                'purity': np.nan,
+                                'completeness': .0,
                                 'predicted_size': 0,
                                 'correctly_predicted': 0,
                                 'real_size': gold_standard.genome_id_to_total_length[genome_id]})
-    # sort bins by recall
-    return sorted(bin_metrics, key=lambda t: t['recall'], reverse=True)
+    # sort bins by completeness
+    return sorted(bin_metrics, key=lambda t: t['completeness'], reverse=True)
 
 
 def compute_metrics(query, gold_standard, map_by_recall=False):
@@ -133,28 +133,28 @@ def compute_metrics(query, gold_standard, map_by_recall=False):
 
 
 def print_metrics(bin_metrics, stream=sys.stdout):
-    stream.write("genome\tprecision\trecall\tpredicted_size\tcorrectly_predicted\treal_size\n")
+    stream.write("genome\tpurity\tcompleteness\tpredicted_size\tcorrectly_predicted\treal_size\n")
     for bin in bin_metrics:
         stream.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (
             bin['mapped_genome'],
-            bin['precision'] if not np.isnan(bin['precision']) else 'NA',
-            bin['recall'],
+            bin['purity'] if not np.isnan(bin['purity']) else 'NA',
+            bin['completeness'],
             bin['predicted_size'],
             bin['correctly_predicted'],
             bin['real_size']))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute table of precision and recall per genome bin",
+    parser = argparse.ArgumentParser(description="Compute table of purity and completeness per genome bin",
                                      parents=[argparse_parents.PARSER_GS])
-    parser.add_argument('-m', '--map_by_recall', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
+    parser.add_argument('-m', '--map_by_completeness', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
     args = parser.parse_args()
     if not args.gold_standard_file or not args.bin_file:
         parser.print_help()
         parser.exit(1)
     gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
     query = load_data.open_query(args.bin_file)
-    bin_metrics = compute_metrics(query, gold_standard, args.map_by_recall)
+    bin_metrics = compute_metrics(query, gold_standard, args.map_by_completeness)
     print_metrics(bin_metrics)
 
 

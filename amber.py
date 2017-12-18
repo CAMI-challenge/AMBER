@@ -66,7 +66,7 @@ def evaluate_all(gold_standard_file,
         bin_metrics = precision_recall_per_bin.compute_metrics(query, gold_standard, map_by_recall)
         if genomes_file:
             bin_metrics = exclude_genomes.filter_data(bin_metrics, genomes_file, keyword)
-        f = open(path + "/precision_recall.tsv", 'w')
+        f = open(path + "/purity_completeness.tsv", 'w')
         precision_recall_per_bin.print_metrics(bin_metrics, f)
         # slow code disabled
         # plot_by_genome.plot_by_genome(bin_metrics, path + '/genomes_sorted_by_recall', 'recall')
@@ -76,7 +76,7 @@ def evaluate_all(gold_standard_file,
         # AVG PRECISION RECALL
         avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, sem_precision, sem_recall = \
             precision_recall_average.compute_precision_and_recall(bin_metrics, filter_tail_percentage)
-        f = open(path + "/precision_recall_avg.tsv", 'w')
+        f = open(path + "/purity_completeness_avg.tsv", 'w')
         precision_recall_average.print_precision_recall_table_header(f)
         precision_recall_average.print_precision_recall(binning_label,
                                                         avg_precision,
@@ -90,7 +90,7 @@ def evaluate_all(gold_standard_file,
 
         # PRECISION RECALL BY BP COUNTS
         precision, recall = precision_recall_by_bpcount.compute_metrics(query, gold_standard)
-        f = open(path + "/precision_recall_by_bpcount.tsv", 'w')
+        f = open(path + "/purity_completeness_by_bpcount.tsv", 'w')
         precision_recall_by_bpcount.print_precision_recall_by_bpcount(precision, recall, f)
         f.close()
 
@@ -107,14 +107,14 @@ def evaluate_all(gold_standard_file,
         acc = accuracy.compute_metrics(query, gold_standard)
 
         summary_per_query.append(collections.OrderedDict([('binning_label', binning_label),
-                                                          ('avg_precision', avg_precision),
-                                                          ('std_deviation_precision', std_deviation_precision),
-                                                          ('sem_precision', sem_precision),
-                                                          ('avg_recall', avg_recall),
-                                                          ('std_deviation_recall', std_deviation_recall),
-                                                          ('sem_recall', sem_recall),
-                                                          ('avg_precision_per_bp', precision),
-                                                          ('avg_recall_per_bp', recall),
+                                                          ('avg_purity', avg_precision),
+                                                          ('std_deviation_purity', std_deviation_precision),
+                                                          ('sem_purity', sem_precision),
+                                                          ('avg_completeness', avg_recall),
+                                                          ('std_deviation_completeness', std_deviation_recall),
+                                                          ('sem_completeness', sem_recall),
+                                                          ('avg_purity_per_bp', precision),
+                                                          ('avg_completeness_per_bp', recall),
                                                           ('ri_by_bp', ri_by_bp),
                                                           ('ri_by_seq', ri_by_seq),
                                                           ('a_rand_index_by_bp', a_rand_index_by_bp),
@@ -136,14 +136,14 @@ def convert_summary_to_tuples_of_strings(summary_per_query):
     tuples = []
     for summary in summary_per_query:
         tuples.append(((summary['binning_label']),
-                      format(summary['avg_precision'], '.3f'),
-                      format(summary['std_deviation_precision'], '.3f'),
-                      format(summary['sem_precision'], '.3f'),
-                      format(summary['avg_recall'], '.3f'),
-                      format(summary['std_deviation_recall'], '.3f'),
-                      format(summary['sem_recall'], '.3f'),
-                      format(summary['avg_precision_per_bp'], '.3f'),
-                      format(summary['avg_recall_per_bp'], '.3f'),
+                      format(summary['avg_purity'], '.3f'),
+                      format(summary['std_deviation_purity'], '.3f'),
+                      format(summary['sem_purity'], '.3f'),
+                      format(summary['avg_completeness'], '.3f'),
+                      format(summary['std_deviation_completeness'], '.3f'),
+                      format(summary['sem_completeness'], '.3f'),
+                      format(summary['avg_purity_per_bp'], '.3f'),
+                      format(summary['avg_completeness_per_bp'], '.3f'),
                       format(summary['ri_by_bp'], '.3f'),
                       format(summary['ri_by_seq'], '.3f'),
                       format(summary['a_rand_index_by_bp'], '.3f'),
@@ -207,23 +207,23 @@ def print_summary(summary_per_query, output_dir=None):
 
 def compute_rankings(summary_per_query, output_dir):
     f = open(os.path.normpath(output_dir + '/rankings.txt'), 'w')
-    f.write("Tool\tAverage precision\n")
-    sorted_by = sorted(summary_per_query, key=lambda x: x['avg_precision'], reverse=True)
+    f.write("Tool\tAverage purity\n")
+    sorted_by = sorted(summary_per_query, key=lambda x: x['avg_purity'], reverse=True)
     for summary in sorted_by:
-        f.write("%s \t %1.3f\n" % (summary['binning_label'], summary['avg_precision']))
+        f.write("%s \t %1.3f\n" % (summary['binning_label'], summary['avg_purity']))
 
-    sorted_by = sorted(summary_per_query, key=lambda x: x['avg_recall'], reverse=True)
-    f.write("\nTool\tAverage recall\n")
+    sorted_by = sorted(summary_per_query, key=lambda x: x['avg_completeness'], reverse=True)
+    f.write("\nTool\tAverage completeness\n")
     for summary in sorted_by:
-        f.write("%s \t %1.3f\n" % (summary['binning_label'], summary['avg_recall']))
+        f.write("%s \t %1.3f\n" % (summary['binning_label'], summary['avg_completeness']))
 
-    sorted_by = sorted(summary_per_query, key=lambda x: x['avg_precision'] + x['avg_recall'], reverse=True)
-    f.write("\nTool\tAverage precision + Average recall\tAverage precision\tAverage recall\n")
+    sorted_by = sorted(summary_per_query, key=lambda x: x['avg_purity'] + x['avg_completeness'], reverse=True)
+    f.write("\nTool\tAverage purity + Average completeness\tAverage purity\tAverage completeness\n")
     for summary in sorted_by:
         f.write("%s\t%1.3f\t%1.3f\t%1.3f\n" % (summary['binning_label'],
-                                               summary['avg_precision'] + summary['avg_recall'],
-                                               summary['avg_precision'],
-                                               summary['avg_recall']))
+                                               summary['avg_purity'] + summary['avg_completeness'],
+                                               summary['avg_purity'],
+                                               summary['avg_completeness']))
     f.close()
 
 
@@ -231,7 +231,7 @@ def main():
     parser = argparse.ArgumentParser(description="Compute all metrics and figures for one or more binning files; output summary to screen and results per binning file to chosen directory",
                                      parents=[argparse_parents.PARSER_MULTI2])
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
-    parser.add_argument('-m', '--map_by_recall', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
+    parser.add_argument('-m', '--map_by_completeness', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
     args = parser.parse_args()
     binning_labels = get_labels(args.labels, args.bin_files)
     summary_per_query, bin_metrics_per_query = evaluate_all(args.gold_standard_file,
@@ -241,7 +241,7 @@ def main():
                                                             args.filter,
                                                             args.remove_genomes,
                                                             args.keyword,
-                                                            args.map_by_recall,
+                                                            args.map_by_completeness,
                                                             args.output_dir)
     summary_as_string = convert_summary_to_tuples_of_strings(summary_per_query)
     print_summary(summary_as_string)
@@ -251,8 +251,8 @@ def main():
     plots.plot_weighed_precision_recall(summary_per_query, args.output_dir)
     plots.plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, args.output_dir)
 
-    plots.plot_boxplot(bin_metrics_per_query, binning_labels, 'precision', args.output_dir)
-    plots.plot_boxplot(bin_metrics_per_query, binning_labels, 'recall', args.output_dir)
+    plots.plot_boxplot(bin_metrics_per_query, binning_labels, 'purity', args.output_dir)
+    plots.plot_boxplot(bin_metrics_per_query, binning_labels, 'completeness', args.output_dir)
 
     plot_by_genome.plot_by_genome2(bin_metrics_per_query, binning_labels, args.output_dir)
     compute_rankings(summary_per_query, args.output_dir)
@@ -260,7 +260,7 @@ def main():
     precision_recall_files = []
     for query_file in args.bin_files:
         tool_id = query_file.split('/')[-1]
-        precision_recall_files.append(os.path.join(args.output_dir, tool_id) + "/precision_recall.tsv")
+        precision_recall_files.append(os.path.join(args.output_dir, tool_id) + "/purity_completeness.tsv")
     df = pd.DataFrame.from_dict(summary_per_query)
     df.set_index('binning_label', inplace=True)
     df.rename(columns={'binning_label': 'Tool'}, inplace=True)

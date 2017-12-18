@@ -5,10 +5,13 @@ import os
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import math
 import re
 from utils import load_data
+
+LEGEND2 = False
 
 
 def create_colors_list():
@@ -43,7 +46,7 @@ def scan_dir(output_dir):
     data_list = []
     binning_labels = []
     for path in [d for d in (os.path.join(output_dir, d1) for d1 in os.listdir(output_dir)) if os.path.isdir(d)]:
-        f = open(path + '/precision_recall.tsv', 'r')
+        f = open(path + '/purity_completeness.tsv', 'r')
         data_list.append(load_data.load_tsv_table(f))
 
         # load label and order
@@ -88,16 +91,22 @@ def plot_boxplot(data_list, binning_labels, metric_name, output_dir, order=None)
 
     # transform plot_labels to percentages
     vals = axs.get_xticks()
-    axs.set_xticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
+    axs.set_xticklabels(['{:3.0f}'.format(x * 100) for x in vals])
+
+    # enable code to rotate labels
+    labels = axs.get_yticklabels()
+    plt.setp(labels, fontsize=14) ## rotation=55
 
     for box in bplot['boxes']:
         box.set(facecolor=next(colors_iter), linewidth=0.1)
     plt.ylim(plt.ylim()[::-1])
 
     if metric_name == 'precision':
-        axs.set_xlabel(metric_name.title() + ' per bin')
+        axs.set_xlabel('Purity per bin $p_{x}$ (%)' if LEGEND2 else 'Purity per bin $p$ (%)', fontsize=14)
+        metric_name = 'purity'
     else:
-        axs.set_xlabel(metric_name.title() + ' per genome')
+        axs.set_xlabel('Completeness per genome $r_{x}$ (%)' if LEGEND2 else 'Completeness per genome $r$ (%)', fontsize=14)
+        metric_name = 'completeness'
 
     fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.png'), dpi=100, format='png', bbox_inches='tight')
@@ -127,7 +136,7 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
     plot_labels = []
     if plot_type == 'e':
         for summary in summary_per_query:
-            axs.errorbar(float(summary['avg_precision']), float(summary['avg_recall']), xerr=float(summary['sem_precision']), yerr=float(summary['sem_recall']),
+            axs.errorbar(float(summary['avg_purity']), float(summary['avg_completeness']), xerr=float(summary['sem_purity']), yerr=float(summary['sem_completeness']),
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
@@ -138,7 +147,7 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
             i += 1
     if plot_type == 'w':
         for summary in summary_per_query:
-            axs.plot(float(summary['avg_precision_per_bp']), float(summary['avg_recall_per_bp']), marker='o', color=colors_list[i], markersize=10)
+            axs.plot(float(summary['avg_purity_per_bp']), float(summary['avg_completeness_per_bp']), marker='o', color=colors_list[i], markersize=10)
             plot_labels.append(summary['binning_label'])
             i += 1
     elif plot_type == 'p':
@@ -154,15 +163,21 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
 
     # transform plot_labels to percentages
     vals = axs.get_xticks()
-    axs.set_xticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
+    axs.set_xticklabels(['{:3.0f}'.format(x * 100) for x in vals])
     vals = axs.get_yticks()
-    axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
+    axs.set_yticklabels(['{:3.0f}'.format(x * 100) for x in vals])
 
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.xlabel(xlabel, fontsize=14)
+    plt.ylabel(ylabel, fontsize=14)
     plt.tight_layout()
     fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.eps'), dpi=100, format='eps', bbox_inches='tight')
-    lgd = plt.legend(plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False)
+
+    colors_iter = iter(colors_list)
+    circles = []
+    for summary in summary_per_query:
+        circles.append(Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=11, markerfacecolor=next(colors_iter)))
+
+    lgd = plt.legend(circles, plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False, fontsize=12)
 
     fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
@@ -173,18 +188,18 @@ def plot_avg_precision_recall(summary_per_query, output_dir):
     plot_summary(summary_per_query,
                  output_dir,
                  'e',
-                 'avg_precision_recall',
-                 'Average precision per bin', #'Truncated average precision per bin $\overline{p}_{99}$',
-                 'Average recall per genome') #'Average recall per genome $\overline{r}$')
+                 'avg_purity_completeness',
+                 'Truncated average purity per bin $\overline{p}_{99}$ (%)' if LEGEND2 else 'Average purity per bin (%)',
+                 'Average completeness per genome $\overline{r}$ (%)' if LEGEND2 else 'Average completeness per genome (%)')
 
 
 def plot_weighed_precision_recall(summary_per_query, output_dir):
     plot_summary(summary_per_query,
                  output_dir,
                  'w',
-                 'avg_precision_recall_per_bp',
-                 'Average precision per base pair', # 'Average precision per base pair $\overline{p}_{bp}$',
-                 'Average recall per base pair') # 'Average recall per base pair $\overline{r}_{bp}$')
+                 'avg_purity_completeness_per_bp',
+                 'Average purity per base pair $\overline{p}_{bp}$ (%)' if LEGEND2 else 'Average purity per base pair (%)',
+                 'Average completeness per base pair $\overline{r}_{bp}$ (%)' if LEGEND2 else 'Average completeness per base pair (%)')
 
 
 def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
@@ -192,8 +207,8 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
                  output_dir,
                  'p',
                  'ari_vs_assigned_bps',
-                 'Adjusted Rand Index',
-                 'Percentage of assigned base pairs')
+                 'Adjusted Rand Index (%)' if LEGEND2 else 'Adjusted Rand Index',
+                 'Percentage of assigned base pairs (%)' if LEGEND2 else 'Percentage of assigned base pairs')
 
 
 def main():
