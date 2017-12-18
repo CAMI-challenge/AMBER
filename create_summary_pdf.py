@@ -5,11 +5,11 @@ import argparse
 from utils import load_data
 from utils import argparse_parents
 
-PLOTS = ['avg_precision_recall',
+PLOTS = ['avg_purity_completeness',
          'ari_vs_assigned_bps',
-         'avg_precision_recall_per_bp',
+         'avg_purity_completeness_per_bp',
          'completeness_contamination_table',
-         'precision_recall_per_bin']
+         'purity_completeness_per_bin']
 
 
 def load_summary(input_dir):
@@ -55,6 +55,7 @@ def create_completeness_contamination_table(input_dir, output_dir, gold_standard
     os.system("latex -output-directory " + output_dir + " " + output_dir + "/completeness_contamination_table.tex")
     os.system("dvips " + output_dir + "/completeness_contamination_table.dvi " + "-o " + output_dir + "/completeness_contamination_table.ps")
     os.system("ps2eps -f " + output_dir + "/completeness_contamination_table.ps")
+    os.system("cp " + output_dir + "/completeness_contamination_table.eps " + input_dir)
 
 
 def create_pdf(input_dir, output_dir, plots):
@@ -94,7 +95,7 @@ def create_pdf(input_dir, output_dir, plots):
 
 def main():
     parser = argparse.ArgumentParser(description="Combine figures and table of completeness and contamination into file summary.pdf")
-    parser.add_argument('-c', '--figure_codes', help="Comma-separated figure codes without spaces (1=average precision vs. average recall, 2=ari vs. %%assigned bps, 3=weighed precision vs. weighed recall, 4=table of contamination and completeness, 5=precision vs. recall per bin; default 1,2,3,4)", required=False)
+    parser.add_argument('-c', '--figure_codes', help="Comma-separated figure codes without spaces (1=average purity vs. average completeness, 2=ari vs. %%assigned bps, 3=weighed purity vs. weighed completeness, 4=table of contamination and completeness, 5=purity vs. completeness per bin; default 1,2,3,4)", required=False)
     parser.add_argument('-i', '--input_dir', help="Directory to read file summary.tsv and figures from", required=True)
     parser.add_argument('-o', '--output_dir', help="Directory to write pdf and temporary files (if different from input_dir)", required=False)
     parser.add_argument('-g', '--gold_standard_file', help=argparse_parents.HELP_GOLD_STANDARD_FILE, required=False)
