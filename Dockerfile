@@ -2,8 +2,9 @@ FROM bioboxes/biobox-minimal-base
 
 ADD image /usr/local
 RUN install.sh
-ADD *.py /usr/local/bin/ 
-ADD utils /usr/local/bin/utils
+ADD *.py /usr/local/bin/
+ADD src /usr/local/bin/src
+ADD src/utils /usr/local/bin/src/utils
 ADD requirements /requirements
 RUN pip3 install -r /requirements/default.txt
 
