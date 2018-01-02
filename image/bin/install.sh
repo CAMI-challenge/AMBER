@@ -12,7 +12,8 @@ make install
 ln -s /usr/local/bin/python3 /usr/local/bin/python 
 
 # install pip
-apt install -y python3-pip python3-dev pkg-config libfreetype6-dev 
+apt install -y python3-pip python3-dev pkg-config libfreetype6-dev
+pip3 install --upgrade pip
 
 # remove make, configure and wget
 apt remove -y build-essential wget
