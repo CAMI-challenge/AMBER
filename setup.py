@@ -9,9 +9,9 @@ def dependencies():
         return f.read().splitlines()
 
 setup(
-    name                 = 'amber',
+    name                 = 'ambie',
     version              = __version__,
-    description          = 'AMBER: Assessment of Metagenome BinnERs',
+    description          = 'AMBIE: Assessment of Metagenome BInnErs',
     author               = 'CAMI',
     author_email         = 'contact@cami-challenge.org',
     url                  = 'http://cami-challenge.org',
