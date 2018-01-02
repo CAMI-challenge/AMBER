@@ -12,7 +12,7 @@ Feature: Run Scripts without error
       |  gsa_mapping.binning      | input |
     When I run the command
     """
-    ../precision_recall_by_bpcount.py -g input/gsa_mapping.binning input/test_query.binning
+    ../src/precision_recall_by_bpcount.py -g input/gsa_mapping.binning input/test_query.binning
     """
     Then the exit code should be 0
     And the stdout should contain:

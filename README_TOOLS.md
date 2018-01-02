@@ -1,4 +1,4 @@
-### precision_recall.py
+### src/precision_recall.py
 ~~~BASH
 usage: precision_recall.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE]
                            [-l LABELS] [-p FILTER] [-r REMOVE_GENOMES]
@@ -32,7 +32,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall.py -g test/gsa_mapping.binning \
+python3 src/precision_recall.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 -r test/unique_common.tsv -k "circular element" \
 -p 1 \
@@ -47,7 +47,7 @@ CONCOCT    0.837     0.266             0.052         0.517  0.476          0.069
 MetaBAT    0.822     0.256             0.047         0.570  0.428          0.065
 ~~~
 
-### precision_recall_per_bin.py
+### src/precision_recall_per_bin.py
 ~~~BASH
 usage: precision_recall_per_bin.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE]
                                    [-m]
@@ -69,7 +69,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_bin.py -g test/gsa_mapping.binning \
+python3 precision_recall_per_bin.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2
 ~~~
@@ -83,7 +83,7 @@ evo_1035930.029 0.995223021915 1.0     2423708        2412130             241213
 ...
 ~~~
 
-### utils/exclude_genomes.py
+### src/utils/exclude_genomes.py
 ~~~BASH
 usage: exclude_genomes.py [-h] -r REMOVE_GENOMES [-k KEYWORD] [file]
 
@@ -106,17 +106,17 @@ optional arguments:
 
 The example computes the table of precision and recall and pipes it to utils/exclude_genomes.py.
 ~~~BASH
-./precision_recall_per_bin.py -g test/gsa_mapping.binning \
+python3 src/precision_recall_per_bin.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
-./utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element"
+python3 src/utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element"
 ~~~
 
 **Output:**
 
 The output the is the table from precision_recall_per_bin.py without the excluded genomes.
 
-### precision_recall_average.py
+### src/precision_recall_average.py
 ~~~BASH
 usage: precision_recall_average.py [-h] [-p FILTER] [-l LABEL] [file]
 
@@ -136,11 +136,11 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_bin.py -g test/gsa_mapping.binning \
+python3 src/precision_recall_per_bin.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
-./utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element" | \
-./precision_recall_average.py -p 1 -l "MaxBin 2.0"
+python3 src/utils/exclude_genomes.py -r test/unique_common.tsv -k "circular element" | \
+python3 src/precision_recall_average.py -p 1 -l "MaxBin 2.0"
 ~~~
 **Output:**
 ~~~BASH
@@ -148,7 +148,7 @@ tool       precision std_dev_precision sem_precision recall std_dev_recall sem_r
 MaxBin 2.0 0.948     0.095             0.016         0.799  0.364          0.058
 ~~~
 
-### precision_recall_by_bpcount.py
+### src/precision_recall_by_bpcount.py
 ~~~BASH
 usage: precision_recall_by_bpcount.py [-h] -g GOLD_STANDARD_FILE
                                       [-f FASTA_FILE]
@@ -170,7 +170,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_by_bpcount.py -g test/gsa_mapping.binning \
+python3 src/precision_recall_by_bpcount.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2
 ~~~
@@ -180,7 +180,7 @@ precision recall
 0.934     0.838
 ~~~
 
-### rand_index.py
+### src/rand_index.py
 ~~~BASH
 usage: rand_index.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] bin_file
 
@@ -200,7 +200,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./rand_index.py -g test/gsa_mapping.binning \
+python3 src/rand_index.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2
 ~~~
@@ -210,7 +210,7 @@ rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq percen
 0.995            0.951             0.917              0.782               0.864
 ~~~
 
-### genome_recovery.py
+### src/genome_recovery.py
 ~~~BASH
 usage: genome_recovery.py [-h] [-p FILTER] [-l LABEL] [-x MIN_COMPLETENESS]
                           [-y MAX_CONTAMINATION]
@@ -238,10 +238,10 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_bin.py -g test/gsa_mapping.binning \
+python3 src/precision_recall_per_bin.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
-./genome_recovery.py -l "MaxBin 2.0" -p 1
+python3 src/genome_recovery.py -l "MaxBin 2.0" -p 1
 ~~~
 **Output:**
 ~~~BASH
@@ -250,7 +250,7 @@ MaxBin 2.0         >50% complete >70% complete >90% complete
 <5% contamination  23            23            21
 ~~~
 
-### plot_by_genome.py
+### src/plot_by_genome.py
 ~~~BASH
 usage: plot_by_genome.py [-h] [-s {recall,precision}] [-o OUT_FILE] [file]
 
@@ -269,15 +269,15 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./precision_recall_per_bin.py -g test/gsa_mapping.binning \
+python3 src/precision_recall_per_bin.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz \
 test/naughty_carson_2 | \
-./plot_by_genome.py
+python3 src/plot_by_genome.py
 ~~~
 **Output:**
 Figure is shown on screen.
 
-### utils/convert_fasta_bins_to_biobox_format.py
+### src/utils/convert_fasta_bins_to_biobox_format.py
 ~~~BASH
 usage: convert_fasta_bins_to_biobox_format.py [-h] [-o OUTPUT_FILE]
                                               paths [paths ...]
@@ -294,7 +294,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./utils/convert_fasta_bins_to_cami.py \
+python3 src/utils/convert_fasta_bins_to_cami.py \
 /path/to/file/maxbin.out.001.fasta \
 /path/to/file/maxbin.out.002.fasta \
 /path/to/file/maxbin.out.003.fasta \
@@ -304,12 +304,12 @@ optional arguments:
 ~~~
 Alternatively:
 ~~~BASH
-./utils/convert_fasta_bins_to_cami.py /path/to/file/maxbin.out.0* -o bins.tsv
+python3 src/utils/convert_fasta_bins_to_cami.py /path/to/file/maxbin.out.0* -o bins.tsv
 ~~~
 **Output:**
 File bins.tsv is created in the working directory.
 
-### utils/add_length_column.py
+### src/utils/add_length_column.py
 ~~~BASH
 usage: add_length_column.py [-h] -g GOLD_STANDARD_FILE -f FASTA_FILE
 
@@ -326,7 +326,7 @@ optional arguments:
 **Example:**
 File CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz used in the example can be downloaded [here](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz).
 ~~~BASH
-./utils/add_length_column.py -g test/gsa_mapping.binning \
+python3 src/utils/add_length_column.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz
 ~~~
 **Output:**
@@ -343,7 +343,7 @@ RL|S1|C10560 evo_1286_AP.033 995657
 ~~~
 Column _LENGTH in the gold standard mapping eliminates the need for a FASTA or FASTQ file in program evaluate.py.
 
-### create_summary_pdf.py
+### src/create_summary_pdf.py
 _create_summary_pdf.py_ must be run after tool _evaluate.py_. The input directory of _create_summary_pdf.py_ must be the output directory of _evaluate.py_.
 ~~~BASH
 usage: create_summary_pdf.py [-h] [-c FIGURE_CODES] -i INPUT_DIR
@@ -377,7 +377,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./create_summary_pdf.py -i input_dir -c 1,2,3,4 
+python3 src/create_summary_pdf.py -i input_dir -c 1,2,3,4 
 ~~~
 **Output:**
 File summary.pdf will be created in directory input_dir (or in output_dir, if provided).

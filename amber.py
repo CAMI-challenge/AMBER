@@ -1,27 +1,28 @@
 #!/usr/bin/env python
 
 import argparse
+import collections
 import os
 import sys
-import collections
-import precision_recall_per_bin
-import precision_recall_average
-import precision_recall_by_bpcount
-import rand_index
-import genome_recovery
-import accuracy
-import plot_by_genome
-import html_plots
-import plots
 import matplotlib
+from src import accuracy
+from src import genome_recovery
+from src import html_plots
+from src import plot_by_genome
+from src import plots
+from src import precision_recall_by_bpcount
+from src import precision_recall_per_bin
+from src import rand_index
+from src import precision_recall_average
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import pandas as pd
-from utils import exclude_genomes
-from utils import load_data
-from utils import argparse_parents
-from utils import labels
+from src.utils import exclude_genomes
+from src.utils import load_data
+from src.utils import argparse_parents
+from src.utils import labels
 
 
 def get_labels(labels, bin_files):

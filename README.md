@@ -151,6 +151,7 @@ In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and
 * **purity_completeness.tsv**: contains purity and completeness per genome bin
 * **purity_completeness_avg.tsv**: contains purity and completeness averaged over genome bins. Includes standard deviation and standard error of the mean
 * **purity_completeness_by_bpcount.tsv**: contains purity and completeness weighed by base pairs
+* **heatmap.png + .pdf**: heatmap representing base pair assignments to predicted bins vs. their true origins from the underlying genomes
 <!---* **genomes_sorted_by_purity.png + .pdf**: figure of purity and completeness per genome with genomes sorted by purity-->
 <!---* **genomes_sorted_by_completeness.png + .pdf**: figure of purity and completeness per genome with genomes sorted by completeness-->
 

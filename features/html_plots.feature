@@ -11,7 +11,7 @@ Feature: Run Scripts without error
       |  summary.tsv      | input |
     When I run the command
     """
-    ../html_plots.py  -n "goofy" -o "out.html" -p "input/precision_recall.tsv" -s "input/summary.tsv"
+    ../src/html_plots.py  -n "goofy" -o "out.html" -p "input/precision_recall.tsv" -s "input/summary.tsv"
     """
     Then the exit code should be 0
     And the file "out.html" should exist
