@@ -9,6 +9,10 @@ import numpy as np
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import os, sys, inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir)
 from src import plots
 from src.utils import load_data
 from src.utils import argparse_parents

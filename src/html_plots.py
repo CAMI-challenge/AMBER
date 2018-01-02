@@ -22,11 +22,11 @@ from bokeh.models.widgets import Div
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.resources import CDN
 
-from src.utils import labels
 import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
+from src.utils import labels
 from version import __version__
 
 SCATTER_ELEMENT_WIDTH = 1500

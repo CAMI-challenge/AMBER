@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-import os
-
 import matplotlib
-
 matplotlib.use('Agg')
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -13,6 +10,10 @@ import matplotlib.ticker as ticker
 import numpy as np
 import math
 import re
+import os, sys, inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir)
 from src.utils import load_data
 from src.utils import labels
 
