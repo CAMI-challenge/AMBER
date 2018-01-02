@@ -1,1 +1,5 @@
+include README.rst
 include requirements/*
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
