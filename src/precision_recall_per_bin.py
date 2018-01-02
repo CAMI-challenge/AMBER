@@ -15,8 +15,8 @@ import sys
 import numpy as np
 import pandas as pd
 
-from utils import argparse_parents
-from utils import load_data
+from src.utils import argparse_parents
+from src.utils import load_data
 
 
 def map_genomes_by_recall(gold_standard, bin_id_to_list_of_sequence_id):

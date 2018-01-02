@@ -13,7 +13,8 @@ import matplotlib.ticker as ticker
 import numpy as np
 import math
 import re
-from utils import load_data
+from src.utils import load_data
+from src.utils import labels
 
 LEGEND2 = False
 
@@ -135,8 +136,8 @@ def plot_boxplot(data_list, binning_labels, metric_name, output_dir, order=None)
     axs.set_xticklabels(['{:3.0f}'.format(x * 100) for x in vals])
 
     # enable code to rotate labels
-    labels = axs.get_yticklabels()
-    plt.setp(labels, fontsize=14) ## rotation=55
+    tick_labels = axs.get_yticklabels()
+    plt.setp(tick_labels, fontsize=14) ## rotation=55
 
     for box in bplot['boxes']:
         box.set(facecolor=next(colors_iter), linewidth=0.1)
@@ -175,24 +176,24 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
     plot_labels = []
     if plot_type == 'e':
         for summary in summary_per_query:
-            axs.errorbar(float(summary['avg_purity']), float(summary['avg_completeness']), xerr=float(summary['sem_purity']), yerr=float(summary['sem_completeness']),
+            axs.errorbar(float(summary[labels.AVG_PRECISION]), float(summary[labels.AVG_RECALL]), xerr=float(summary[labels.SEM_PRECISION]), yerr=float(summary[labels.SEM_RECALL]),
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
                          mfc=colors_list[i],
                          capsize=3,
                          markersize=8)
-            plot_labels.append(summary['binning_label'])
+            plot_labels.append(summary[labels.TOOL])
             i += 1
     if plot_type == 'w':
         for summary in summary_per_query:
-            axs.plot(float(summary['avg_purity_per_bp']), float(summary['avg_completeness_per_bp']), marker='o', color=colors_list[i], markersize=10)
-            plot_labels.append(summary['binning_label'])
+            axs.plot(float(summary[labels.PRECISION]), float(summary[labels.RECALL]), marker='o', color=colors_list[i], markersize=10)
+            plot_labels.append(summary[labels.TOOL])
             i += 1
     elif plot_type == 'p':
         for summary in summary_per_query:
-            axs.plot(float(summary['a_rand_index_by_bp']), float(summary['percent_assigned_bps']), marker='o', color=colors_list[i], markersize=10)
-            plot_labels.append(summary['binning_label'])
+            axs.plot(float(summary[labels.ARI_BY_BP]), float(summary[labels.PERCENTAGE_ASSIGNED_BPS]), marker='o', color=colors_list[i], markersize=10)
+            plot_labels.append(summary[labels.TOOL])
             i += 1
 
     # turn on grid

@@ -3,10 +3,10 @@
 import argparse
 import sys
 
-from utils import argparse_parents
-from utils import load_data
+from src.utils import argparse_parents
+from src.utils import load_data
 
-from utils import labels
+from src.utils import labels
 
 
 def choose2(n):

@@ -4,8 +4,8 @@ import argparse
 from collections import Counter
 from collections import defaultdict
 
-from utils import argparse_parents
-from utils import load_data
+from src.utils import argparse_parents
+from src.utils import load_data
 
 
 def calc_accuracy(bin_id_to_genome_id_to_total_length, gold_standard):

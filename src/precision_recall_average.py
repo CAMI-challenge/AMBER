@@ -5,11 +5,11 @@ import math
 import sys
 
 import numpy as np
-from utils import argparse_parents
-from utils import filter_tail
-from utils import load_data
+from src.utils import argparse_parents
+from src.utils import filter_tail
+from src.utils import load_data
 
-from utils import labels
+from src.utils import labels
 
 
 def compute_precision_and_recall(data, filter_tail_percentage):

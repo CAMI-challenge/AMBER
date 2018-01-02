@@ -10,8 +10,8 @@ import numpy as np
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from src import plots
-from utils import load_data
-from utils import argparse_parents
+from src.utils import load_data
+from src.utils import argparse_parents
 
 
 def plot_by_genome(data, out_file=None, sort_by='completeness'):

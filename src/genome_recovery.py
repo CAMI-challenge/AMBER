@@ -4,10 +4,11 @@ import argparse
 import sys
 
 import numpy as np
+import collections
 
-from utils import argparse_parents
-from utils import filter_tail
-from utils import load_data
+from src.utils import argparse_parents
+from src.utils import filter_tail
+from src.utils import load_data
 
 
 def get_defaults():
@@ -34,6 +35,20 @@ def calc_table(metrics, min_completeness, max_contamination):
     return genome_recovery
 
 
+def calc_dict(metrics, min_completeness, max_contamination):
+    if not min_completeness:
+        min_completeness = get_defaults()[0]
+    if not max_contamination:
+        max_contamination = get_defaults()[1]
+
+    genome_recovery = calc_table(metrics, min_completeness, max_contamination)
+    counts_dict = collections.OrderedDict()
+    for i, cont in zip(range(len(max_contamination)), max_contamination):
+        for j, compl in zip(range(len(min_completeness)), min_completeness):
+            counts_dict['>{}compl<{}cont'.format(compl, cont)] = genome_recovery[i][j]
+    return counts_dict
+
+
 def print_table(genome_recovery, label, min_completeness, max_contamination, stream=sys.stdout):
     if not label:
         label = ""
@@ -55,8 +70,8 @@ def print_table(genome_recovery, label, min_completeness, max_contamination, str
 def main():
     parser = argparse.ArgumentParser(description="Calculate number of genome bins recovered with more than the specified thresholds of completeness and contamination. Default: >50%, >70%, >90% completeness vs. <10%, <5% contamination",
                                      parents=[argparse_parents.PARSER_MULTI])
-    parser.add_argument('-x', '--min_completeness', help="Comma-separated list of min. completeness thresholds (default: 50,70,90)", required=False)
-    parser.add_argument('-y', '--max_contamination', help="Comma-separated list of max. contamination thresholds (default: 10,5)", required=False)
+    parser.add_argument('-x', '--min_completeness', help=argparse_parents.HELP_THRESHOLDS_COMPLETENESS, required=False)
+    parser.add_argument('-y', '--max_contamination', help=argparse_parents.HELP_THRESHOLDS_CONTAMINATION, required=False)
     args = parser.parse_args()
     if not args.file and sys.stdin.isatty():
         parser.print_help()

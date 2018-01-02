@@ -5,9 +5,9 @@ import argparse
 from src import precision_recall_per_bin
 
 from src import precision_recall_average
-from utils import argparse_parents
-from utils import exclude_genomes
-from utils import load_data
+from src.utils import argparse_parents
+from src.utils import exclude_genomes
+from src.utils import load_data
 
 
 def evaluate_all(gold_standard, queries, labels, filter_tail_percentage, genomes_file, keyword, map_by_recall):

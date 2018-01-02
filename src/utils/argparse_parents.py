@@ -12,7 +12,9 @@ HELP_GENOMES_FILE = "File with list of genomes to be removed"
 HELP_LABEL = "Binning name"
 HELP_LABELS = "Comma-separated binning names"
 HELP_KEYWORD = "Keyword in the second column of file with list of genomes to be removed (no keyword=remove all genomes in list)"
-HELP_MAP_BY_RECALL = "Map genomes to bins by maximizing recall"
+HELP_MAP_BY_RECALL = "Map genomes to bins by maximizing completeness"
+HELP_THRESHOLDS_COMPLETENESS = "Comma-separated list of min. completeness thresholds (default %%: 50,70,90)"
+HELP_THRESHOLDS_CONTAMINATION = "Comma-separated list of max. contamination thresholds (default %%: 10,5)"
 
 PARSER_GS = argparse.ArgumentParser(add_help=False)
 PARSER_GS.add_argument("bin_file", help=HELP_QUERY_FILE)

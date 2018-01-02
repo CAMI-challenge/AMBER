@@ -3,8 +3,8 @@
 import argparse
 import os
 
-from utils import argparse_parents
-from utils import load_data
+from src.utils import argparse_parents
+from src.utils import load_data
 
 PLOTS = ['avg_purity_completeness',
          'ari_vs_assigned_bps',

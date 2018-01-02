@@ -22,7 +22,7 @@ from bokeh.models.widgets import Div
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.resources import CDN
 
-from utils.labels import abbreviations
+from src.utils import labels
 import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -48,25 +48,13 @@ COLORS_20 = palettes.d3['Category20'][20]
 COLORS_10 = palettes.d3['Category10'][10]
 HEATMAP_COLORS = list(reversed(palettes.RdYlBu[10])) + ['white']
 
-COMPL_0_5 = '_05compl'
-COMPL_0_9 = '_09compl'
-COMPL_0_7 = '_07compl'
-CONT_0_1 = '_01cont'
-CONT_0_05 = '_005cont'
+COMPL_0_5 = '>0.5compl'
+COMPL_0_9 = '>0.9compl'
+COMPL_0_7 = '>0.7compl'
+CONT_0_1 = '<0.1cont'
+CONT_0_05 = '<0.05cont'
 
-SEM_PRECISION_FILE= "sem_purity"
-SEM_RECALL_FILE= "sem_completeness"
-STD_DEV_RECALL_FILE= "std_dev_completeness"
-STD_DEV_PRECISION_FILE= "std_dev_purity"
-
-SEM_PRECISION= SEM_PRECISION_FILE
-SEM_RECALL= SEM_RECALL_FILE
-STD_DEV_RECALL= "std_deviation_completeness"
-STD_DEV_PRECISION= "std_deviation_purity"
-
-NO_COLOR_COLUMNS_FILE = [SEM_PRECISION_FILE, SEM_RECALL_FILE, STD_DEV_PRECISION_FILE, STD_DEV_RECALL_FILE]
-
-NO_COLOR_COLUMNS = [SEM_PRECISION, SEM_RECALL, STD_DEV_PRECISION, STD_DEV_RECALL]
+NO_COLOR_COLUMNS = [labels.SEM_PRECISION, labels.SEM_RECALL, labels.STD_DEV_PRECISION, labels.STD_DEV_RECALL]
 
 CONTAMINATION_COMPLETENESS_COLUMNS = [
     '{}{}'.format(COMPL_0_5, CONT_0_1),
@@ -429,7 +417,7 @@ def build_html_summary_path(precision_recall_paths, names, summary, html_output)
     summary_df = pd.DataFrame.from_csv(summary, sep='\t', header=0)
     summary_df = summary_df.rename(index=str, columns=dict(zip(CONTAMINATION_COMPLETENESS_COLUMNS_FILE,
                                                                CONTAMINATION_COMPLETENESS_COLUMNS)))
-    build_html(precision_recall_paths, names, summary_df, html_output, CONTAMINATION_COMPLETENESS_COLUMNS, NO_COLOR_COLUMNS_FILE)
+    build_html(precision_recall_paths, names, summary_df, html_output, CONTAMINATION_COMPLETENESS_COLUMNS, NO_COLOR_COLUMNS)
 
 
 def build_html(precision_recall_paths, names, summary, html_output,
@@ -455,9 +443,9 @@ def build_html(precision_recall_paths, names, summary, html_output,
     def create_entry(k, v):
         return "<li><strong>{0}: </strong>{1}</li>".format(k, v)
 
-    html_listing = list(map(lambda k: create_entry(k, abbreviations[k]),
+    html_listing = list(map(lambda k: create_entry(k, labels.abbreviations[k]),
                             list(filter(lambda k: k not in CONTAMINATION_COMPLETENESS_COLUMNS_FILE,
-                                        abbreviations.keys()))))
+                                        labels.abbreviations.keys()))))
 
     element_column.append(
         create_description("<ul>{0}</ul>".format(" ".join(html_listing))))
