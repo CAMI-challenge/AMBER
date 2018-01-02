@@ -3,6 +3,8 @@ from setuptools import setup, find_packages
 from version import __version__
 import glob
 
+readme = open('README.rst').read()
+
 def dependencies():
     file_ = pkg_resources.resource_filename(__name__, os.path.join('requirements', 'default.txt'))
     with open(file_, 'r') as f:
@@ -12,6 +14,7 @@ setup(
     name                 = 'amber',
     version              = __version__,
     description          = 'AMBER: Assessment of Metagenome BinnERs',
+    long_description     = readme,
     author               = 'CAMI',
     author_email         = 'contact@cami-challenge.org',
     url                  = 'http://cami-challenge.org',
