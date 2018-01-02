@@ -4,8 +4,10 @@ import argparse
 import os
 import matplotlib
 matplotlib.use('Agg')
+import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+import matplotlib.ticker as ticker
 import numpy as np
 import math
 import re
@@ -46,11 +48,11 @@ def scan_dir(output_dir):
     data_list = []
     binning_labels = []
     for path in [d for d in (os.path.join(output_dir, d1) for d1 in os.listdir(output_dir)) if os.path.isdir(d)]:
-        f = open(path + '/purity_completeness.tsv', 'r')
+        f = open(os.path.join(path, 'purity_completeness.tsv'), 'r')
         data_list.append(load_data.load_tsv_table(f))
 
         # load label and order
-        f = open(path + '/label.txt', 'r')
+        f = open(os.path.join(path, 'label.txt'), 'r')
         line = f.readline().rstrip('\n')
         match = p_order.match(line)
         match_string = match.group()
@@ -59,6 +61,43 @@ def scan_dir(output_dir):
         f.close()
 
     return data_list, binning_labels, order
+
+
+def plot_heatmap(df_confusion, output_dir, separate_bar=False):
+    fig, axs = plt.subplots(figsize=(10, 8))
+
+    sns_plot = sns.heatmap(df_confusion, ax=axs, annot=False, cmap="YlGnBu_r", xticklabels=False, yticklabels=False, cbar=True)
+    sns_plot.set_xlabel("Genomes", fontsize=20)
+    sns_plot.set_ylabel("Predicted bins", fontsize=20)
+    # plt.yticks(fontsize=8, rotation=0)
+    # plt.xticks(fontsize=8)
+
+    fig.savefig(os.path.normpath(output_dir + '/heatmap.eps'), dpi=100, format='eps', bbox_inches='tight')
+    fig.savefig(os.path.normpath(output_dir + '/heatmap.png'), dpi=100, format='png', bbox_inches='tight')
+    plt.close(fig)
+
+    if not separate_bar:
+        return
+
+    # create separate figure for bar
+    fig = plt.figure(figsize=(6, 6))
+    mappable = sns_plot.get_children()[0]
+    fmt = lambda x, pos: '{:.0f}'.format(x / 1000000)
+
+    cbar = plt.colorbar(mappable, orientation='vertical', label='[millions]', format=ticker.FuncFormatter(fmt))
+
+    text = cbar.ax.yaxis.label
+    font = matplotlib.font_manager.FontProperties(size=16)
+    text.set_font_properties(font)
+
+    cbar.outline.set_visible(False)
+    cbar.ax.tick_params(labelsize=14)
+
+    # store separate bar figure
+    plt.gca().set_visible(False)
+    fig.savefig(os.path.normpath(output_dir + '/heatmap_bar.eps'), dpi=100, format='eps', bbox_inches='tight')
+
+    plt.close(fig)
 
 
 def plot_boxplot(data_list, binning_labels, metric_name, output_dir, order=None):

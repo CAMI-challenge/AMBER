@@ -41,7 +41,7 @@ def evaluate_all(gold_standard_file,
                  query_files,
                  labels,
                  filter_tail_percentage,
-                 genomes_file,
+                 filter_genomes_file,
                  keyword,
                  map_by_recall,
                  output_dir):
@@ -56,17 +56,29 @@ def evaluate_all(gold_standard_file,
         path = os.path.join(output_dir, tool_id)
         load_data.make_sure_path_exists(path)
 
-        f = open(path + "/label.txt", 'w')
+        f = open(os.path.join(path, "label.txt"), 'w')
         f.write("#({}){}".format(count, binning_label))
         f.close()
 
         query = load_data.open_query(query_file)
 
+        if map_by_recall:
+            bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes = precision_recall_per_bin.map_genomes_by_recall(gold_standard, query.bin_id_to_list_of_sequence_id)
+        else:
+            bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes = precision_recall_per_bin.map_genomes(gold_standard, query.bin_id_to_list_of_sequence_id)
+
+        df_confusion = precision_recall_per_bin.compute_confusion_matrix(
+            bin_id_to_mapped_genome,
+            bin_id_to_genome_id_to_total_length,
+            gold_standard,
+            query)
+        plots.plot_heatmap(df_confusion, path)
+
         # PRECISION RECALL PER BIN
-        bin_metrics = precision_recall_per_bin.compute_metrics(query, gold_standard, map_by_recall)
-        if genomes_file:
-            bin_metrics = exclude_genomes.filter_data(bin_metrics, genomes_file, keyword)
-        f = open(path + "/purity_completeness.tsv", 'w')
+        bin_metrics = precision_recall_per_bin.compute_metrics(query, gold_standard, bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes)
+        if filter_genomes_file:
+            bin_metrics = exclude_genomes.filter_data(bin_metrics, filter_genomes_file, keyword)
+        f = open(os.path.join(path, "purity_completeness.tsv"), 'w')
         precision_recall_per_bin.print_metrics(bin_metrics, f)
         # slow code disabled
         # plot_by_genome.plot_by_genome(bin_metrics, path + '/genomes_sorted_by_recall', 'recall')
@@ -76,7 +88,7 @@ def evaluate_all(gold_standard_file,
         # AVG PRECISION RECALL
         avg_precision, avg_recall, std_deviation_precision, std_deviation_recall, sem_precision, sem_recall = \
             precision_recall_average.compute_precision_and_recall(bin_metrics, filter_tail_percentage)
-        f = open(path + "/purity_completeness_avg.tsv", 'w')
+        f = open(os.path.join(path, "purity_completeness_avg.tsv"), 'w')
         precision_recall_average.print_precision_recall_table_header(f)
         precision_recall_average.print_precision_recall(binning_label,
                                                         avg_precision,
@@ -90,13 +102,13 @@ def evaluate_all(gold_standard_file,
 
         # PRECISION RECALL BY BP COUNTS
         precision, recall = precision_recall_by_bpcount.compute_metrics(query, gold_standard)
-        f = open(path + "/purity_completeness_by_bpcount.tsv", 'w')
+        f = open(os.path.join(path, "purity_completeness_by_bpcount.tsv"), 'w')
         precision_recall_by_bpcount.print_precision_recall_by_bpcount(precision, recall, f)
         f.close()
 
         # (ADJUSTED) RAND INDEX
         ri_by_seq, ri_by_bp, a_rand_index_by_bp, a_rand_index_by_seq, percent_assigned_bps = rand_index.compute_metrics(query, gold_standard)
-        f = open(path + "/rand_index.tsv", 'w')
+        f = open(os.path.join(path, "rand_index.tsv"), 'w')
         rand_index.print_rand_indices(ri_by_seq, ri_by_bp, a_rand_index_by_bp, a_rand_index_by_seq, percent_assigned_bps, f)
         f.close()
 
@@ -177,7 +189,7 @@ def print_summary(summary_per_query, output_dir=None):
     if output_dir is None:
         stream=sys.stdout
     else:
-        stream = open(output_dir + "/summary.tsv", 'w')
+        stream = open(os.path.join(output_dir, "summary.tsv"), 'w')
     stream.write("%s\n" % "\t".join((labels.TOOL,
                                      labels.AVG_PRECISION,
                                      labels.STD_DEV_PRECISION,
@@ -260,7 +272,7 @@ def main():
     precision_recall_files = []
     for query_file in args.bin_files:
         tool_id = query_file.split('/')[-1]
-        precision_recall_files.append(os.path.join(args.output_dir, tool_id) + "/purity_completeness.tsv")
+        precision_recall_files.append(os.path.join(args.output_dir, tool_id, "purity_completeness.tsv"))
     df = pd.DataFrame.from_dict(summary_per_query)
     df.set_index('binning_label', inplace=True)
     df.rename(columns={'binning_label': 'Tool'}, inplace=True)

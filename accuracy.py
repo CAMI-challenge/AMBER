@@ -7,13 +7,18 @@ from collections import defaultdict
 from utils import argparse_parents
 
 
-def calc_accuracy(bin_id_to_genome_id_to_total_length, bin_id_to_total_lengths, gold_standard, query):
-    query_sequence_ids = set(query.sequence_id_to_bin_id.keys())
-    gs_sequence_ids = set(gold_standard.sequence_id_to_lengths.keys())
-    unassigned = 0
-    for unassigned_seq_id in gs_sequence_ids - query_sequence_ids:
-        unassigned += gold_standard.sequence_id_to_lengths[unassigned_seq_id]
-    denominator_p = sum(bin_id_to_total_lengths.values()) + unassigned
+def calc_accuracy(bin_id_to_genome_id_to_total_length, gold_standard):
+    # query_sequence_ids = set(query.sequence_id_to_bin_id.keys())
+    # gs_sequence_ids = set(gold_standard.sequence_id_to_lengths.keys())
+    # unassigned = 0
+    # for unassigned_seq_id in gs_sequence_ids - query_sequence_ids:
+    #     unassigned += gold_standard.sequence_id_to_lengths[unassigned_seq_id]
+    # denominator_p = sum(bin_id_to_total_lengths.values()) + unassigned
+
+    # summing up assigned and unassigned bps is equivalent to summing up the length of all genomes
+    denominator_p = 0
+    for genome_id in gold_standard.genome_id_to_total_length.keys():
+        denominator_p += gold_standard.genome_id_to_total_length[genome_id]
 
     true_positives_p = 0
     for predicted_bin, genome_assigns in list(bin_id_to_genome_id_to_total_length.items()):
@@ -44,7 +49,7 @@ def compute_metrics(query, gold_standard):
             bin_id_to_total_length[predicted_bin] += gold_standard.sequence_id_to_lengths[sequence_id]
             genome_id = gold_standard.sequence_id_to_genome_id[sequence_id]
             bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += gold_standard.sequence_id_to_lengths[sequence_id]
-    accuracy = calc_accuracy(bin_id_to_genome_id_to_total_length, bin_id_to_total_length, gold_standard, query)
+    accuracy = calc_accuracy(bin_id_to_genome_id_to_total_length, gold_standard)
     return accuracy
 
 

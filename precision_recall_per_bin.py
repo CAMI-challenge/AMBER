@@ -11,6 +11,8 @@
 import argparse
 import numpy as np
 import sys
+import collections
+import pandas as pd
 from utils import load_data
 from utils import argparse_parents
 
@@ -27,7 +29,7 @@ def map_genomes_by_recall(gold_standard, bin_id_to_list_of_sequence_id):
     @return:
     """
     bin_id_to_genome_id_to_total_length = {}
-    mapped = set()
+    mapped_genomes = set()
     bin_id_to_mapped_genome = {}
     for predicted_bin in bin_id_to_list_of_sequence_id:
         bin_id_to_genome_id_to_total_length[predicted_bin] = {}
@@ -45,9 +47,9 @@ def map_genomes_by_recall(gold_standard, bin_id_to_list_of_sequence_id):
                 best_genome_id = genome_id
             elif max_genome_percentage == genome_percentage and gold_standard.genome_id_to_total_length[genome_id] > gold_standard.genome_id_to_total_length[best_genome_id]:
                 best_genome_id = genome_id
-        mapped.add(best_genome_id)
+        mapped_genomes.add(best_genome_id)
         bin_id_to_mapped_genome[predicted_bin] = best_genome_id
-    return bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped
+    return bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes
 
 
 def map_genomes(gold_standard, bin_id_to_list_of_sequence_id):
@@ -80,6 +82,48 @@ def map_genomes(gold_standard, bin_id_to_list_of_sequence_id):
         mapped.add(best_genome_id)
         bin_id_to_mapped_genome[predicted_bin] = best_genome_id
     return bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped
+
+
+def compute_confusion_matrix(bin_id_to_mapped_genome,
+                             bin_id_to_genome_id_to_total_length,
+                             gold_standard,
+                             query):
+    df_confusion = pd.DataFrame(bin_id_to_genome_id_to_total_length).T
+
+    query_sequence_ids = set(query.sequence_id_to_bin_id.keys())
+    gs_sequence_ids = set(gold_standard.sequence_id_to_lengths.keys())
+    genome_id_to_unassigned_bps = collections.Counter()
+    for unassigned_seq_id in gs_sequence_ids - query_sequence_ids:
+        genome_id = gold_standard.sequence_id_to_genome_id[unassigned_seq_id]
+        genome_id_to_unassigned_bps[genome_id] += gold_standard.sequence_id_to_lengths[unassigned_seq_id]
+
+    df_unassigned = pd.DataFrame.from_dict(genome_id_to_unassigned_bps, orient='index').rename(columns={0: 'unassigned'}).T
+    table = df_confusion.append(df_unassigned)
+    table.fillna(0, inplace=True)
+    # use log scale
+    #table = table.applymap(np.log).fillna(0)
+
+    # sort bins by the number of true positives (length of mapped genome within the bin)
+    bin_id_to_mapped_genome_by_length = collections.OrderedDict(sorted(bin_id_to_mapped_genome.items(), key=lambda t: bin_id_to_genome_id_to_total_length[t[0]][t[1]], reverse=True))
+
+    # sort genomes
+    genome_order = []
+    for bin_id in bin_id_to_mapped_genome_by_length:
+        mapped_genome = bin_id_to_mapped_genome_by_length[bin_id]
+        if mapped_genome not in genome_order:
+            genome_order.append(mapped_genome)
+    genome_order += list(set(table.columns.values.tolist()) - set(genome_order))
+    for genome_id in genome_id_to_unassigned_bps.keys():
+        if genome_id not in genome_order:
+            genome_order.append(genome_id)
+
+    table = table.loc[list(bin_id_to_mapped_genome_by_length.keys()) + ['unassigned'], genome_order]
+
+    for genome_id in gold_standard.genome_id_to_total_length.keys():
+        if genome_id not in table.columns.values.tolist():
+            table[genome_id] = 0
+
+    return table
 
 
 def compute_precision_recall(gold_standard,
@@ -118,17 +162,12 @@ def compute_precision_recall(gold_standard,
     return sorted(bin_metrics, key=lambda t: t['completeness'], reverse=True)
 
 
-def compute_metrics(query, gold_standard, map_by_recall=False):
-    if map_by_recall:
-        bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped = map_genomes_by_recall(gold_standard, query.bin_id_to_list_of_sequence_id)
-    else:
-        bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped = map_genomes(gold_standard, query.bin_id_to_list_of_sequence_id)
-
+def compute_metrics(query, gold_standard, bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes):
     bin_metrics = compute_precision_recall(gold_standard,
                                            query.bin_id_to_list_of_sequence_id,
                                            bin_id_to_mapped_genome,
                                            bin_id_to_genome_id_to_total_length,
-                                           mapped)
+                                           mapped_genomes)
     return bin_metrics
 
 

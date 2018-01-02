@@ -36,6 +36,14 @@ class Query:
         pass
 
 
+def load_unique_common(unique_common_file_path):
+    genome_to_unique_common = {}
+    with open(unique_common_file_path) as read_handler:
+        for line in read_handler:
+            genome_to_unique_common[line.split("\t")[0]] = line.split("\t")[1].strip('\n')
+    return genome_to_unique_common
+
+
 def load_tsv_table(stream):
     data = []
     next(stream)
@@ -104,7 +112,7 @@ def get_genome_mapping_without_lenghts(mapping_file, remove_genomes_file=None, k
 
     filtering_genomes_to_keyword = {}
     if remove_genomes_file:
-        filtering_genomes_to_keyword = exclude_genomes.load_unique_common(remove_genomes_file)
+        filtering_genomes_to_keyword = load_unique_common(remove_genomes_file)
 
     with open(mapping_file, 'r') as read_handler:
         for sequence_id, genome_id, length in read_binning_file(read_handler):

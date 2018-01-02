@@ -6,24 +6,18 @@ import argparse
 
 try:
     import argparse_parents
+    import load_data
 except ImportError:
     sys.path.append(os.path.dirname(__file__))
     try:
         import argparse_parents
+        import load_data
     finally:
         sys.path.remove(os.path.dirname(__file__))
 
 
-def load_unique_common(unique_common_file_path):
-    genome_to_unique_common = {}
-    with open(unique_common_file_path) as read_handler:
-        for line in read_handler:
-            genome_to_unique_common[line.split("\t")[0]] = line.split("\t")[1].strip('\n')
-    return genome_to_unique_common
-
-
 def print_filtered_data(stream, unique_common_file_path, keyword):
-    genome_to_unique_common = load_unique_common(unique_common_file_path)
+    genome_to_unique_common = load_data.load_unique_common(unique_common_file_path)
     for line in stream:
         line = line.strip()
         if len(line) == 0 or line.startswith("@"):
@@ -35,8 +29,19 @@ def print_filtered_data(stream, unique_common_file_path, keyword):
         print(line)
 
 
+def filter_genomes(gold_standard, unique_common_file_path, keyword):
+    if not unique_common_file_path:
+        return gold_standard.genome_id_to_list_of_contigs.keys()
+    genome_to_unique_common = load_data.load_unique_common(unique_common_file_path)
+    genome_ids = []
+    for genome_id in gold_standard.genome_id_to_list_of_contigs:
+        if genome_id not in genome_to_unique_common or (keyword and genome_to_unique_common[genome_id] != keyword):
+            genome_ids.append(genome_id)
+    return genome_ids
+
+
 def filter_data(bin_metrics, unique_common_file_path, keyword):
-    genome_to_unique_common = load_unique_common(unique_common_file_path)
+    genome_to_unique_common = load_data.load_unique_common(unique_common_file_path)
     filtered_bin_metrics = []
     for bin in bin_metrics:
         bin_id = bin['mapped_genome']
