@@ -89,7 +89,7 @@ Additional parameters may be specified - see below.
 ~~~BASH
 usage: amber.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
                 [-p FILTER] [-r REMOVE_GENOMES] [-k KEYWORD] -o OUTPUT_DIR
-                [-m]
+                [-m] [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION]
                 bin_files [bin_files ...]
 
 Compute all metrics and figures for one or more binning files; output summary
@@ -117,7 +117,14 @@ optional arguments:
                         in list)
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         Directory to write the results to
-  -m, --map_by_completeness   Map genomes to bins by maximizing completeness
+  -m, --map_by_completeness
+                        Map genomes to bins by maximizing completeness
+  -x MIN_COMPLETENESS, --min_completeness MIN_COMPLETENESS
+                        Comma-separated list of min. completeness thresholds
+                        (default %: 50,70,90)
+  -y MAX_CONTAMINATION, --max_contamination MAX_CONTAMINATION
+                        Comma-separated list of max. contamination thresholds
+                        (default %: 10,5)
 ~~~
 **Example:**
 ~~~BASH
