@@ -2,7 +2,9 @@
 
 import argparse
 import datetime
+import re
 from math import pi
+from collections import OrderedDict
 
 import bokeh.models.widgets.tables
 import numpy as np
@@ -48,84 +50,11 @@ COLORS_20 = palettes.d3['Category20'][20]
 COLORS_10 = palettes.d3['Category10'][10]
 HEATMAP_COLORS = list(reversed(palettes.RdYlBu[10])) + ['white']
 
-COMPL_0_5 = '>0.5compl'
-COMPL_0_9 = '>0.9compl'
-COMPL_0_7 = '>0.7compl'
-CONT_0_1 = '<0.1cont'
-CONT_0_05 = '<0.05cont'
-
 NO_COLOR_COLUMNS = [labels.SEM_PRECISION, labels.SEM_RECALL, labels.STD_DEV_PRECISION, labels.STD_DEV_RECALL]
-
-CONTAMINATION_COMPLETENESS_COLUMNS = [
-    '{}{}'.format(COMPL_0_5, CONT_0_1),
-    '{}{}'.format(COMPL_0_7, CONT_0_1),
-    '{}{}'.format(COMPL_0_9, CONT_0_1),
-    '{}{}'.format(COMPL_0_5, CONT_0_05),
-    '{}{}'.format(COMPL_0_7, CONT_0_05),
-    '{}{}'.format(COMPL_0_9, CONT_0_05)]
-
-FILE_COMPL_0_5 = '>0.5compl'
-FILE_COMPL_0_9 = '>0.9compl'
-FILE_COMPL_0_7 = '>0.7compl'
-FILE_CONT_0_1 = '<0.1cont'
-FILE_CONT_0_05 = '<0.05cont'
-
-# This array is used when the columns of the file are parsed
-CONTAMINATION_COMPLETENESS_COLUMNS_FILE = ['{}{}'.format(FILE_COMPL_0_5, FILE_CONT_0_1),
-                                           '{}{}'.format(FILE_COMPL_0_7, FILE_CONT_0_1),
-                                           '{}{}'.format(FILE_COMPL_0_9, FILE_CONT_0_1),
-                                           '{}{}'.format(FILE_COMPL_0_5, FILE_CONT_0_05),
-                                           '{}{}'.format(FILE_COMPL_0_7, FILE_CONT_0_05),
-                                           '{}{}'.format(FILE_COMPL_0_9, FILE_CONT_0_05)]
 
 COL_DESCRIPTION = "description"
 COL_TITLE = "title"
 COL_FILE_ID = "file_id"
-
-COMPLETION_COL_0_9 = {
-    COL_DESCRIPTION: "number of bins with more than 90% completeness",
-    COL_TITLE: ">90% completeness",
-}
-
-COMPLETION_COL_0_7 = {
-    COL_DESCRIPTION: "number of bins with more than 70% completeness",
-    COL_TITLE: ">70% completeness",
-    COL_FILE_ID: '>0.7compl'
-}
-
-COMPLETION_COL_0_5 = {
-    COL_DESCRIPTION: "number of bins with more than 50% completeness",
-    COL_TITLE: ">50% completeness",
-    COL_FILE_ID: '>0.5compl'
-}
-
-DESCRIPTION_COMPLETENESS_COL = {
-    COMPL_0_5: COMPLETION_COL_0_5,
-    FILE_COMPL_0_5: COMPLETION_COL_0_5,
-    COMPL_0_7: COMPLETION_COL_0_7,
-    FILE_COMPL_0_7: COMPLETION_COL_0_7,
-    COMPL_0_9: COMPLETION_COL_0_9,
-    FILE_COMPL_0_9: COMPLETION_COL_0_9
-}
-
-DESCRIPTION_COMPLETENESS_COL_X = {
-    FILE_COMPL_0_5: COMPLETION_COL_0_5,
-    FILE_COMPL_0_7: COMPLETION_COL_0_7,
-    FILE_COMPL_0_9: COMPLETION_COL_0_9
-}
-
-DESCRIPTION_CONTAMINATION_ROW = {
-    CONT_0_1: {
-        COL_DESCRIPTION: "number of bins with less than 10% contamination",
-        COL_TITLE: "<10% contamination",
-        COL_FILE_ID: '<0.1cont'
-    },
-    CONT_0_05: {
-        COL_DESCRIPTION: "number of bins with less than 5% contamination",
-        COL_TITLE: "<05% contamination",
-        COL_FILE_ID: '<0.05cont'
-    }
-}
 
 ID_SUMMARY = "summary"
 ID_CONTAMINATION_COMPLETENESS = "contamination_completeness"
@@ -200,30 +129,40 @@ def create_title_a(href, number, name):
     return [div]
 
 
-def create_contamination_completeness_table(df):
-    from collections import OrderedDict
+def get_contamination_completeness_thresholds(df):
+    contamination_completeness_cols = [c for c in df.columns]
+    completeness_thr = []
+    contamination_thr = []
+    for col in contamination_completeness_cols:
+        values = col.split('<')
+        completeness_item = values[0]
+        contamination_item = '<' + values[1]
+        if completeness_item not in completeness_thr:
+            completeness_thr.append(completeness_item)
+        if contamination_item not in contamination_thr:
+            contamination_thr.append(contamination_item)
+    return completeness_thr, contamination_thr
+
+
+def create_contamination_completeness_table(df, completeness_thr, contamination_thr):
     contamination_completenes_row_arr = []
-
     for index, row in df.iterrows():
-        list(filter(lambda x: CONT_0_1 in x, row.index))
-
-        def get_row_for_contamination(row, contamination):
+        for contamination_item in contamination_thr:
             cols = OrderedDict()
-            cols['Tool'] = "{} {}".format(row.name, DESCRIPTION_CONTAMINATION_ROW[contamination][COL_TITLE])
-            cols[COMPL_0_5] = row["{}{}".format(COMPL_0_5, contamination)]
-            cols[COMPL_0_7] = row["{}{}".format(COMPL_0_7, contamination)]
-            cols[COMPL_0_9] = row["{}{}".format(COMPL_0_9, contamination)]
-            return cols
+            contamination_val = format(float(re.match("\d+\.\d+", contamination_item[1:]).group()) * 100, '.0f')
+            cols['Tool'] = '{} <{}% contamination'.format(row.name, contamination_val)
+            for completeness_item in completeness_thr:
+                cols[completeness_item] = row['{}{}'.format(completeness_item, contamination_item)]
+            contamination_completenes_row_arr.append(cols)
 
-        contamination_completenes_row_arr.append(get_row_for_contamination(row, CONT_0_1))
-        contamination_completenes_row_arr.append(get_row_for_contamination(row, CONT_0_05))
     df = pd.DataFrame(contamination_completenes_row_arr)
 
     def create_table_column(field):
         if field == "Tool":
             return widgets.TableColumn(title=field, field=field, width=600)
         else:
-            return widgets.TableColumn(title=DESCRIPTION_COMPLETENESS_COL[field][COL_TITLE], field=field)
+            completeness_val = format(float(re.match("\d+\.\d+", field[1:]).group()) * 100, '.0f')
+            return widgets.TableColumn(title='>{}% completeness'.format(completeness_val), field=field)
 
     dt = DataTable(source=bokeh.models.ColumnDataSource(df),
                    columns=list(map(lambda x: create_table_column(x), df.columns.values)),
@@ -415,13 +354,11 @@ def save_html_file(path, elements):
 
 def build_html_summary_path(precision_recall_paths, names, summary, html_output):
     summary_df = pd.DataFrame.from_csv(summary, sep='\t', header=0)
-    summary_df = summary_df.rename(index=str, columns=dict(zip(CONTAMINATION_COMPLETENESS_COLUMNS_FILE,
-                                                               CONTAMINATION_COMPLETENESS_COLUMNS)))
-    build_html(precision_recall_paths, names, summary_df, html_output, CONTAMINATION_COMPLETENESS_COLUMNS, NO_COLOR_COLUMNS)
+    build_html(precision_recall_paths, names, summary_df, html_output, NO_COLOR_COLUMNS)
 
 
-def build_html(precision_recall_paths, names, summary, html_output,
-               contamination_completeness_cols=CONTAMINATION_COMPLETENESS_COLUMNS, std_dev_sem_columns=NO_COLOR_COLUMNS):
+def build_html(precision_recall_paths, names, summary, html_output, std_dev_sem_columns=NO_COLOR_COLUMNS):
+    contamination_completeness_cols = [c for c in summary.columns if c.startswith('>')]
     element_column = list()
 
     summary.insert(0, "Tool", summary.index)
@@ -444,7 +381,7 @@ def build_html(precision_recall_paths, names, summary, html_output,
         return "<li><strong>{0}: </strong>{1}</li>".format(k, v)
 
     html_listing = list(map(lambda k: create_entry(k, labels.abbreviations[k]),
-                            list(filter(lambda k: k not in CONTAMINATION_COMPLETENESS_COLUMNS_FILE,
+                            list(filter(lambda k: k not in contamination_completeness_cols,
                                         labels.abbreviations.keys()))))
 
     element_column.append(
@@ -453,14 +390,26 @@ def build_html(precision_recall_paths, names, summary, html_output,
 
     element_column.append(create_summary_heatmap(df_without_contam_complete, std_dev_sem_columns))
 
-    completion_contamination_col = map(lambda k: create_entry(DESCRIPTION_COMPLETENESS_COL_X[k][COL_TITLE],
-                                                              DESCRIPTION_COMPLETENESS_COL_X[k][COL_DESCRIPTION]),
-                                       DESCRIPTION_COMPLETENESS_COL_X.keys())
+    completeness_thr, contamination_thr = get_contamination_completeness_thresholds(summary[contamination_completeness_cols])
 
-    completion_contamination_row = map(lambda k:
-                                       create_entry(DESCRIPTION_CONTAMINATION_ROW[k][COL_TITLE],
-                                                    DESCRIPTION_CONTAMINATION_ROW[k][COL_DESCRIPTION]),
-                                       DESCRIPTION_CONTAMINATION_ROW.keys())
+    completeness_thr_formatted = []
+    for completeness_item in completeness_thr:
+        value = format(float(re.match("\d+\.\d+", completeness_item[1:]).group()) * 100, '.0f')
+        completeness_thr_formatted.append('{}% completeness'.format(value))
+
+    contamination_thr_formatted = []
+    for contamination_item in contamination_thr:
+        value = format(float(re.match("\d+\.\d+", contamination_item[1:]).group()) * 100, '.0f')
+        contamination_thr_formatted.append('{}% contamination'.format(value))
+
+    def create_entry_completeness(v):
+        return "<li><strong>>{0}: </strong>number of bins with more than {1}</li>".format(v, v)
+
+    def create_entry_contamination(v):
+        return "<li><strong><{0}: </strong>number of bins with less than {1}</li>".format(v, v)
+
+    completion_contamination_col = [create_entry_completeness(v) for v in completeness_thr_formatted]
+    completion_contamination_row = [create_entry_contamination(v) for v in contamination_thr_formatted]
 
     element_column.append(create_subtitle_div(ID_CONTAMINATION_COMPLETENESS, "Contamination and completeness"))
 
@@ -468,7 +417,7 @@ def build_html(precision_recall_paths, names, summary, html_output,
         create_description("Table columns: <ul>{0}</ul> "
                            "Table rows: <ul>{1}</ul>".format(" ".join(completion_contamination_col),
                                                              " ".join(completion_contamination_row))))
-    element_column.append(create_contamination_completeness_table(summary[contamination_completeness_cols]))
+    element_column.append(create_contamination_completeness_table(summary[contamination_completeness_cols], completeness_thr, contamination_thr))
 
     element_column.append(create_subtitle_div(ID_PRECISION_VS_RECALL_TOOLS, "Average purity per bin vs. average completeness per genome"))
     element_column.append(create_description(DESCRIPTION_PRECISION_RECALL_TOOLS))
