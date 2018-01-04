@@ -18,8 +18,7 @@ setup(
     url                  = 'http://cami-challenge.org',
     scripts              = glob.glob('*.py'),
     install_requires     = dependencies(),
-    packages             = find_packages('src'),
-    package_dir          = {'': 'src'},
+    packages             = find_packages(),
     classifiers = [
         'Natural Language :: English',
         'Programming Language :: Python',
