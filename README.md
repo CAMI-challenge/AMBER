@@ -16,7 +16,7 @@ Optional:
 
 ## Installation
 
-Install pip first (tested on Linux Ubuntu 16.04):
+Install pip first (tested on Linux Ubuntu 17.10):
 
 ~~~BASH
 sudo apt install python3-pip
@@ -25,7 +25,7 @@ sudo apt install python3-pip
 Then run:
 
 ~~~BASH
-pip3 install https://github.com/CAMI-challenge/AMBER/archive/v0.6.3.tar.gz 
+pip3 install https://github.com/CAMI-challenge/AMBER/archive/v0.6.4.tar.gz 
 ~~~
 
 Make sure to add AMBER to your PATH:
@@ -167,9 +167,10 @@ In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and
 ## Run AMBER as a Biobox
 
 
-Run the AMBER docker image with the command:
+Build and run the AMBER docker image with the commands:
 
 ~~~BASH
+docker build -t cami/amber:latest .
 docker run -v $(pwd)/input/gold_standard.fasta:/bbx/input/gold_standard.fasta -v $(pwd)/input/gsa_mapping.binning:/bbx/input/gsa_mapping.binning  -v  $(pwd)/input/test_query.binning:/bbx/input/test_query.binning  -v  $(pwd)/output:/bbx/output -v $(pwd)/input/biobox.yaml:/bbx/input/biobox.yaml cami/amber:latest default
 ~~~
 
