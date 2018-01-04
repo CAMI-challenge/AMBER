@@ -3,6 +3,7 @@ from setuptools import setup, find_packages
 from version import __version__
 import glob
 
+
 def dependencies():
     file_ = pkg_resources.resource_filename(__name__, os.path.join('requirements', 'default.txt'))
     with open(file_, 'r') as f:
@@ -17,7 +18,8 @@ setup(
     url                  = 'http://cami-challenge.org',
     scripts              = glob.glob('*.py'),
     install_requires     = dependencies(),
-    packages             = find_packages(),
+    packages             = find_packages('src'),
+    package_dir          = {'': 'src'},
     classifiers = [
         'Natural Language :: English',
         'Programming Language :: Python',
