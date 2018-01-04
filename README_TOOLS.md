@@ -341,10 +341,10 @@ RL|S1|C6571  evo_1286_AP.033 69914
 RL|S1|C10560 evo_1286_AP.033 995657
 ...
 ~~~
-Column _LENGTH in the gold standard mapping eliminates the need for a FASTA or FASTQ file in program evaluate.py.
+Column _LENGTH in the gold standard mapping eliminates the need for a FASTA or FASTQ file in program amber.py.
 
 ### src/create_summary_pdf.py
-_create_summary_pdf.py_ must be run after tool _evaluate.py_. The input directory of _create_summary_pdf.py_ must be the output directory of _evaluate.py_.
+_create_summary_pdf.py_ must be run after tool _amber.py_. The input directory of _create_summary_pdf.py_ must be the output directory of _amber.py_.
 ~~~BASH
 usage: create_summary_pdf.py [-h] [-c FIGURE_CODES] -i INPUT_DIR
                              [-o OUTPUT_DIR] [-g GOLD_STANDARD_FILE]
