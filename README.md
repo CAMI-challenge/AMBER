@@ -25,7 +25,7 @@ sudo apt install python3-pip
 Then run:
 
 ~~~BASH
-pip3 install https://github.com/CAMI-challenge/AMBER/archive/v0.6.4.tar.gz 
+pip3 install https://github.com/CAMI-challenge/AMBER/archive/v0.7.0.tar.gz 
 ~~~
 
 Make sure to add AMBER to your PATH:
@@ -128,7 +128,7 @@ optional arguments:
 ~~~
 **Example:**
 ~~~BASH
-./amber.py -g test/gsa_mapping.binning \
+python3 amber.py -g test/gsa_mapping.binning \
 -l "MaxBin 2.0, CONCOCT, MetaBAT" \
 -p 1 \
 -r test/unique_common.tsv \
