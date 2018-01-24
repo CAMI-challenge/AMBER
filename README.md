@@ -25,7 +25,7 @@ sudo apt install python3-pip
 Then run:
 
 ~~~BASH
-pip3 install https://github.com/CAMI-challenge/AMBER/archive/v0.7.0.tar.gz 
+pip3 install cami-amber 
 ~~~
 
 Make sure to add AMBER to your PATH:
