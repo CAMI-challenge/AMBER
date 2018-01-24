@@ -106,4 +106,8 @@ venv.bak/
 
 # End of https://www.gitignore.io/api/python
 
-/tmp
+.idea
+*.iml
+*.pyc
+tmp/
+ignore/
