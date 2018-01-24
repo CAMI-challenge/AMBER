@@ -16,24 +16,21 @@ Optional:
 
 ## Installation
 
-Install pip first (tested on Linux Ubuntu 17.10):
+Create venv first:
 
 ~~~BASH
-sudo apt install python3-pip
+mkdir -p ~/.virtualenvs/
+python3 -m venv ~/.virtualenvs/cami-amber
 ~~~
 
 Then run:
 
 ~~~BASH
-pip3 install https://github.com/CAMI-challenge/AMBER/archive/v0.7.0.tar.gz 
+source ~/.virtualenvs/cami-amber
+pip install cami-amber
 ~~~
 
-Make sure to add AMBER to your PATH:
-
-~~~BASH
-echo 'PATH=$PATH:${HOME}/.local/bin' >> ~/.bashrc
-source ~/.bashrc
-~~~
+AMBER will be automatically added to your PATH.
 
 You can also run [AMBER as a Biobox](#run-amber-as-a-biobox). 
 
