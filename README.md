@@ -222,16 +222,11 @@ If the dev branch is merged into the master branch:
 
 3. Make a release on GitHub with the same version number provided in [version.py](version.py) .
 
-The tool can now be installed by using the master branch
+4. Create package and upload it to PyPI:
 
 ~~~BASH
-pip3 install https://github.com/CAMI-challenge/AMBER/archive/master.zip
-~~~
-
-or a specific tag
-
-~~~BASH
-pip3 install https://github.com/CAMI-challenge/AMBER/archive/tag.tar.gz 
+python3 setup.py sdist bdist_wheel
+twine upload dist/*
 ~~~
 
 # Citation
