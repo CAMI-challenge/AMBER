@@ -10,7 +10,7 @@ def dependencies():
         return f.read().splitlines()
 
 setup(
-    name                 = 'amber',
+    name                 = 'cami-amber',
     version              = __version__,
     description          = 'AMBER: Assessment of Metagenome BinnERs',
     author               = 'CAMI',

@@ -4,6 +4,7 @@ import argparse
 import collections
 import os
 import matplotlib
+from version import __version__
 from src import accuracy
 from src import genome_recovery
 from src import html_plots
@@ -177,11 +178,12 @@ def compute_rankings(summary_per_query, output_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="Compute all metrics and figures for one or more binning files; output summary to screen and results per binning file to chosen directory",
-                                     parents=[argparse_parents.PARSER_MULTI2])
+                                     parents=[argparse_parents.PARSER_MULTI2], prog='AMBER')
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
     parser.add_argument('-m', '--map_by_completeness', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
     parser.add_argument('-x', '--min_completeness', help=argparse_parents.HELP_THRESHOLDS_COMPLETENESS, required=False)
     parser.add_argument('-y', '--max_contamination', help=argparse_parents.HELP_THRESHOLDS_CONTAMINATION, required=False)
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
     args = parser.parse_args()
 
     min_completeness = None
