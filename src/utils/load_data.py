@@ -115,16 +115,19 @@ def get_genome_mapping_without_lenghts(mapping_file, remove_genomes_file=None, k
         filtering_genomes_to_keyword = load_unique_common(remove_genomes_file)
 
     with open(mapping_file, 'r') as read_handler:
-        for sequence_id, genome_id, length in read_binning_file(read_handler):
-            if genome_id in filtering_genomes_to_keyword and (not keyword or filtering_genomes_to_keyword[genome_id] == keyword):
-                continue
-            gold_standard.sequence_id_to_genome_id[sequence_id] = genome_id
-            if genome_id not in gold_standard.genome_id_to_list_of_contigs:
-                gold_standard.genome_id_to_list_of_contigs[genome_id] = []
-            gold_standard.genome_id_to_list_of_contigs[genome_id].append(sequence_id)
+        try:
+            for sequence_id, genome_id, length in read_binning_file(read_handler):
+                if genome_id in filtering_genomes_to_keyword and (not keyword or filtering_genomes_to_keyword[genome_id] == keyword):
+                    continue
+                gold_standard.sequence_id_to_genome_id[sequence_id] = genome_id
+                if genome_id not in gold_standard.genome_id_to_list_of_contigs:
+                    gold_standard.genome_id_to_list_of_contigs[genome_id] = []
+                gold_standard.genome_id_to_list_of_contigs[genome_id].append(sequence_id)
+        except:
+            exit("Error. File {} is malformed.".format(mapping_file))
 
     if len(gold_standard.genome_id_to_list_of_contigs) == 0:
-        sys.exit('All bins of the gold standard have been filtered out due to option --remove_genomes.')
+        exit('All bins of the gold standard have been filtered out due to option --remove_genomes.')
 
     return gold_standard
 
@@ -149,15 +152,20 @@ def get_genome_mapping(mapping_file, fastx_file):
             if not fastx_file:
                 exit("Sequences length could not be determined. Please provide a FASTA or FASTQ file using option -f or add column _LENGTH to gold standard.")
             sequence_length = read_lengths_from_fastx_file(fastx_file)
-        for anonymous_contig_id, genome_id, length in read_binning_file(read_handler):
-            total_length = length if is_length_column_av else sequence_length[anonymous_contig_id]
-            gold_standard.sequence_id_to_lengths[anonymous_contig_id] = total_length
-            gold_standard.sequence_id_to_genome_id[anonymous_contig_id] = genome_id
-            if genome_id not in gold_standard.genome_id_to_total_length:
-                gold_standard.genome_id_to_total_length[genome_id] = 0
-                gold_standard.genome_id_to_list_of_contigs[genome_id] = []
-            gold_standard.genome_id_to_total_length[genome_id] += total_length
-            gold_standard.genome_id_to_list_of_contigs[genome_id].append(anonymous_contig_id)
+        try:
+            for anonymous_contig_id, genome_id, length in read_binning_file(read_handler, True):
+                total_length = length if is_length_column_av else sequence_length[anonymous_contig_id]
+                gold_standard.sequence_id_to_lengths[anonymous_contig_id] = total_length
+                gold_standard.sequence_id_to_genome_id[anonymous_contig_id] = genome_id
+                if genome_id not in gold_standard.genome_id_to_total_length:
+                    gold_standard.genome_id_to_total_length[genome_id] = 0
+                    gold_standard.genome_id_to_list_of_contigs[genome_id] = []
+                gold_standard.genome_id_to_total_length[genome_id] += total_length
+                gold_standard.genome_id_to_list_of_contigs[genome_id].append(anonymous_contig_id)
+        except KeyError:
+            exit("Error. Sequence {} could not be found in the FASTA or FASTQ file.".format(anonymous_contig_id))
+        except:
+            exit("Error. File {} is malformed.".format(mapping_file))
 
     return gold_standard
 
@@ -184,17 +192,32 @@ def read_header(input_stream):
             header[key] = value.strip()
 
 
-def read_rows(input_stream, index_key, index_value, index_length):
+def read_rows(input_stream, index_key, index_value, index_length, is_gs):
     for line in input_stream:
         if len(line.strip()) == 0 or line.startswith("#"):
             continue
         line = line.rstrip('\n')
         row_data = line.split('\t')
-        key = row_data[index_key]
-        value = row_data[index_value]
-        if index_length is not None:
-            length = row_data[index_length]
-            yield key, value, int(length)
+
+        try:
+            key = row_data[index_key]
+        except:
+            print("Value in column SEQUENCEID could not be read.")
+            raise
+
+        try:
+            value = row_data[index_value]
+        except:
+            print("Value in column BINID could not be read.")
+            raise
+
+        if is_gs and index_length is not None:
+            try:
+                length = int(row_data[index_length])
+            except:
+                print("Value in column _LENGTH could not be read. Please provide a value or remove column altogether (and provide a FASTA or FASTQ file instead - see README).")
+                raise
+            yield key, value, length
         else:
             yield key, value, int(0)
 
@@ -227,9 +250,9 @@ def get_column_indices(input_stream):
     return index_key, index_value, index_length
 
 
-def read_binning_file(input_stream):
+def read_binning_file(input_stream, is_gs=False):
     index_key, index_value, index_length = get_column_indices(input_stream)
-    return read_rows(input_stream, index_key, index_value, index_length)
+    return read_rows(input_stream, index_key, index_value, index_length, is_gs)
 
 
 def open_query(file_path_query):
@@ -238,11 +261,14 @@ def open_query(file_path_query):
     query.bin_id_to_list_of_sequence_id = {}
     query.sequence_id_to_bin_id = {}
     with open(file_path_query) as read_handler:
-        for sequence_id, predicted_bin, length in read_binning_file(read_handler):
-            if predicted_bin not in query.bin_id_to_list_of_sequence_id:
-                query.bin_id_to_list_of_sequence_id[predicted_bin] = []
-            query.bin_id_to_list_of_sequence_id[predicted_bin].append(sequence_id)
-            query.sequence_id_to_bin_id[sequence_id] = predicted_bin
+        try:
+            for sequence_id, predicted_bin, length in read_binning_file(read_handler):
+                if predicted_bin not in query.bin_id_to_list_of_sequence_id:
+                    query.bin_id_to_list_of_sequence_id[predicted_bin] = []
+                query.bin_id_to_list_of_sequence_id[predicted_bin].append(sequence_id)
+                query.sequence_id_to_bin_id[sequence_id] = predicted_bin
+        except:
+            exit("Error. File {} is malformed.".format(file_path_query))
     return query
 
 
