@@ -231,8 +231,8 @@ twine upload dist/*
 
 # Citation
 
-A manuscript describing AMBER is currently under review, but its preprint version is available already:
-* Meyer et al. (2017). **AMBER: Assessment of Metagenome BinnERs.** *bioRxiv*, 239582. doi:[10.1101/239582](https://doi.org/10.1101/239582)
+Please cite AMBER as:
+* Fernando Meyer, Peter Hofmann, Peter Belmann, Ruben Garrido-Oter, Adrian Fritz, Alexander Sczyrba, and Alice C. McHardy. (2018). **AMBER: Assessment of Metagenome BinnERs.** *GigaScience*, giy069. doi:[10.1093/gigascience/giy069](https://doi.org/10.1093/gigascience/giy069)
 
 The metrics implemented in AMBER were used and described in the CAMI manuscript, thus you may also cite:
-* Sczyrba*, Hofmann*, Belmann*, et al. (2017). **Critical Assessment of Metagenome Interpretation—a benchmark of metagenomics software.** *Nature Methods*, 14, 11:1063–1071. doi:[10.1038/nmeth.4458](https://doi.org/10.1038/nmeth.4458)
+* Sczyrba, Hofmann, Belmann, et al. (2017). **Critical Assessment of Metagenome Interpretation—a benchmark of metagenomics software.** *Nature Methods*, 14, 11:1063–1071. doi:[10.1038/nmeth.4458](https://doi.org/10.1038/nmeth.4458)
