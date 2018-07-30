@@ -45,6 +45,7 @@ def evaluate_all(gold_standard_file,
                  keyword,
                  map_by_recall,
                  min_completeness, max_contamination,
+                 plot_heatmaps,
                  output_dir):
     gold_standard = load_data.get_genome_mapping(gold_standard_file, fasta_file)
     labels_iterator = iter(binning_labels)
@@ -68,12 +69,13 @@ def evaluate_all(gold_standard_file,
         else:
             bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes = precision_recall_per_bin.map_genomes(gold_standard, query.bin_id_to_list_of_sequence_id)
 
-        df_confusion = precision_recall_per_bin.compute_confusion_matrix(
-            bin_id_to_mapped_genome,
-            bin_id_to_genome_id_to_total_length,
-            gold_standard,
-            query)
-        plots.plot_heatmap(df_confusion, path)
+        if plot_heatmaps:
+            df_confusion = precision_recall_per_bin.compute_confusion_matrix(
+                bin_id_to_mapped_genome,
+                bin_id_to_genome_id_to_total_length,
+                gold_standard,
+                query)
+            plots.plot_heatmap(df_confusion, path)
 
         # PRECISION RECALL PER BIN
         bin_metrics = precision_recall_per_bin.compute_metrics(query, gold_standard, bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes)
@@ -183,6 +185,7 @@ def main():
     parser.add_argument('-m', '--map_by_completeness', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
     parser.add_argument('-x', '--min_completeness', help=argparse_parents.HELP_THRESHOLDS_COMPLETENESS, required=False)
     parser.add_argument('-y', '--max_contamination', help=argparse_parents.HELP_THRESHOLDS_CONTAMINATION, required=False)
+    parser.add_argument('-c', '--plot_heatmaps', help="Plot heatmaps of confusion matrices (can take some minutes)", action='store_true')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
     args = parser.parse_args()
 
@@ -203,6 +206,7 @@ def main():
                                                             args.keyword,
                                                             args.map_by_completeness,
                                                             min_completeness, max_contamination,
+                                                            args.plot_heatmaps,
                                                             args.output_dir)
     df = pd.DataFrame.from_dict(summary_per_query)
     print(df.to_csv(sep='\t', index=False, float_format='%.3f'))
