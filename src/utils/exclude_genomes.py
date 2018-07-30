@@ -48,7 +48,7 @@ def filter_data(bin_metrics, unique_common_file_path, keyword):
         if bin_id not in genome_to_unique_common or (keyword and genome_to_unique_common[bin_id] != keyword):
             filtered_bin_metrics.append(bin)
     if len(filtered_bin_metrics) == 0:
-        sys.exit('All bins have been filtered out due to option --remove_genomes.')
+        sys.exit('All bins have been filtered out due to option --remove_genomes or --min_length.')
     return filtered_bin_metrics
 
 

@@ -39,6 +39,7 @@ def get_labels(labels, bin_files):
 def evaluate_all(gold_standard_file,
                  fasta_file,
                  query_files,
+                 min_length,
                  binning_labels,
                  filter_tail_percentage,
                  filter_genomes_file,
@@ -47,7 +48,9 @@ def evaluate_all(gold_standard_file,
                  min_completeness, max_contamination,
                  plot_heatmaps,
                  output_dir):
-    gold_standard = load_data.get_genome_mapping(gold_standard_file, fasta_file)
+    if not min_length:
+        min_length = 0
+    gold_standard = load_data.get_genome_mapping(gold_standard_file, fasta_file, min_length)
     labels_iterator = iter(binning_labels)
     summary_per_query = []
     bin_metrics_per_query = []
@@ -62,7 +65,7 @@ def evaluate_all(gold_standard_file,
         f.write("#({}){}".format(count, binning_label))
         f.close()
 
-        query = load_data.open_query(query_file)
+        query = load_data.open_query(query_file, gold_standard)
 
         if map_by_recall:
             bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes = precision_recall_per_bin.map_genomes_by_recall(gold_standard, query.bin_id_to_list_of_sequence_id)
@@ -181,6 +184,7 @@ def compute_rankings(summary_per_query, output_dir):
 def main():
     parser = argparse.ArgumentParser(description="Compute all metrics and figures for one or more binning files; output summary to screen and results per binning file to chosen directory",
                                      parents=[argparse_parents.PARSER_MULTI2], prog='AMBER')
+    parser.add_argument('-n', '--min_length', help="Minimum length of sequences", type=int, required=False)
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
     parser.add_argument('-m', '--map_by_completeness', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
     parser.add_argument('-x', '--min_completeness', help=argparse_parents.HELP_THRESHOLDS_COMPLETENESS, required=False)
@@ -200,6 +204,7 @@ def main():
     summary_per_query, bin_metrics_per_query = evaluate_all(args.gold_standard_file,
                                                             args.fasta_file,
                                                             args.bin_files,
+                                                            args.min_length,
                                                             binning_labels,
                                                             args.filter,
                                                             args.remove_genomes,

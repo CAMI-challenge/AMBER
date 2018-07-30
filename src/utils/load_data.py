@@ -132,7 +132,7 @@ def get_genome_mapping_without_lenghts(mapping_file, remove_genomes_file=None, k
     return gold_standard
 
 
-def get_genome_mapping(mapping_file, fastx_file):
+def get_genome_mapping(mapping_file, fastx_file, min_length=0):
     """
     @param mapping_file:
     @type mapping_file: str | unicode
@@ -155,6 +155,8 @@ def get_genome_mapping(mapping_file, fastx_file):
         try:
             for anonymous_contig_id, genome_id, length in read_binning_file(read_handler, True):
                 total_length = length if is_length_column_av else sequence_length[anonymous_contig_id]
+                if total_length < min_length:
+                    continue
                 gold_standard.sequence_id_to_lengths[anonymous_contig_id] = total_length
                 gold_standard.sequence_id_to_genome_id[anonymous_contig_id] = genome_id
                 if genome_id not in gold_standard.genome_id_to_total_length:
@@ -255,7 +257,7 @@ def read_binning_file(input_stream, is_gs=False):
     return read_rows(input_stream, index_key, index_value, index_length, is_gs)
 
 
-def open_query(file_path_query):
+def open_query(file_path_query, gold_standard=None):
     query = Query()
     query.path = file_path_query
     query.bin_id_to_list_of_sequence_id = {}
@@ -263,6 +265,8 @@ def open_query(file_path_query):
     with open(file_path_query) as read_handler:
         try:
             for sequence_id, predicted_bin, length in read_binning_file(read_handler):
+                if gold_standard and sequence_id not in gold_standard.sequence_id_to_genome_id:
+                    continue
                 if predicted_bin not in query.bin_id_to_list_of_sequence_id:
                     query.bin_id_to_list_of_sequence_id[predicted_bin] = []
                 query.bin_id_to_list_of_sequence_id[predicted_bin].append(sequence_id)
