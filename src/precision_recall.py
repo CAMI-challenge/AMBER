@@ -32,28 +32,3 @@ def evaluate_all(gold_standard, queries, labels, filter_tail_percentage, genomes
                                                         std_deviation_recall,
                                                         std_error_precision,
                                                         std_error_recall)
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Compute precision and recall, including standard deviation and standard error of the mean, for binning files",
-                                     parents=[argparse_parents.PARSER_MULTI2])
-    parser.add_argument('-m', '--map_by_recall', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
-    args = parser.parse_args()
-    labels = []
-    if args.labels:
-        labels = [x.strip() for x in args.labels.split(',')]
-        if len(labels) != len(args.bin_files):
-            parser.error('number of labels does not match the number of query files')
-    gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
-    queries = load_data.open_queries(args.bin_files)
-    evaluate_all(gold_standard,
-                 queries,
-                 labels,
-                 args.filter,
-                 args.remove_genomes,
-                 args.keyword,
-                 args.map_by_recall)
-
-
-if __name__ == "__main__":
-    main()

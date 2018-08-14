@@ -7,8 +7,6 @@ import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
-from src.utils import argparse_parents
-from src.utils import load_data
 
 
 def calc_precision_recall(bin_id_to_genome_id_to_total_length, bin_id_to_total_lengths, genome_id_to_total_length):
@@ -71,19 +69,3 @@ def compute_metrics(query, gold_standard):
 def print_precision_recall_by_bpcount(precision, recall, stream=sys.stdout):
     stream.write("precision\trecall\n%1.3f\t%1.3f\n" % (precision, recall))
 
-
-def main():
-    parser = argparse.ArgumentParser(description="Compute precision and recall weighed by base pair counts (not averaged over genome bins) from binning file",
-                                     parents=[argparse_parents.PARSER_GS])
-    args = parser.parse_args()
-    if not args.bin_file:
-        parser.print_help()
-        parser.exit(1)
-    gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
-    query = load_data.open_query(args.bin_file)
-    precision, recall = compute_metrics(query, gold_standard)
-    print_precision_recall_by_bpcount(precision, recall)
-
-
-if __name__ == "__main__":
-    main()

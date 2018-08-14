@@ -16,82 +16,90 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 import numpy as np
 import pandas as pd
-from src.utils import argparse_parents
 from src.utils import load_data
 
 
-def map_genomes_by_recall(gold_standard, bin_id_to_list_of_sequence_id):
+def g_compute_confusion_matrix_all(gold_standard, queries_list, sequence_id_to_length):
+    for query in queries_list:
+        g_compute_confusion_matrix(gold_standard, query, sequence_id_to_length)
+
+
+def g_compute_confusion_matrix(gold_standard, query, sequence_id_to_length):
+    query.bin_id_to_genome_id_to_length = {}
+    query.bin_id_to_mapped_genome = {}
+    for bin_id in query.bin_id_to_list_of_sequence_ids:
+        query.bin_id_to_genome_id_to_length[bin_id] = {}
+        for sequence_id in query.bin_id_to_list_of_sequence_ids[bin_id]:
+            genome_id = gold_standard.sequence_id_to_bin_id[sequence_id]
+            if genome_id not in query.bin_id_to_genome_id_to_length[bin_id]:
+                query.bin_id_to_genome_id_to_length[bin_id][genome_id] = 0
+            query.bin_id_to_genome_id_to_length[bin_id][genome_id] += sequence_id_to_length[sequence_id]
+
+
+def map_genomes_by_recall_all(gold_standard, queries_list):
+    for query in queries_list:
+        map_genomes_by_recall(gold_standard, query)
+
+
+def map_genomes_by_recall(gold_standard, query):
     """
     This script maps a predicted bin to the genome that maximizes recall
-
-    @attention: In case of reads, read ids might not be paired read id and cause error: ReadID/1 ReadID/2
-
-    @param sequence_id_to_genome_id:
-    @param anonymous_sequence_id_to_lengths:
-    @param bin_id_to_list_of_sequence_id
     @return:
     """
-    bin_id_to_genome_id_to_total_length = {}
-    mapped_genomes = set()
-    bin_id_to_mapped_genome = {}
-    for predicted_bin in bin_id_to_list_of_sequence_id:
-        bin_id_to_genome_id_to_total_length[predicted_bin] = {}
-        for sequence_id in bin_id_to_list_of_sequence_id[predicted_bin]:
-            genome_id = gold_standard.sequence_id_to_genome_id[sequence_id]
-            if genome_id not in bin_id_to_genome_id_to_total_length[predicted_bin]:
-                bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] = 0
-            bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += gold_standard.sequence_id_to_lengths[sequence_id]
+    query.bin_id_to_mapped_genome = {}
+    query.bin_id_to_true_positives = {}
+    query.mapped_genomes = set()
+    for bin_id in query.bin_id_to_list_of_sequence_ids:
         max_genome_percentage = .0
         best_genome_id = ""
-        for genome_id in bin_id_to_genome_id_to_total_length[predicted_bin]:
-            genome_percentage = bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] / gold_standard.genome_id_to_total_length[genome_id]
+        for genome_id in query.bin_id_to_genome_id_to_length[bin_id]:
+            genome_percentage = query.bin_id_to_genome_id_to_length[bin_id][genome_id] / gold_standard.bin_id_to_length[genome_id]
             if max_genome_percentage < genome_percentage:
                 max_genome_percentage = genome_percentage
                 best_genome_id = genome_id
-            elif max_genome_percentage == genome_percentage and gold_standard.genome_id_to_total_length[genome_id] > gold_standard.genome_id_to_total_length[best_genome_id]:
+            elif max_genome_percentage == genome_percentage and gold_standard.bin_id_to_length[genome_id] > gold_standard.bin_id_to_length[best_genome_id]:
                 best_genome_id = genome_id
-        mapped_genomes.add(best_genome_id)
-        bin_id_to_mapped_genome[predicted_bin] = best_genome_id
-    return bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes
+        query.bin_id_to_true_positives[bin_id] = gold_standard.bin_id_to_length[best_genome_id]
+        query.mapped_genomes.add(best_genome_id)
+        query.bin_id_to_mapped_genome[bin_id] = best_genome_id
 
 
-def map_genomes(gold_standard, bin_id_to_list_of_sequence_id):
+def map_genomes_by_precision_all(queries_list):
+    for query in queries_list:
+        map_genomes_by_precision(query)
+
+
+def map_genomes_by_precision(query):
     """
     This script maps a predicted bin to the genome that maximizes precision
-
-    @attention: In case of reads, read ids might not be paired read id and cause error: ReadID/1 ReadID/2
-
-    @param sequence_id_to_genome_id:
-    @param anonymous_sequence_id_to_lengths:
-    @param bin_id_to_list_of_sequence_id
     @return:
     """
-    bin_id_to_genome_id_to_total_length = {}
-    mapped = set()
-    bin_id_to_mapped_genome = {}
-    for predicted_bin in bin_id_to_list_of_sequence_id:
-        bin_id_to_genome_id_to_total_length[predicted_bin] = {}
-        for sequence_id in bin_id_to_list_of_sequence_id[predicted_bin]:
-            genome_id = gold_standard.sequence_id_to_genome_id[sequence_id]
-            if genome_id not in bin_id_to_genome_id_to_total_length[predicted_bin]:
-                bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] = 0
-            bin_id_to_genome_id_to_total_length[predicted_bin][genome_id] += gold_standard.sequence_id_to_lengths[sequence_id]
+    query.bin_id_to_mapped_genome = {}
+    query.bin_id_to_true_positives = {}
+    query.mapped = set()
+    for bin_id in query.bin_id_to_list_of_sequence_ids:
         max_length = 0
         best_genome_id = ""
-        for genome_id in bin_id_to_genome_id_to_total_length[predicted_bin]:
-            if max_length < bin_id_to_genome_id_to_total_length[predicted_bin][genome_id]:
-                max_length = bin_id_to_genome_id_to_total_length[predicted_bin][genome_id]
+        for genome_id in query.bin_id_to_genome_id_to_length[bin_id]:
+            if max_length < query.bin_id_to_genome_id_to_length[bin_id][genome_id]:
+                max_length = query.bin_id_to_genome_id_to_length[bin_id][genome_id]
                 best_genome_id = genome_id
-        mapped.add(best_genome_id)
-        bin_id_to_mapped_genome[predicted_bin] = best_genome_id
-    return bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped
+        query.bin_id_to_true_positives[bin_id] = query.bin_id_to_genome_id_to_length[bin_id][best_genome_id]
+        query.mapped.add(best_genome_id)
+        query.bin_id_to_mapped_genome[bin_id] = best_genome_id
 
 
-def compute_confusion_matrix(bin_id_to_mapped_genome,
-                             bin_id_to_genome_id_to_total_length,
-                             gold_standard,
+def transform_confusion_matrix_all(gold_standard, queries_list):
+    for query in queries_list:
+        transform_confusion_matrix(gold_standard, query)
+
+
+def transform_confusion_matrix(gold_standard,
                              query):
-    df_confusion = pd.DataFrame(bin_id_to_genome_id_to_total_length).T
+    bin_id_to_mapped_genome = query.bin_id_to_mapped_genome
+    bin_id_to_genome_id_to_length = query.bin_id_to_genome_id_to_length
+
+    df_confusion = pd.DataFrame(bin_id_to_genome_id_to_length).T
 
     query_sequence_ids = set(query.sequence_id_to_bin_id.keys())
     gs_sequence_ids = set(gold_standard.sequence_id_to_lengths.keys())
@@ -107,7 +115,7 @@ def compute_confusion_matrix(bin_id_to_mapped_genome,
     #table = table.applymap(np.log).fillna(0)
 
     # sort bins by the number of true positives (length of mapped genome within the bin)
-    bin_id_to_mapped_genome_by_length = collections.OrderedDict(sorted(bin_id_to_mapped_genome.items(), key=lambda t: bin_id_to_genome_id_to_total_length[t[0]][t[1]], reverse=True))
+    bin_id_to_mapped_genome_by_length = collections.OrderedDict(sorted(bin_id_to_mapped_genome.items(), key=lambda t: bin_id_to_genome_id_to_length[t[0]][t[1]], reverse=True))
 
     # sort genomes
     genome_order = []
@@ -130,47 +138,47 @@ def compute_confusion_matrix(bin_id_to_mapped_genome,
 
 
 def compute_precision_recall(gold_standard,
-                             bin_id_to_list_of_sequence_id,
-                             bin_id_to_mapped_genome,
-                             bin_id_to_genome_id_to_total_length,
-                             mapped):
-    bin_id_to_total_lengths = {}
-    for predicted_bin in bin_id_to_list_of_sequence_id:
-        for sequence_id in bin_id_to_list_of_sequence_id[predicted_bin]:
-            if predicted_bin not in bin_id_to_total_lengths:
-                bin_id_to_total_lengths[predicted_bin] = 0
-            bin_id_to_total_lengths[predicted_bin] += gold_standard.sequence_id_to_lengths[sequence_id]
+                             query):
+    # bin_metrics = []
+    bin_id_to_precision = {}
+    bin_id_to_recall = {}
+    for bin in query.bins:
+        bin_id_to_precision[bin.id] = float(bin.true_positives) / float(bin.length)
 
-    bin_metrics = []
-    for predicted_bin in bin_id_to_list_of_sequence_id:
-        best_genome_id = bin_id_to_mapped_genome[predicted_bin]
-        # length of genome in bin divided by bin size
-        precision = float(bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id]) / float(bin_id_to_total_lengths[predicted_bin])
-        recall = float(bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id]) / float(gold_standard.genome_id_to_total_length[best_genome_id])
-        bin_metrics.append({'mapped_genome': best_genome_id,
-                            'purity': precision,
-                            'completeness': recall,
-                            'predicted_size': bin_id_to_total_lengths[predicted_bin],
-                            'correctly_predicted': bin_id_to_genome_id_to_total_length[predicted_bin][best_genome_id],
-                            'real_size': gold_standard.genome_id_to_total_length[best_genome_id]})
-    for genome_id in gold_standard.genome_id_to_list_of_contigs:
-        if genome_id not in mapped:
-            bin_metrics.append({'mapped_genome': genome_id,
-                                'purity': np.nan,
-                                'completeness': .0,
-                                'predicted_size': 0,
-                                'correctly_predicted': 0,
-                                'real_size': gold_standard.genome_id_to_total_length[genome_id]})
-    # sort bins by completeness
-    return sorted(bin_metrics, key=lambda t: t['completeness'], reverse=True)
+        if isinstance(bin, load_data.GenomeBin):
+            gold_standard_query = gold_standard.genome_query
+        else:
+            gold_standard_query = gold_standard.taxonomic_query
+
+        if bin.mapping_id in gold_standard_query.get_bin_ids():
+            bin_id_to_recall[bin.id] = float(bin.true_positives) / float(gold_standard_query.get_bin_by_id(bin.mapping_id).length)
+        else:
+            bin_id_to_recall[bin.id] = .0
+
+    return bin_id_to_precision, bin_id_to_recall
 
 
-def compute_metrics(query, gold_standard, bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes):
+    #     bin_metrics.append({'mapped_genome': mapping_id,
+    #                         'purity': precision,
+    #                         'completeness': recall,
+    #                         'predicted_size': query.bin_id_to_total_length[bin_id],
+    #                         'correctly_predicted': query.bin_id_to_genome_id_to_length[bin_id][mapping_id],
+    #                         'real_size': gold_standard.bin_id_to_total_length[mapping_id]})
+    # for genome_id in gold_standard.bin_id_to_list_of_sequence_ids:
+    #     if genome_id not in query.mapped:
+    #         bin_metrics.append({'mapped_genome': genome_id,
+    #                             'purity': np.nan,
+    #                             'completeness': .0,
+    #                             'predicted_size': 0,
+    #                             'correctly_predicted': 0,
+    #                             'real_size': gold_standard.bin_id_to_total_length[genome_id]})
+    # # sort bins by completeness
+    # return sorted(bin_metrics, key=lambda t: t['completeness'], reverse=True)
+
+
+def compute_metrics(gold_standard, query):
     bin_metrics = compute_precision_recall(gold_standard,
-                                           query.bin_id_to_list_of_sequence_id,
-                                           bin_id_to_mapped_genome,
-                                           bin_id_to_genome_id_to_total_length,
-                                           mapped_genomes)
+                                           query)
     return bin_metrics
 
 
@@ -184,27 +192,3 @@ def print_metrics(bin_metrics, stream=sys.stdout):
             bin['predicted_size'],
             bin['correctly_predicted'],
             bin['real_size']))
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Compute table of purity and completeness per genome bin",
-                                     parents=[argparse_parents.PARSER_GS])
-    parser.add_argument('-m', '--map_by_completeness', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
-    args = parser.parse_args()
-    if not args.gold_standard_file or not args.bin_file:
-        parser.print_help()
-        parser.exit(1)
-    gold_standard = load_data.get_genome_mapping(args.gold_standard_file, args.fasta_file)
-    query = load_data.open_query(args.bin_file)
-
-    if args.map_by_completeness:
-            bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes = map_genomes_by_recall(gold_standard, query.bin_id_to_list_of_sequence_id)
-    else:
-        bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes = map_genomes(gold_standard, query.bin_id_to_list_of_sequence_id)
-
-    bin_metrics = compute_metrics(query, gold_standard, bin_id_to_mapped_genome, bin_id_to_genome_id_to_total_length, mapped_genomes)
-    print_metrics(bin_metrics)
-
-
-if __name__ == "__main__":
-    main()
