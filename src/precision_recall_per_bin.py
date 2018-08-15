@@ -17,76 +17,7 @@ sys.path.insert(0, parentdir)
 import numpy as np
 import pandas as pd
 from src.utils import load_data
-
-
-def g_compute_confusion_matrix_all(gold_standard, queries_list, sequence_id_to_length):
-    for query in queries_list:
-        g_compute_confusion_matrix(gold_standard, query, sequence_id_to_length)
-
-
-def g_compute_confusion_matrix(gold_standard, query, sequence_id_to_length):
-    query.bin_id_to_genome_id_to_length = {}
-    query.bin_id_to_mapped_genome = {}
-    for bin_id in query.bin_id_to_list_of_sequence_ids:
-        query.bin_id_to_genome_id_to_length[bin_id] = {}
-        for sequence_id in query.bin_id_to_list_of_sequence_ids[bin_id]:
-            genome_id = gold_standard.sequence_id_to_bin_id[sequence_id]
-            if genome_id not in query.bin_id_to_genome_id_to_length[bin_id]:
-                query.bin_id_to_genome_id_to_length[bin_id][genome_id] = 0
-            query.bin_id_to_genome_id_to_length[bin_id][genome_id] += sequence_id_to_length[sequence_id]
-
-
-def map_genomes_by_recall_all(gold_standard, queries_list):
-    for query in queries_list:
-        map_genomes_by_recall(gold_standard, query)
-
-
-def map_genomes_by_recall(gold_standard, query):
-    """
-    This script maps a predicted bin to the genome that maximizes recall
-    @return:
-    """
-    query.bin_id_to_mapped_genome = {}
-    query.bin_id_to_true_positives = {}
-    query.mapped_genomes = set()
-    for bin_id in query.bin_id_to_list_of_sequence_ids:
-        max_genome_percentage = .0
-        best_genome_id = ""
-        for genome_id in query.bin_id_to_genome_id_to_length[bin_id]:
-            genome_percentage = query.bin_id_to_genome_id_to_length[bin_id][genome_id] / gold_standard.bin_id_to_length[genome_id]
-            if max_genome_percentage < genome_percentage:
-                max_genome_percentage = genome_percentage
-                best_genome_id = genome_id
-            elif max_genome_percentage == genome_percentage and gold_standard.bin_id_to_length[genome_id] > gold_standard.bin_id_to_length[best_genome_id]:
-                best_genome_id = genome_id
-        query.bin_id_to_true_positives[bin_id] = gold_standard.bin_id_to_length[best_genome_id]
-        query.mapped_genomes.add(best_genome_id)
-        query.bin_id_to_mapped_genome[bin_id] = best_genome_id
-
-
-def map_genomes_by_precision_all(queries_list):
-    for query in queries_list:
-        map_genomes_by_precision(query)
-
-
-def map_genomes_by_precision(query):
-    """
-    This script maps a predicted bin to the genome that maximizes precision
-    @return:
-    """
-    query.bin_id_to_mapped_genome = {}
-    query.bin_id_to_true_positives = {}
-    query.mapped = set()
-    for bin_id in query.bin_id_to_list_of_sequence_ids:
-        max_length = 0
-        best_genome_id = ""
-        for genome_id in query.bin_id_to_genome_id_to_length[bin_id]:
-            if max_length < query.bin_id_to_genome_id_to_length[bin_id][genome_id]:
-                max_length = query.bin_id_to_genome_id_to_length[bin_id][genome_id]
-                best_genome_id = genome_id
-        query.bin_id_to_true_positives[bin_id] = query.bin_id_to_genome_id_to_length[bin_id][best_genome_id]
-        query.mapped.add(best_genome_id)
-        query.bin_id_to_mapped_genome[bin_id] = best_genome_id
+from src.utils import load_ncbi_taxinfo
 
 
 def transform_confusion_matrix_all(gold_standard, queries_list):
@@ -137,49 +68,65 @@ def transform_confusion_matrix(gold_standard,
     return table
 
 
-def compute_precision_recall(gold_standard,
-                             query):
-    # bin_metrics = []
-    bin_id_to_precision = {}
-    bin_id_to_recall = {}
+def g_legacy_format(gold_standard, query):
+    gold_standard_query = gold_standard.genome_query
+    bin_metrics = []
     for bin in query.bins:
-        bin_id_to_precision[bin.id] = float(bin.true_positives) / float(bin.length)
+        bin_metrics.append({'mapped_genome': bin.mapping_id,
+                            'purity': bin.precision,
+                            'completeness': bin.recall,
+                            'predicted_size': bin.length,
+                            'correctly_predicted': bin.true_positives,
+                            'real_size': gold_standard_query.get_bin_by_id(bin.mapping_id).length})
+    mapped_ids = query.get_all_mapping_ids()
+    for gs_bin in gold_standard_query.bins:
+        if gs_bin.id not in mapped_ids:
+            bin_metrics.append({'mapped_genome': gs_bin.id,
+                                'purity': np.nan,
+                                'completeness': .0,
+                                'predicted_size': 0,
+                                'correctly_predicted': 0,
+                                'real_size': gs_bin.length})
+    # sort bins by completeness
+    return sorted(bin_metrics, key=lambda t: t['completeness'], reverse=True)
 
-        if isinstance(bin, load_data.GenomeBin):
-            gold_standard_query = gold_standard.genome_query
-        else:
-            gold_standard_query = gold_standard.taxonomic_query
+
+def t_legacy_format(gold_standard, query):
+    gold_standard_query = gold_standard.taxonomic_query
+    bin_metrics = []
+    for bin in query.bins:
+        bin_metrics.append({'rank': gold_standard_query.tax_id_to_rank[bin.id],
+                            'tax_id': bin.id,
+                            'purity': bin.precision,
+                            'completeness': bin.recall,
+                            'predicted_size': bin.length,
+                            'correctly_predicted': bin.true_positives,
+                            'real_size': gold_standard_query.get_bin_by_id(bin.id).length if bin.id in gold_standard_query.get_bin_ids() else np.nan})
+    rank_to_index = dict(zip(load_ncbi_taxinfo.RANKS[::-1], list(range(len(load_ncbi_taxinfo.RANKS)))))
+    # sort bins by rank and completeness
+    return sorted(bin_metrics, key=lambda t: (rank_to_index[t['rank']], t['completeness']), reverse=True)
+
+
+def legacy_format(gold_standard, query):
+    if isinstance(query, load_data.GenomeQuery):
+        return g_legacy_format(gold_standard, query)
+    else:
+        return t_legacy_format(gold_standard, query)
+
+
+def compute_precision_recall(gold_standard, query):
+    if isinstance(query, load_data.GenomeQuery):
+        gold_standard_query = gold_standard.genome_query
+    else:
+        gold_standard_query = gold_standard.taxonomic_query
+
+    for bin in query.bins:
+        bin.precision = float(bin.true_positives) / float(bin.length)
 
         if bin.mapping_id in gold_standard_query.get_bin_ids():
-            bin_id_to_recall[bin.id] = float(bin.true_positives) / float(gold_standard_query.get_bin_by_id(bin.mapping_id).length)
+            bin.recall = float(bin.true_positives) / float(gold_standard_query.get_bin_by_id(bin.mapping_id).length)
         else:
-            bin_id_to_recall[bin.id] = .0
-
-    return bin_id_to_precision, bin_id_to_recall
-
-
-    #     bin_metrics.append({'mapped_genome': mapping_id,
-    #                         'purity': precision,
-    #                         'completeness': recall,
-    #                         'predicted_size': query.bin_id_to_total_length[bin_id],
-    #                         'correctly_predicted': query.bin_id_to_genome_id_to_length[bin_id][mapping_id],
-    #                         'real_size': gold_standard.bin_id_to_total_length[mapping_id]})
-    # for genome_id in gold_standard.bin_id_to_list_of_sequence_ids:
-    #     if genome_id not in query.mapped:
-    #         bin_metrics.append({'mapped_genome': genome_id,
-    #                             'purity': np.nan,
-    #                             'completeness': .0,
-    #                             'predicted_size': 0,
-    #                             'correctly_predicted': 0,
-    #                             'real_size': gold_standard.bin_id_to_total_length[genome_id]})
-    # # sort bins by completeness
-    # return sorted(bin_metrics, key=lambda t: t['completeness'], reverse=True)
-
-
-def compute_metrics(gold_standard, query):
-    bin_metrics = compute_precision_recall(gold_standard,
-                                           query)
-    return bin_metrics
+            bin.recall = .0
 
 
 def print_metrics(bin_metrics, stream=sys.stdout):

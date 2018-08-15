@@ -22,19 +22,6 @@ except ImportError:
         sys.path.remove(os.path.dirname(__file__))
 
 
-class NCBI:
-    def __init__(self):
-        self.__tax_id_to_rank = None
-
-    @property
-    def tax_id_to_rank(self):
-        return self.__tax_id_to_rank
-
-    @tax_id_to_rank.setter
-    def tax_id_to_rank(self, tax_id_to_rank):
-        self.__tax_id_to_rank = tax_id_to_rank
-
-
 class Query:
     def __init__(self):
         self.__bins = []
@@ -71,6 +58,9 @@ class Query:
     def get_bin_by_id(self, id):
         return self.__bin_id_to_bin[id]
 
+    def get_all_mapping_ids(self):
+        return [bin.mapping_id for bin in self.bins]
+
 
 class GenomeQuery(Query):
     def __init__(self):
@@ -101,6 +91,8 @@ class GenomeQuery(Query):
 
 
 class TaxonomicQuery(Query):
+    tax_id_to_rank = None
+
     def __init__(self):
         super().__init__()
 
@@ -118,6 +110,8 @@ class Bin:
         self.__length = 0
         self.__true_positives = 0
         self.__mapping_id = None
+        self.__precision = .0
+        self.__recall = .0
 
     @property
     def id(self):
@@ -139,6 +133,14 @@ class Bin:
     def mapping_id(self):
         return self.__mapping_id
 
+    @property
+    def precision(self):
+        return self.__precision
+
+    @property
+    def recall(self):
+        return self.__recall
+
     @id.setter
     def id(self, id):
         self.__id = id
@@ -158,6 +160,14 @@ class Bin:
     @mapping_id.setter
     def mapping_id(self, mapping_id):
         self.__mapping_id = mapping_id
+
+    @precision.setter
+    def precision(self, precision):
+        self.__precision = precision
+
+    @recall.setter
+    def recall(self, recall):
+        self.__recall = recall
 
     def add_sequence_id(self, sequence_id, sequence_length):
         self.__sequence_ids.add(sequence_id)
@@ -188,11 +198,11 @@ class GenomeBin(Bin):
                     best_gs_bin = gs_bin
                 elif max_genome_percentage == genome_percentage and gs_bin.length > best_gs_bin.length:
                     best_gs_bin = gs_bin
-            self.__mapping_id = best_gs_bin.id
+            self.mapping_id = best_gs_bin.id
             self.true_positives = self.__genome_id_to_length[best_gs_bin.id]
         else:
-            self.__mapping_id = max(self.__genome_id_to_length, key=self.__genome_id_to_length.get)
-            self.true_positives = self.__genome_id_to_length[self.__mapping_id]
+            self.mapping_id = max(self.__genome_id_to_length, key=self.__genome_id_to_length.get)
+            self.true_positives = self.__genome_id_to_length[self.mapping_id]
 
 
 class TaxonomicBin(Bin):
@@ -444,6 +454,7 @@ def read_binning_file(input_stream, is_gs):
 def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_rank, gold_standard, min_length=0):
     g_query = GenomeQuery()
     t_query = TaxonomicQuery()
+    t_query.tax_id_to_rank = tax_id_to_rank
     is_length_column_av = False
 
     with open(file_path_query) as read_handler:
@@ -454,8 +465,13 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                     exit("Sequences length could not be determined. Please provide a FASTA or FASTQ file using option -f or add column _LENGTH to gold standard.")
                 Bin.sequence_id_to_length = read_lengths_from_fastx_file(fastx_file)
 
-        if gold_standard and gold_standard.genome_query:
-            gs_sequence_ids = gold_standard.genome_query.get_sequence_ids()
+        g_sequence_ids = {}
+        t_sequence_ids = {}
+        if gold_standard:
+            if gold_standard.genome_query:
+                g_sequence_ids = gold_standard.genome_query.get_sequence_ids()
+            if gold_standard.taxonomic_query:
+                t_sequence_ids = gold_standard.taxonomic_query.get_sequence_ids()
 
         try:
             for sequence_id, bin_id, tax_id, length in read_binning_file(read_handler, is_gs):
@@ -463,7 +479,7 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                     Bin.sequence_id_to_length[sequence_id] = length
 
                 if bin_id:
-                    if gold_standard and sequence_id not in gs_sequence_ids:
+                    if not is_gs and sequence_id not in g_sequence_ids:
                         continue
                     if Bin.sequence_id_to_length[sequence_id] < min_length:
                         continue
@@ -476,9 +492,8 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                     bin.add_sequence_id(sequence_id, Bin.sequence_id_to_length[sequence_id])
 
                 if tax_id:
-                    # TODO: check for every rank
-                    # if t_gold_standard and sequence_id not in t_gold_standard.sequence_id_to_bin_id:
-                    #     continue
+                    if not is_gs and sequence_id not in t_sequence_ids:
+                        continue
                     if not tax_id_to_parent:
                         warnings.warn("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.", Warning)
                     tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank)
@@ -492,11 +507,6 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                             bin = t_query.get_bin_by_id(tax_id)
 
                         bin.add_sequence_id(sequence_id, Bin.sequence_id_to_length[sequence_id])
-
-                        # rank = tax_id_to_rank[tax_id]
-                        # if rank not in t_query.rank_to_sequence_id_to_bin_id:
-                        #     t_query.rank_to_sequence_id_to_bin_id[rank] = {}
-                        # t_query.rank_to_sequence_id_to_bin_id[rank][sequence_id] = tax_id
         except BaseException as e:
             traceback.print_exc()
             exit("Error. File {} is malformed. {}".format(file_path_query, e))

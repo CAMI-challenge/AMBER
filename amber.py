@@ -85,9 +85,6 @@ def load_queries(gold_standard_file, fastx_file, query_files, map_by_completenes
             t_query.label = label
             queries_list.append(t_query)
 
-    for query in queries_list:
-        query.compute_true_positives(gold_standard)
-
     return gold_standard, queries_list
 
 
@@ -100,7 +97,15 @@ def evaluate_all(gold_standard,
                  output_dir):
 
     for query in queries_list:
-        bin_id_to_precision, bin_id_to_recall = precision_recall_per_bin.compute_precision_recall(gold_standard, query)
+        query.compute_true_positives(gold_standard)
+
+        precision_recall_per_bin.compute_precision_recall(gold_standard, query)
+
+        bin_metrics = precision_recall_per_bin.legacy_format(gold_standard, query)
+        df = pd.DataFrame.from_dict(bin_metrics)
+        print(df.to_csv(sep='\t', index=False, float_format='%.3f'))
+
+
 
     exit()
 
