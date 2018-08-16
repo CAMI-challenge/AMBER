@@ -68,52 +68,6 @@ def transform_confusion_matrix(gold_standard,
     return table
 
 
-def g_legacy_format(gold_standard, query):
-    gold_standard_query = gold_standard.genome_query
-    bin_metrics = []
-    for bin in query.bins:
-        bin_metrics.append({'mapped_genome': bin.mapping_id,
-                            'purity': bin.precision,
-                            'completeness': bin.recall,
-                            'predicted_size': bin.length,
-                            'correctly_predicted': bin.true_positives,
-                            'real_size': gold_standard_query.get_bin_by_id(bin.mapping_id).length})
-    mapped_ids = query.get_all_mapping_ids()
-    for gs_bin in gold_standard_query.bins:
-        if gs_bin.id not in mapped_ids:
-            bin_metrics.append({'mapped_genome': gs_bin.id,
-                                'purity': np.nan,
-                                'completeness': .0,
-                                'predicted_size': 0,
-                                'correctly_predicted': 0,
-                                'real_size': gs_bin.length})
-    # sort bins by completeness
-    return sorted(bin_metrics, key=lambda t: t['completeness'], reverse=True)
-
-
-def t_legacy_format(gold_standard, query):
-    gold_standard_query = gold_standard.taxonomic_query
-    bin_metrics = []
-    for bin in query.bins:
-        bin_metrics.append({'rank': gold_standard_query.tax_id_to_rank[bin.id],
-                            'tax_id': bin.id,
-                            'purity': bin.precision,
-                            'completeness': bin.recall,
-                            'predicted_size': bin.length,
-                            'correctly_predicted': bin.true_positives,
-                            'real_size': gold_standard_query.get_bin_by_id(bin.id).length if bin.id in gold_standard_query.get_bin_ids() else np.nan})
-    rank_to_index = dict(zip(load_ncbi_taxinfo.RANKS[::-1], list(range(len(load_ncbi_taxinfo.RANKS)))))
-    # sort bins by rank and completeness
-    return sorted(bin_metrics, key=lambda t: (rank_to_index[t['rank']], t['completeness']), reverse=True)
-
-
-def legacy_format(gold_standard, query):
-    if isinstance(query, load_data.GenomeQuery):
-        return g_legacy_format(gold_standard, query)
-    else:
-        return t_legacy_format(gold_standard, query)
-
-
 def compute_precision_recall(gold_standard, query):
     if isinstance(query, load_data.GenomeQuery):
         gold_standard_query = gold_standard.genome_query

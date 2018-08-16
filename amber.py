@@ -11,10 +11,8 @@ from src import genome_recovery
 from src import html_plots
 from src import plot_by_genome
 from src import plots
-from src import precision_recall_by_bpcount
 from src import precision_recall_per_bin
 from src import rand_index
-from src import precision_recall_average
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -24,6 +22,7 @@ from src.utils import load_data
 from src.utils import argparse_parents
 from src.utils import labels as utils_labels
 from src.utils import load_ncbi_taxinfo
+from src.utils import filter_tail
 
 
 def make_sure_path_exists(path):
@@ -85,6 +84,8 @@ def load_queries(gold_standard_file, fastx_file, query_files, map_by_completenes
             t_query.label = label
             queries_list.append(t_query)
 
+    # TODO if there is a g_query (t_query), there must be a g_gold_standard (t_gold_standard)
+
     return gold_standard, queries_list
 
 
@@ -96,14 +97,55 @@ def evaluate_all(gold_standard,
                  min_completeness, max_contamination,
                  output_dir):
 
+    if gold_standard.genome_query:
+        gs_genome_bins_metrics = gold_standard.genome_query.get_bins_metrics(gold_standard)
+        gs_pd_genome_bins = pd.DataFrame.from_dict(gs_genome_bins_metrics)
+        gs_pd_genome_bins['rank'] = 'NA'
+
+    if gold_standard.taxonomic_query:
+        gs_tax_bins_metrics = gold_standard.taxonomic_query.get_bins_metrics(gold_standard)
+        gs_pd_tax_bins = pd.DataFrame.from_dict(gs_tax_bins_metrics)
+
     for query in queries_list:
         query.compute_true_positives(gold_standard)
 
         precision_recall_per_bin.compute_precision_recall(gold_standard, query)
 
-        bin_metrics = precision_recall_per_bin.legacy_format(gold_standard, query)
-        df = pd.DataFrame.from_dict(bin_metrics)
-        print(df.to_csv(sep='\t', index=False, float_format='%.3f'))
+        bins_metrics = query.get_bins_metrics(gold_standard)
+
+        if isinstance(query, load_data.GenomeQuery):
+            if filter_tail_percentage:
+                filter_tail.filter_tail(bins_metrics, filter_tail_percentage)
+            if filter_genomes_file:
+                bins_metrics = exclude_genomes.filter_data(bins_metrics, filter_genomes_file, keyword)
+            pd_bins = pd.DataFrame.from_dict(bins_metrics)
+            pd_bins['rank'] = 'NA'
+            gs_pd_bins = gs_pd_genome_bins
+        else:
+            pd_bins = pd.DataFrame.from_dict(bins_metrics)
+            gs_pd_bins = gs_pd_tax_bins
+
+        for rank, pd_bins_rank in pd_bins.groupby('rank'):
+            print(rank)
+            precision_rows = pd_bins_rank[pd_bins_rank['purity'].notnull()]['purity']
+            recall_rows = pd_bins_rank[pd_bins_rank['real_size'] > 0]['completeness']
+            avg_precision = precision_rows.mean()
+            sem_precision = precision_rows.sem()
+            std_precision = precision_rows.std()
+            avg_recall = recall_rows.mean()
+            std_recall = recall_rows.sem()
+            sem_recall = recall_rows.std()
+
+            true_positives = pd_bins_rank['correctly_predicted'].sum()
+            all_bins_length = pd_bins_rank['predicted_size'].sum()
+            precision_by_bp = float(true_positives) / float(all_bins_length)
+
+            gs_length = gs_pd_bins[gs_pd_bins['rank'] == rank]['real_size'].sum()
+            recall_by_bp = true_positives / gs_length
+
+
+        # print(df.to_csv(sep='\t', index=False, float_format='%.3f'))
+        # pd_metrics = pd.concat([pd_metrics, df], ignore_index=True)
 
 
 
