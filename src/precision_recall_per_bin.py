@@ -1,23 +1,12 @@
 #!/usr/bin/env python
 
-# Script for computing precision and recall. It takes as input:
-# - a gold standard file in bioboxes format
-# (https://github.com/bioboxes/rfc/blob/4bb19a633a6a969c2332f1f298852114c5f89b1b/data-format/binning.mkd)
-# with optional column _LENGTH
-# - a (compressed) fasta or fastq file, required if _LENGTH is not present in the gold standard file
-# - the bins to be evaluated in the same format as above
-# It writes to standard output a table containing precision and recall for each bin.
-
-import argparse
 import collections
 import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
-import numpy as np
 import pandas as pd
-from src.utils import load_data
-from src.utils import load_ncbi_taxinfo
+from src import binning_classes
 
 
 def transform_confusion_matrix_all(gold_standard, queries_list):
@@ -69,7 +58,7 @@ def transform_confusion_matrix(gold_standard,
 
 
 def compute_precision_recall(gold_standard, query):
-    if isinstance(query, load_data.GenomeQuery):
+    if isinstance(query, binning_classes.GenomeQuery):
         gold_standard_query = gold_standard.genome_query
     else:
         gold_standard_query = gold_standard.taxonomic_query
@@ -81,15 +70,3 @@ def compute_precision_recall(gold_standard, query):
             bin.recall = float(bin.true_positives) / float(gold_standard_query.get_bin_by_id(bin.mapping_id).length)
         else:
             bin.recall = .0
-
-
-def print_metrics(bin_metrics, stream=sys.stdout):
-    stream.write("genome\tpurity\tcompleteness\tpredicted_size\tcorrectly_predicted\treal_size\n")
-    for bin in bin_metrics:
-        stream.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (
-            bin['mapped_genome'],
-            bin['purity'] if not np.isnan(bin['purity']) else 'NA',
-            bin['completeness'],
-            bin['predicted_size'],
-            bin['correctly_predicted'],
-            bin['real_size']))
