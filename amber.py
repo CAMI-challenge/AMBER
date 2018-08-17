@@ -126,6 +126,7 @@ def evaluate_all(gold_standard,
             gs_pd_bins = gs_pd_tax_bins
 
         for rank, pd_bins_rank in pd_bins.groupby('rank'):
+            gs_pd_bins_rank = gs_pd_bins[gs_pd_bins['rank'] == rank]
             print(rank)
             precision_rows = pd_bins_rank[pd_bins_rank['purity'].notnull()]['purity']
             recall_rows = pd_bins_rank[pd_bins_rank['real_size'] > 0]['completeness']
@@ -133,17 +134,39 @@ def evaluate_all(gold_standard,
             sem_precision = precision_rows.sem()
             std_precision = precision_rows.std()
             avg_recall = recall_rows.mean()
-            std_recall = recall_rows.sem()
-            sem_recall = recall_rows.std()
+            sem_recall = recall_rows.sem()
+            std_recall = recall_rows.std()
 
-            true_positives = pd_bins_rank['correctly_predicted'].sum()
+            true_positives_all_bins = pd_bins_rank['true_positives'].sum()
             all_bins_length = pd_bins_rank['predicted_size'].sum()
-            precision_by_bp = float(true_positives) / float(all_bins_length)
+            precision_by_bp = float(true_positives_all_bins) / float(all_bins_length)
 
-            gs_length = gs_pd_bins[gs_pd_bins['rank'] == rank]['real_size'].sum()
-            recall_by_bp = true_positives / gs_length
+            # print(gs_pd_bins_rank)
+
+            true_positives_recall = 0
+            for gs_index, gs_row in gs_pd_bins_rank.iterrows():
+                bin_assigns = []
+                for index, row in pd_bins_rank.iterrows():
+                    if row['id']:
+                        bin = query.get_bin_by_id(row['id'])
+                        if gs_row['mapping_id'] in bin.mapping_id_to_length:
+                            bin_assigns.append(bin.mapping_id_to_length[gs_row['mapping_id']])
+                if len(bin_assigns) > 0:
+                    true_positives_recall += max(bin_assigns)
+
+            print("true_positives_recall {}".format(true_positives_recall))
 
 
+            gs_length = gs_pd_bins_rank['real_size'].sum()
+            recall_by_bp = float(true_positives_recall) / float(gs_length)
+
+            accuracy = float(true_positives_all_bins) / float(gs_length)
+
+            print("precision by bp:\t{}".format(precision_by_bp))
+            print("recall by bp:\t{}".format(recall_by_bp))
+            print("accuracy:\t{}".format(accuracy))
+
+            # exit()
         # print(df.to_csv(sep='\t', index=False, float_format='%.3f'))
         # pd_metrics = pd.concat([pd_metrics, df], ignore_index=True)
 

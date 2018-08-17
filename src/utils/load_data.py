@@ -26,16 +26,11 @@ class Query:
     def __init__(self):
         self.__bins = []
         self.__bin_id_to_bin = {}
-        self.__sequence_id_to_bin_id = {}
         self.__label = ""
 
     @property
     def bins(self):
         return self.__bins
-
-    @property
-    def sequence_id_to_bin_id(self):
-        return self.__sequence_id_to_bin_id
 
     @property
     def label(self):
@@ -44,11 +39,6 @@ class Query:
     @bins.setter
     def bins(self, bins):
         self.__bins = bins
-
-    @sequence_id_to_bin_id.setter
-    def sequence_id_to_bin_id(self, sequence_id_bin_id):
-        (sequence_id, bin_id) = sequence_id_bin_id
-        self.__sequence_id_to_bin_id[sequence_id] = bin_id
 
     @label.setter
     def label(self, label):
@@ -75,11 +65,21 @@ class Query:
 class GenomeQuery(Query):
     def __init__(self):
         super().__init__()
+        self.__sequence_id_to_bin_id = {}
         self.__map_by_completeness = False
+
+    @property
+    def sequence_id_to_bin_id(self):
+        return self.__sequence_id_to_bin_id
 
     @property
     def map_by_completeness(self):
         return self.__map_by_completeness
+
+    @sequence_id_to_bin_id.setter
+    def sequence_id_to_bin_id(self, sequence_id_bin_id):
+        (sequence_id, bin_id) = sequence_id_bin_id
+        self.__sequence_id_to_bin_id[sequence_id] = bin_id
 
     @map_by_completeness.setter
     def map_by_completeness(self, map_by_completeness):
@@ -96,11 +96,12 @@ class GenomeQuery(Query):
         mapped_ids = self.get_all_mapping_ids()
         for gs_bin in gold_standard.genome_query.bins:
             if gs_bin.id not in mapped_ids:
-                bins_metrics.append({'mapped_genome': gs_bin.id,
+                bins_metrics.append({'id': None,
+                                     'mapping_id': gs_bin.id,
                                      'purity': np.nan,
                                      'completeness': .0,
                                      'predicted_size': 0,
-                                     'correctly_predicted': 0,
+                                     'true_positives': 0,
                                      'real_size': gs_bin.length})
         # sort bins by completeness
         return sorted(bins_metrics, key=lambda t: t['completeness'], reverse=True)
@@ -111,6 +112,16 @@ class TaxonomicQuery(Query):
 
     def __init__(self):
         super().__init__()
+        self.__rank_to_sequence_id_to_bin_id = defaultdict(dict)
+
+    @property
+    def rank_to_sequence_id_to_bin_id(self):
+        return self.__rank_to_sequence_id_to_bin_id
+
+    @rank_to_sequence_id_to_bin_id.setter
+    def rank_to_sequence_id_to_bin_id(self, rank_sequence_id_bin_id):
+        (rank, sequence_id, bin_id) = rank_sequence_id_bin_id
+        self.__rank_to_sequence_id_to_bin_id[rank][sequence_id] = bin_id
 
     def compute_true_positives(self, gold_standard):
         for bin in self.bins:
@@ -241,11 +252,12 @@ class GenomeBin(Bin):
 
     def get_metrics_dict(self, gold_standard):
         gold_standard_query = gold_standard.genome_query
-        return {'mapped_genome': self.mapping_id,
+        return {'id': self.id,
+                'mapping_id': self.mapping_id,
                 'purity': self.precision,
                 'completeness': self.recall,
                 'predicted_size': self.length,
-                'correctly_predicted': self.true_positives,
+                'true_positives': self.true_positives,
                 'real_size': gold_standard_query.get_bin_by_id(self.mapping_id).length}
 
 
@@ -266,12 +278,18 @@ class TaxonomicBin(Bin):
     def mapping_id(self):
         return self.id
 
-    # def compute_confusion_matrix(self, gold_standard):
-    #     super().compute_confusion_matrix(gold_standard.taxonomic_query)
+    def compute_confusion_matrix(self, gold_standard):
+        gold_standard_query = gold_standard.taxonomic_query
+        if self.rank not in gold_standard_query.rank_to_sequence_id_to_bin_id:
+            return
+        for sequence_id in self.sequence_ids:
+            if sequence_id in gold_standard_query.rank_to_sequence_id_to_bin_id[self.rank]:
+                mapping_id = gold_standard_query.rank_to_sequence_id_to_bin_id[self.rank][sequence_id]
+                self.mapping_id_to_length[mapping_id] += Bin.sequence_id_to_length[sequence_id]
 
     def compute_true_positives(self, gold_standard):
-        # if not self.mapping_id_to_length:
-        #     self.compute_confusion_matrix(gold_standard)
+        if len(self.mapping_id_to_length) == 0:
+            self.compute_confusion_matrix(gold_standard)
         gold_standard_query = gold_standard.taxonomic_query
         if not self.id in gold_standard_query.get_bin_ids():
             return
@@ -283,13 +301,15 @@ class TaxonomicBin(Bin):
 
     def get_metrics_dict(self, gold_standard):
         gold_standard_query = gold_standard.taxonomic_query
-        return {'rank': gold_standard_query.tax_id_to_rank[self.id],
-                'tax_id': self.id,
+        return {'id': self.id,
+                'rank': gold_standard_query.tax_id_to_rank[self.id],
+                'mapping_id': self.id,
                 'purity': self.precision,
                 'completeness': self.recall,
                 'predicted_size': self.length,
-                'correctly_predicted': self.true_positives,
-                'real_size': gold_standard_query.get_bin_by_id(self.id).length if self.id in gold_standard_query.get_bin_ids() else np.nan}
+                'true_positives': self.true_positives,
+                'real_size': gold_standard_query.get_bin_by_id(
+                    self.id).length if self.id in gold_standard_query.get_bin_ids() else np.nan}
 
 
 class GoldStandard:
@@ -564,7 +584,8 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                             t_query.add_bin(bin)
                         else:
                             bin = t_query.get_bin_by_id(tax_id)
-
+                        t_query.rank_to_sequence_id_to_bin_id = (tax_id_to_rank[tax_id], sequence_id, tax_id)
+                        bin.rank = tax_id_to_rank[tax_id]
                         bin.add_sequence_id(sequence_id, Bin.sequence_id_to_length[sequence_id])
         except BaseException as e:
             traceback.print_exc()

@@ -44,7 +44,7 @@ def filter_data(bin_metrics, unique_common_file_path, keyword):
     genome_to_unique_common = load_data.load_unique_common(unique_common_file_path)
     filtered_bin_metrics = []
     for bin in bin_metrics:
-        bin_id = bin['mapped_genome']
+        bin_id = bin['mapping_id']
         if bin_id not in genome_to_unique_common or (keyword and genome_to_unique_common[bin_id] != keyword):
             filtered_bin_metrics.append(bin)
     if len(filtered_bin_metrics) == 0:
