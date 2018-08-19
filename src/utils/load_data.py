@@ -288,7 +288,8 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
     return g_query, t_query
 
 
-def load_queries(gold_standard_file, fastx_file, query_files, map_by_completeness, ncbi_nodes_file, min_length, labels):
+def load_queries(gold_standard_file, fastx_file, query_files, map_by_completeness, filter_tail_percentage,
+                 filter_genomes_file, filter_keyword, ncbi_nodes_file, min_length, labels):
     if not min_length:
         min_length = 0
 
@@ -303,6 +304,8 @@ def load_queries(gold_standard_file, fastx_file, query_files, map_by_completenes
                                                   tax_id_to_parent, tax_id_to_rank,
                                                   None,
                                                   min_length)
+    g_gold_standard.filter_genomes_file = filter_genomes_file
+    g_gold_standard.filter_keyword = filter_keyword
     gold_standard = binning_classes.GoldStandard(g_gold_standard, t_gold_standard)
 
     queries_list = []
@@ -316,6 +319,9 @@ def load_queries(gold_standard_file, fastx_file, query_files, map_by_completenes
         if g_query:
             g_query.label = label
             g_query.map_by_completeness = map_by_completeness
+            g_query.filter_tail_percentage = filter_tail_percentage
+            g_query.filter_genomes_file = filter_genomes_file
+            g_query.filter_keyword = filter_keyword
             queries_list.append(g_query)
         if t_query:
             t_query.label = label

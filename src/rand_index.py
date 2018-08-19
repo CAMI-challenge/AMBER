@@ -13,7 +13,7 @@ def choose2(n):
     return (n * (n - 1)) / 2.0
 
 
-def preprocess_by_bp_counts(bin_ids, gold_standard, query):
+def preprocess_counts(bin_ids, gold_standard, query, by_bp_counts):
     if not bin_ids:
         return
     bin_id_to_mapping_id_to_length = defaultdict(lambda: defaultdict(int))
@@ -31,44 +31,17 @@ def preprocess_by_bp_counts(bin_ids, gold_standard, query):
 
     for bin in query.get_bins_by_id(bin_ids):
         for sequence_id in bin.sequence_ids:
-            mapping_id = gs_sequence_id_to_mapping_id[sequence_id]
-            bin_id_to_mapping_id_to_length[bin.id][mapping_id] += binning_classes.Bin.sequence_id_to_length[sequence_id]
+            if sequence_id in gs_sequence_id_to_mapping_id:
+                mapping_id = gs_sequence_id_to_mapping_id[sequence_id]
+                bin_id_to_mapping_id_to_length[bin.id][mapping_id] += binning_classes.Bin.sequence_id_to_length[sequence_id] if by_bp_counts else 1
 
     for sequence_id in sequence_id_to_bin_id:
-        mapping_id = gs_sequence_id_to_mapping_id[sequence_id]
-        bin_id = sequence_id_to_bin_id[sequence_id]
-        mapping_id_to_bin_id_to_length[mapping_id][bin_id] += binning_classes.Bin.sequence_id_to_length[sequence_id]
+        if sequence_id in gs_sequence_id_to_mapping_id:
+            mapping_id = gs_sequence_id_to_mapping_id[sequence_id]
+            bin_id = sequence_id_to_bin_id[sequence_id]
+            mapping_id_to_bin_id_to_length[mapping_id][bin_id] += binning_classes.Bin.sequence_id_to_length[sequence_id] if by_bp_counts else 1
 
     return bin_id_to_mapping_id_to_length, mapping_id_to_bin_id_to_length
-
-
-def preprocess_by_sequence_counts(bin_ids, gold_standard, query):
-    if not bin_ids:
-        return
-    bin_id_to_mapping_id_to_total_sequences = defaultdict(lambda: defaultdict(int))
-    mapping_id_to_bin_id_to_total_sequences = defaultdict(lambda: defaultdict(int))
-
-    if isinstance(query, binning_classes.GenomeQuery):
-        gold_standard_query = gold_standard.genome_query
-        gs_sequence_id_to_mapping_id = gold_standard_query.sequence_id_to_bin_id
-        sequence_id_to_bin_id = query.sequence_id_to_bin_id
-    else:
-        gold_standard_query = gold_standard.taxonomic_query
-        rank = query.get_bin_by_id(bin_ids[0]).rank
-        gs_sequence_id_to_mapping_id = gold_standard_query.rank_to_sequence_id_to_bin_id[rank]
-        sequence_id_to_bin_id = query.rank_to_sequence_id_to_bin_id[rank]
-
-    for bin in query.get_bins_by_id(bin_ids):
-        for sequence_id in bin.sequence_ids:
-            mapping_id = gs_sequence_id_to_mapping_id[sequence_id]
-            bin_id_to_mapping_id_to_total_sequences[bin.id][mapping_id] += 1
-
-    for sequence_id in sequence_id_to_bin_id:
-        mapping_id = gs_sequence_id_to_mapping_id[sequence_id]
-        bin_id = sequence_id_to_bin_id[sequence_id]
-        mapping_id_to_bin_id_to_total_sequences[mapping_id][bin_id] += 1
-
-    return bin_id_to_mapping_id_to_total_sequences, mapping_id_to_bin_id_to_total_sequences
 
 
 def combinations(bin_id_to_mapping_id_to_counts, mapping_id_to_bin_id_to_counts):
@@ -97,7 +70,8 @@ def compute_adjusted_rand_index(bin_id_to_mapping_id_to_counts, mapping_id_to_bi
     bin_comb, mapping_comb, bin_mapping_comb, num_bp_comb = combinations(bin_id_to_mapping_id_to_counts, mapping_id_to_bin_id_to_counts)
     temp = bin_comb * mapping_comb / num_bp_comb
     ret = bin_mapping_comb - temp
-    return ret / (((bin_comb + mapping_comb) / 2.0) - temp)
+    denominator = (((bin_comb + mapping_comb) / 2.0) - temp)
+    return ret / denominator if denominator != 0 else .0
 
 
 def compute_rand_index(bin_id_to_mapping_id_to_counts, mapping_id_to_bin_id_to_counts):
@@ -115,8 +89,8 @@ def print_rand_indices(ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq, percentage_of
 
 
 def compute_metrics(bin_ids, query, gold_standard):
-    bin_id_to_mapping_id_to_total_sequences, mapping_id_to_bin_id_to_total_sequences = preprocess_by_sequence_counts(bin_ids, gold_standard, query)
-    bin_id_to_mapping_id_to_length, mapping_id_to_bin_id_to_length = preprocess_by_bp_counts(bin_ids, gold_standard, query)
+    bin_id_to_mapping_id_to_total_sequences, mapping_id_to_bin_id_to_total_sequences = preprocess_counts(bin_ids, gold_standard, query, False)
+    bin_id_to_mapping_id_to_length, mapping_id_to_bin_id_to_length = preprocess_counts(bin_ids, gold_standard, query, True)
 
     ri_by_seq = compute_rand_index(bin_id_to_mapping_id_to_total_sequences, mapping_id_to_bin_id_to_total_sequences)
     ri_by_bp = compute_rand_index(bin_id_to_mapping_id_to_length, mapping_id_to_bin_id_to_length)

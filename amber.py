@@ -16,11 +16,9 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import pandas as pd
-from src.utils import exclude_genomes
 from src.utils import load_data
 from src.utils import argparse_parents
 from src.utils import labels as utils_labels
-from src.utils import filter_tail
 from src import binning_classes
 
 
@@ -50,11 +48,32 @@ def get_labels(labels, bin_files):
     return tool_id
 
 
+def compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query):
+    true_positives_all_bins = pd_bins_rank['true_positives'].sum()
+    all_bins_length = pd_bins_rank['predicted_size'].sum()
+    precision_by_bp = float(true_positives_all_bins) / float(all_bins_length)
+
+    true_positives_recall = 0
+    for gs_index, gs_row in gs_pd_bins_rank.iterrows():
+        bin_assigns = []
+        for index, row in pd_bins_rank.iterrows():
+            if row['id']:
+                bin = query.get_bin_by_id(row['id'])
+                if gs_row['mapping_id'] in bin.mapping_id_to_length:
+                    bin_assigns.append(bin.mapping_id_to_length[gs_row['mapping_id']])
+        if len(bin_assigns) > 0:
+            true_positives_recall += max(bin_assigns)
+
+    gs_length = gs_pd_bins_rank['real_size'].sum()
+    recall_by_bp = float(true_positives_recall) / float(gs_length)
+    accuracy = float(true_positives_all_bins) / float(gs_length)
+    percentage_of_assigned_bps = float(all_bins_length) / float(gs_length)
+
+    return precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps
+
+
 def evaluate_all(gold_standard,
                  queries_list,
-                 filter_tail_percentage,
-                 filter_genomes_file,
-                 keyword,
                  min_completeness, max_contamination,
                  output_dir):
 
@@ -68,29 +87,25 @@ def evaluate_all(gold_standard,
         gs_pd_tax_bins = pd.DataFrame.from_dict(gs_tax_bins_metrics)
 
     for query in queries_list:
+        # Compute metrics per bin
         query.compute_true_positives(gold_standard)
-
         precision_recall_per_bin.compute_precision_recall(gold_standard, query)
-
         bins_metrics = query.get_bins_metrics(gold_standard)
 
+        pd_bins = pd.DataFrame.from_dict(bins_metrics)
         if isinstance(query, binning_classes.GenomeQuery):
-            if filter_tail_percentage:
-                filter_tail.filter_tail(bins_metrics, filter_tail_percentage)
-            if filter_genomes_file:
-                bins_metrics = exclude_genomes.filter_data(bins_metrics, filter_genomes_file, keyword)
-            pd_bins = pd.DataFrame.from_dict(bins_metrics)
             pd_bins['rank'] = 'NA'
             gs_pd_bins = gs_pd_genome_bins
         else:
-            pd_bins = pd.DataFrame.from_dict(bins_metrics)
             gs_pd_bins = gs_pd_tax_bins
 
+        # Compute metrics over bins
         for rank, pd_bins_rank in pd_bins.groupby('rank'):
             gs_pd_bins_rank = gs_pd_bins[gs_pd_bins['rank'] == rank]
             print(rank)
             precision_rows = pd_bins_rank[pd_bins_rank['purity'].notnull()]['purity']
             recall_rows = pd_bins_rank[pd_bins_rank['real_size'] > 0]['completeness']
+
             avg_precision = precision_rows.mean()
             sem_precision = precision_rows.sem()
             std_precision = precision_rows.std()
@@ -98,41 +113,23 @@ def evaluate_all(gold_standard,
             sem_recall = recall_rows.sem()
             std_recall = recall_rows.std()
 
-            true_positives_all_bins = pd_bins_rank['true_positives'].sum()
-            all_bins_length = pd_bins_rank['predicted_size'].sum()
-            precision_by_bp = float(true_positives_all_bins) / float(all_bins_length)
+            precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps = compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query)
 
-            true_positives_recall = 0
-            for gs_index, gs_row in gs_pd_bins_rank.iterrows():
-                bin_assigns = []
-                for index, row in pd_bins_rank.iterrows():
-                    if row['id']:
-                        bin = query.get_bin_by_id(row['id'])
-                        if gs_row['mapping_id'] in bin.mapping_id_to_length:
-                            bin_assigns.append(bin.mapping_id_to_length[gs_row['mapping_id']])
-                if len(bin_assigns) > 0:
-                    true_positives_recall += max(bin_assigns)
+            bin_ids = pd_bins_rank['id'][pd_bins_rank['id'].notnull()].tolist()
+            print(bin_ids)
 
-            gs_length = gs_pd_bins_rank['real_size'].sum()
-            recall_by_bp = float(true_positives_recall) / float(gs_length)
+            ri_by_seq, ri_by_bp, a_rand_index_by_bp, a_rand_index_by_seq = rand_index.compute_metrics(bin_ids, query, gold_standard)
 
-            accuracy = float(true_positives_all_bins) / float(gs_length)
-
+            print("avg_precision:\t{}".format(avg_precision))
+            print("avg_recall:\t{}".format(avg_recall))
             print("precision by bp:\t{}".format(precision_by_bp))
             print("recall by bp:\t{}".format(recall_by_bp))
             print("accuracy:\t{}".format(accuracy))
-
-            percentage_of_assigned_bps = float(all_bins_length) / float(gs_length)
             print("percentage_of_assigned_bps: {}".format(percentage_of_assigned_bps))
-
-            bin_ids = list(filter(None.__ne__, pd_bins_rank['id'].tolist()))
-            ri_by_seq, ri_by_bp, a_rand_index_by_bp, a_rand_index_by_seq = rand_index.compute_metrics(bin_ids, query, gold_standard)
             print("{} {} {} {}".format(ri_by_seq, ri_by_bp, a_rand_index_by_bp, a_rand_index_by_seq))
 
-            # GENOME RECOVERY
-            # genome_recovery_val = genome_recovery.calc_dict(bin_metrics, min_completeness, max_contamination)
-
-            exit()
+            # genome_recovery_val = genome_recovery.calc_dict(pd_bins_rank, min_completeness, max_contamination)
+            # exit()
         # print(df.to_csv(sep='\t', index=False, float_format='%.3f'))
         # pd_metrics = pd.concat([pd_metrics, df], ignore_index=True)
 
@@ -207,6 +204,9 @@ def main():
                                                          args.fasta_file,
                                                          args.bin_files,
                                                          args.map_by_completeness,
+                                                         args.filter,
+                                                         args.remove_genomes,
+                                                         args.keyword,
                                                          args.ncbi_nodes_file,
                                                          args.min_length,
                                                          labels)
@@ -218,9 +218,6 @@ def main():
 
     summary_per_query, bin_metrics_per_query = evaluate_all(gold_standard,
                                                             queries_list,
-                                                            args.filter,
-                                                            args.remove_genomes,
-                                                            args.keyword,
                                                             min_completeness, max_contamination,
                                                             args.output_dir)
     exit()

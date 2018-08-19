@@ -3,6 +3,8 @@
 import numpy as np
 from collections import defaultdict
 from src.utils import load_ncbi_taxinfo
+from src.utils import exclude_genomes
+from src.utils import filter_tail
 
 
 class Query:
@@ -52,6 +54,9 @@ class GenomeQuery(Query):
         super().__init__()
         self.__sequence_id_to_bin_id = {}
         self.__map_by_completeness = False
+        self.__filter_tail_percentage = .0
+        self.__filter_genomes_file = None
+        self.__filter_keyword = None
 
     @property
     def sequence_id_to_bin_id(self):
@@ -60,6 +65,18 @@ class GenomeQuery(Query):
     @property
     def map_by_completeness(self):
         return self.__map_by_completeness
+
+    @property
+    def filter_tail_percentage(self):
+        return self.__filter_tail_percentage
+
+    @property
+    def filter_genomes_file(self):
+        return self.__filter_genomes_file
+
+    @property
+    def filter_keyword(self):
+        return self.__filter_keyword
 
     @sequence_id_to_bin_id.setter
     def sequence_id_to_bin_id(self, sequence_id_bin_id):
@@ -70,14 +87,24 @@ class GenomeQuery(Query):
     def map_by_completeness(self, map_by_completeness):
         self.__map_by_completeness = map_by_completeness
 
+    @filter_tail_percentage.setter
+    def filter_tail_percentage(self, filter_tail_percentage):
+        self.__filter_tail_percentage = filter_tail_percentage
+
+    @filter_genomes_file.setter
+    def filter_genomes_file(self, filter_genomes_file):
+        self.__filter_genomes_file = filter_genomes_file
+
+    @filter_keyword.setter
+    def filter_keyword(self, filter_keyword):
+        self.__filter_keyword = filter_keyword
+
     def compute_true_positives(self, gold_standard):
         for bin in self.bins:
             bin.compute_true_positives(gold_standard, self.__map_by_completeness)
 
     def get_bins_metrics(self, gold_standard):
-        bins_metrics = []
-        for bin in self.bins:
-            bins_metrics.append(bin.get_metrics_dict(gold_standard))
+        bins_metrics = [bin.get_metrics_dict(gold_standard) for bin in self.bins]
         mapped_ids = self.get_all_mapping_ids()
         for gs_bin in gold_standard.genome_query.bins:
             if gs_bin.id not in mapped_ids:
@@ -88,6 +115,12 @@ class GenomeQuery(Query):
                                      'predicted_size': 0,
                                      'true_positives': 0,
                                      'real_size': gs_bin.length})
+
+        if self.filter_tail_percentage:
+            filter_tail.filter_tail(bins_metrics, self.filter_tail_percentage)
+        if self.filter_genomes_file:
+            bins_metrics = exclude_genomes.filter_data(bins_metrics, self.filter_genomes_file, self.filter_keyword)
+
         # sort bins by completeness
         return sorted(bins_metrics, key=lambda t: t['completeness'], reverse=True)
 
