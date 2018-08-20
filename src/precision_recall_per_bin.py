@@ -15,24 +15,30 @@ def transform_confusion_matrix_all(gold_standard, queries_list):
 
 
 def transform_confusion_matrix(gold_standard,
-                             query):
-    bin_id_to_mapped_genome = query.bin_id_to_mapped_genome
-    bin_id_to_genome_id_to_length = query.bin_id_to_genome_id_to_length
+                               query):
+    gold_standard_query = gold_standard.genome_query
 
+    bin_id_to_genome_id_to_length = {}
+    for bin in query.bins:
+        bin_id_to_genome_id_to_length[bin.id] = bin.mapping_id_to_length
     df_confusion = pd.DataFrame(bin_id_to_genome_id_to_length).T
 
     query_sequence_ids = set(query.sequence_id_to_bin_id.keys())
-    gs_sequence_ids = set(gold_standard.sequence_id_to_lengths.keys())
+    gs_sequence_ids = set(gold_standard_query.sequence_id_to_bin_id.keys())
     genome_id_to_unassigned_bps = collections.Counter()
     for unassigned_seq_id in gs_sequence_ids - query_sequence_ids:
-        genome_id = gold_standard.sequence_id_to_genome_id[unassigned_seq_id]
-        genome_id_to_unassigned_bps[genome_id] += gold_standard.sequence_id_to_lengths[unassigned_seq_id]
+        genome_id = gold_standard_query.sequence_id_to_bin_id[unassigned_seq_id]
+        genome_id_to_unassigned_bps[genome_id] += binning_classes.Bin.sequence_id_to_length[unassigned_seq_id]
 
     df_unassigned = pd.DataFrame.from_dict(genome_id_to_unassigned_bps, orient='index').rename(columns={0: 'unassigned'}).T
     table = df_confusion.append(df_unassigned)
     table.fillna(0, inplace=True)
     # use log scale
-    #table = table.applymap(np.log).fillna(0)
+    # table = table.applymap(np.log).fillna(0)
+
+    bin_id_to_mapped_genome = {}
+    for bin in query.bins:
+        bin_id_to_mapped_genome[bin.id] = bin.mapping_id
 
     # sort bins by the number of true positives (length of mapped genome within the bin)
     bin_id_to_mapped_genome_by_length = collections.OrderedDict(sorted(bin_id_to_mapped_genome.items(), key=lambda t: bin_id_to_genome_id_to_length[t[0]][t[1]], reverse=True))
@@ -50,7 +56,7 @@ def transform_confusion_matrix(gold_standard,
 
     table = table.loc[list(bin_id_to_mapped_genome_by_length.keys()) + ['unassigned'], genome_order]
 
-    for genome_id in gold_standard.genome_id_to_total_length.keys():
+    for genome_id in gold_standard_query.get_bin_ids():
         if genome_id not in table.columns.values.tolist():
             table[genome_id] = 0
 

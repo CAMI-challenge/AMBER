@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
 import numpy as np
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from src.utils import load_ncbi_taxinfo
 from src.utils import exclude_genomes
 from src.utils import filter_tail
 
 
-class Query:
+class Query(ABC):
     def __init__(self):
         self.__bins = []
         self.__bin_id_to_bin = {}
@@ -50,6 +51,8 @@ class Query:
 
 
 class GenomeQuery(Query):
+    binning_type = 'genome'
+
     def __init__(self):
         super().__init__()
         self.__sequence_id_to_bin_id = {}
@@ -127,6 +130,7 @@ class GenomeQuery(Query):
 
 class TaxonomicQuery(Query):
     tax_id_to_rank = None
+    binning_type = 'taxonomic'
 
     def __init__(self):
         super().__init__()
@@ -154,7 +158,7 @@ class TaxonomicQuery(Query):
         return sorted(bins_metrics, key=lambda t: (rank_to_index[t['rank']], t['completeness']), reverse=True)
 
 
-class Bin:
+class Bin(ABC):
     sequence_id_to_length = {}
 
     def __init__(self, id):
@@ -231,9 +235,11 @@ class Bin:
         self.__sequence_ids.add(sequence_id)
         self.__length += sequence_length
 
+    @abstractmethod
     def compute_confusion_matrix(self, gold_standard_query):
         pass
 
+    @abstractmethod
     def get_metrics_dict(self):
         pass
 

@@ -7,7 +7,7 @@ import errno
 import matplotlib
 from version import __version__
 from src import genome_recovery
-from src import html_plots
+# from src import html_plots
 from src import plot_by_genome
 from src import plots
 from src import precision_recall_per_bin
@@ -74,18 +74,16 @@ def compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query):
 
 def evaluate_all(gold_standard,
                  queries_list,
-                 min_completeness, max_contamination,
-                 output_dir):
-
+                 min_completeness, max_contamination):
     if gold_standard.genome_query:
         gs_genome_bins_metrics = gold_standard.genome_query.get_bins_metrics(gold_standard)
         gs_pd_genome_bins = pd.DataFrame.from_dict(gs_genome_bins_metrics)
         gs_pd_genome_bins['rank'] = 'NA'
-
     if gold_standard.taxonomic_query:
         gs_tax_bins_metrics = gold_standard.taxonomic_query.get_bins_metrics(gold_standard)
         gs_pd_tax_bins = pd.DataFrame.from_dict(gs_tax_bins_metrics)
 
+    df_all = pd.DataFrame()
     for query in queries_list:
         # Compute metrics per bin
         query.compute_true_positives(gold_standard)
@@ -102,7 +100,6 @@ def evaluate_all(gold_standard,
         # Compute metrics over bins
         for rank, pd_bins_rank in pd_bins.groupby('rank'):
             gs_pd_bins_rank = gs_pd_bins[gs_pd_bins['rank'] == rank]
-            print(rank)
             precision_rows = pd_bins_rank[pd_bins_rank['purity'].notnull()]['purity']
             recall_rows = pd_bins_rank[pd_bins_rank['real_size'] > 0]['completeness']
 
@@ -116,36 +113,37 @@ def evaluate_all(gold_standard,
             precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps = compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query)
 
             bin_ids = pd_bins_rank['id'][pd_bins_rank['id'].notnull()].tolist()
-            print(bin_ids)
+            ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq = rand_index.compute_metrics(bin_ids, query, gold_standard)
 
-            ri_by_seq, ri_by_bp, a_rand_index_by_bp, a_rand_index_by_seq = rand_index.compute_metrics(bin_ids, query, gold_standard)
+            genome_recovery_val = genome_recovery.calc_dict(pd_bins_rank, min_completeness, max_contamination)
 
-            print("avg_precision:\t{}".format(avg_precision))
-            print("avg_recall:\t{}".format(avg_recall))
-            print("precision by bp:\t{}".format(precision_by_bp))
-            print("recall by bp:\t{}".format(recall_by_bp))
-            print("accuracy:\t{}".format(accuracy))
-            print("percentage_of_assigned_bps: {}".format(percentage_of_assigned_bps))
-            print("{} {} {} {}".format(ri_by_seq, ri_by_bp, a_rand_index_by_bp, a_rand_index_by_seq))
+            df = pd.DataFrame({utils_labels.TOOL: query.label,
+                               utils_labels.BINNING_TYPE: query.binning_type,
+                               utils_labels.RANK: rank,
+                               utils_labels.AVG_PRECISION: [avg_precision],
+                               utils_labels.AVG_PRECISION_STD: [std_precision],
+                               utils_labels.AVG_PRECISION_SEM: [sem_precision],
+                               utils_labels.AVG_RECALL: [avg_recall],
+                               utils_labels.AVG_RECALL_STD: [std_recall],
+                               utils_labels.AVG_RECALL_SEM: [sem_recall],
+                               utils_labels.AVG_PRECISION_PER_BP: [precision_by_bp],
+                               utils_labels.AVG_RECALL_PER_BP: [recall_by_bp],
+                               utils_labels.ACCURACY: [accuracy],
+                               utils_labels.PERCENTAGE_ASSIGNED_BPS: [percentage_of_assigned_bps],
+                               utils_labels.RI_BY_BP: [ri_by_bp],
+                               utils_labels.RI_BY_SEQ: [ri_by_seq],
+                               utils_labels.ARI_BY_BP: [ari_by_bp],
+                               utils_labels.ARI_BY_SEQ: [ari_by_seq],})
+            df_genome_recovery = pd.DataFrame.from_dict(genome_recovery_val, orient='index').T
+            df = df.join(df_genome_recovery)
+            df_all = pd.concat([df_all, df], ignore_index=True)
+    return df_all
 
-            # genome_recovery_val = genome_recovery.calc_dict(pd_bins_rank, min_completeness, max_contamination)
-            # exit()
-        # print(df.to_csv(sep='\t', index=False, float_format='%.3f'))
-        # pd_metrics = pd.concat([pd_metrics, df], ignore_index=True)
 
-
-
-    exit()
-    return None, None
-
-
-def create_legend(summary_per_query, output_dir):
+def create_legend(df_results, output_dir):
     colors_iter = iter(plots.create_colors_list())
-    labels = []
-    circles = []
-    for summary in summary_per_query:
-        labels.append(summary[utils_labels.TOOL])
-        circles.append(Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=10, markerfacecolor=next(colors_iter)))
+    labels = list(df_results.groupby(utils_labels.TOOL).groups.keys())
+    circles = [Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=10, markerfacecolor=next(colors_iter)) for label in labels]
 
     fig = plt.figure(figsize=(0.5, 0.5))
     fig.legend(circles, labels, loc='center', frameon=False, ncol=5, handletextpad=0.1)
@@ -173,6 +171,13 @@ def compute_rankings(summary_per_query, output_dir):
                                                summary[utils_labels.AVG_PRECISION],
                                                summary[utils_labels.AVG_RECALL]))
     f.close()
+
+
+def plot_heat_maps(gold_standard, queries_list, output_dir):
+    for query in queries_list:
+        if isinstance(query, binning_classes.GenomeQuery):
+            df_confusion = precision_recall_per_bin.transform_confusion_matrix(gold_standard, query)
+            plots.plot_heatmap(df_confusion, os.path.join(output_dir, query.label))
 
 
 def main():
@@ -211,24 +216,21 @@ def main():
                                                          args.min_length,
                                                          labels)
 
-    # if args.plot_heatmaps and g_queries_list:
-    #     df_confusion = precision_recall_per_bin.transform_confusion_matrix_all(g_gold_standard,
-    #                                                                            g_queries_list)
-    #     plots.plot_heatmap(df_confusion, g_queries_list)
+    df_results = evaluate_all(gold_standard,
+                              queries_list,
+                              min_completeness, max_contamination)
+    df_results.to_csv('summary.tsv', sep='\t', index=False, float_format='%.3f')
 
-    summary_per_query, bin_metrics_per_query = evaluate_all(gold_standard,
-                                                            queries_list,
-                                                            min_completeness, max_contamination,
-                                                            args.output_dir)
+    if args.plot_heatmaps:
+        plot_heat_maps(gold_standard, queries_list, args.output_dir)
+
+    df_results_g = df_results[df_results[utils_labels.BINNING_TYPE] == 'genome']
+    create_legend(df_results_g, args.output_dir)
+    plots.plot_avg_precision_recall(df_results_g, args.output_dir)
+    plots.plot_weighed_precision_recall(df_results_g, args.output_dir)
+    plots.plot_adjusted_rand_index_vs_assigned_bps(df_results_g, args.output_dir)
+
     exit()
-    df = pd.DataFrame.from_dict(summary_per_query)
-    print(df.to_csv(sep='\t', index=False, float_format='%.3f'))
-    df.to_csv(path_or_buf=os.path.join(args.output_dir, "summary.tsv"), sep='\t', index=False, float_format='%.3f')
-
-    create_legend(summary_per_query, args.output_dir)
-    plots.plot_avg_precision_recall(summary_per_query, args.output_dir)
-    plots.plot_weighed_precision_recall(summary_per_query, args.output_dir)
-    plots.plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, args.output_dir)
 
     plots.plot_boxplot(bin_metrics_per_query, labels, 'purity', args.output_dir)
     plots.plot_boxplot(bin_metrics_per_query, labels, 'completeness', args.output_dir)

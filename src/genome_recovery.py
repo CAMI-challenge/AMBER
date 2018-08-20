@@ -16,33 +16,31 @@ def get_defaults():
     return [.5, .7, .9], [.1, .05]
 
 
-def calc_table(metrics, min_completeness, max_contamination):
+def calc_table(pd_bins_rank, min_completeness, max_contamination):
     if not min_completeness:
         min_completeness = get_defaults()[0]
     if not max_contamination:
         max_contamination = get_defaults()[1]
 
     genome_recovery = np.zeros((len(max_contamination), len(min_completeness)), dtype=int)
-    for metric in metrics:
-        precision = float(metric['purity'])
-        recall = float(metric['completeness'])
-        if np.isnan(precision):
+    for row in pd_bins_rank.itertuples():
+        if np.isnan(row.purity):
             continue
-        contamination = 1 - precision
+        contamination = 1 - row.purity
         for i in range(len(max_contamination)):
             for j in range(len(min_completeness)):
-                if recall > min_completeness[j] and contamination < max_contamination[i]:
+                if row.completeness > min_completeness[j] and contamination < max_contamination[i]:
                     genome_recovery[i][j] += 1
     return genome_recovery
 
 
-def calc_dict(metrics, min_completeness, max_contamination):
+def calc_dict(pd_bins_rank, min_completeness, max_contamination):
     if not min_completeness:
         min_completeness = get_defaults()[0]
     if not max_contamination:
         max_contamination = get_defaults()[1]
 
-    genome_recovery = calc_table(metrics, min_completeness, max_contamination)
+    genome_recovery = calc_table(pd_bins_rank, min_completeness, max_contamination)
     counts_dict = collections.OrderedDict()
     for i, cont in zip(range(len(max_contamination)), max_contamination):
         for j, compl in zip(range(len(min_completeness)), min_completeness):

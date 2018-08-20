@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import argparse
 import matplotlib
 matplotlib.use('Agg')
 import seaborn as sns
@@ -70,11 +69,19 @@ def scan_dir(output_dir):
 def plot_heatmap(df_confusion, output_dir, separate_bar=False):
     fig, axs = plt.subplots(figsize=(10, 8))
 
+    # replace columns and rows labels by numbers
+    # d = {value: key for (key, value) in enumerate(df_confusion.columns.tolist(), 1)}
+    # df_confusion = df_confusion.rename(index=str, columns=d)
+    # df_confusion.index = range(1, len(df_confusion.index) + 1)
+    # sns_plot = sns.heatmap(df_confusion, ax=axs, annot=False, cmap="YlGnBu_r", xticklabels=3, yticklabels=3, cbar=False)
+
     sns_plot = sns.heatmap(df_confusion, ax=axs, annot=False, cmap="YlGnBu_r", xticklabels=False, yticklabels=False, cbar=True)
     sns_plot.set_xlabel("Genomes", fontsize=20)
     sns_plot.set_ylabel("Predicted bins", fontsize=20)
-    # plt.yticks(fontsize=8, rotation=0)
-    # plt.xticks(fontsize=8)
+    plt.yticks(fontsize=8, rotation=0)
+    plt.xticks(fontsize=8)
+    # plt.yticks(fontsize=14, rotation=0)
+    # plt.xticks(fontsize=14)
 
     fig.savefig(os.path.normpath(output_dir + '/heatmap.eps'), dpi=100, format='eps', bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/heatmap.png'), dpi=100, format='png', bbox_inches='tight')
@@ -88,7 +95,7 @@ def plot_heatmap(df_confusion, output_dir, separate_bar=False):
     mappable = sns_plot.get_children()[0]
     fmt = lambda x, pos: '{:.0f}'.format(x / 1000000)
 
-    cbar = plt.colorbar(mappable, orientation='vertical', label='[millions]', format=ticker.FuncFormatter(fmt))
+    cbar = plt.colorbar(mappable, orientation='vertical', label='[millions of base pairs]', format=ticker.FuncFormatter(fmt))
 
     text = cbar.ax.yaxis.label
     font = matplotlib.font_manager.FontProperties(size=16)
@@ -162,9 +169,11 @@ def plot_boxplot(data_list, binning_labels, metric_name, output_dir, order=None)
     plt.close(fig)
 
 
-def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, ylabel):
+def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
     colors_list = create_colors_list()
-    if len(summary_per_query) > len(colors_list):
+    df_groups = df_results.groupby(labels.TOOL)
+
+    if len(df_groups) > len(colors_list):
         raise RuntimeError("Plot only supports 29 colors")
 
     fig, axs = plt.subplots(figsize=(6, 5))
@@ -173,29 +182,25 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
     axs.set_xlim([0.0, 1.0])
     axs.set_ylim([0.0, 1.0])
 
-    i = 0
     plot_labels = []
     if plot_type == 'e':
-        for summary in summary_per_query:
-            axs.errorbar(float(summary[labels.AVG_PRECISION]), float(summary[labels.AVG_RECALL]), xerr=float(summary[labels.SEM_PRECISION]), yerr=float(summary[labels.SEM_RECALL]),
+        for i, (tool, pd_summary) in enumerate(df_groups):
+            axs.errorbar(float(pd_summary[labels.AVG_PRECISION][0]), float(pd_summary[labels.AVG_RECALL][0]), xerr=float(pd_summary[labels.AVG_PRECISION_SEM][0]), yerr=float(pd_summary[labels.AVG_RECALL_SEM][0]),
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
                          mfc=colors_list[i],
                          capsize=3,
                          markersize=8)
-            plot_labels.append(summary[labels.TOOL])
-            i += 1
+            plot_labels.append(tool)
     if plot_type == 'w':
-        for summary in summary_per_query:
-            axs.plot(float(summary[labels.PRECISION]), float(summary[labels.RECALL]), marker='o', color=colors_list[i], markersize=10)
-            plot_labels.append(summary[labels.TOOL])
-            i += 1
+        for i, (tool, pd_summary) in enumerate(df_groups):
+            axs.plot(float(pd_summary[labels.AVG_PRECISION_PER_BP][0]), float(pd_summary[labels.AVG_RECALL_PER_BP][0]), marker='o', color=colors_list[i], markersize=10)
+            plot_labels.append(tool)
     elif plot_type == 'p':
-        for summary in summary_per_query:
-            axs.plot(float(summary[labels.ARI_BY_BP]), float(summary[labels.PERCENTAGE_ASSIGNED_BPS]), marker='o', color=colors_list[i], markersize=10)
-            plot_labels.append(summary[labels.TOOL])
-            i += 1
+        for i, (tool, pd_summary) in enumerate(df_groups):
+            axs.plot(float(pd_summary[labels.ARI_BY_BP][0]), float(pd_summary[labels.PERCENTAGE_ASSIGNED_BPS][0]), marker='o', color=colors_list[i], markersize=10)
+            plot_labels.append(tool)
 
     # turn on grid
     axs.minorticks_on()
@@ -215,7 +220,7 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
 
     colors_iter = iter(colors_list)
     circles = []
-    for summary in summary_per_query:
+    for x in range(len(df_groups)):
         circles.append(Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=11, markerfacecolor=next(colors_iter)))
 
     lgd = plt.legend(circles, plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False, fontsize=12)
@@ -225,8 +230,8 @@ def plot_summary(summary_per_query, output_dir, plot_type, file_name, xlabel, yl
     plt.close(fig)
 
 
-def plot_avg_precision_recall(summary_per_query, output_dir):
-    plot_summary(summary_per_query,
+def plot_avg_precision_recall(df_results_g, output_dir):
+    plot_summary(df_results_g,
                  output_dir,
                  'e',
                  'avg_purity_completeness',
@@ -250,19 +255,3 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
                  'ari_vs_assigned_bps',
                  'Adjusted Rand Index (%)' if LEGEND2 else 'Adjusted Rand Index',
                  'Percentage of assigned base pairs (%)' if LEGEND2 else 'Percentage of assigned base pairs')
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Create plots from one or more tables of results")
-    parser.add_argument("files", nargs='+', help="File(s) including system path")
-    parser.add_argument('-o', '--output_dir', help="Directory to save the plots in", required=True)
-    args = parser.parse_args()
-    load_data.make_sure_path_exists(args.output_dir)
-    results = load_results(args.files)
-    plot_avg_precision_recall(results, args.output_dir)
-    plot_weighed_precision_recall(results, args.output_dir)
-    plot_adjusted_rand_index_vs_assigned_bps(results, args.output_dir)
-
-
-if __name__ == "__main__":
-    main()
