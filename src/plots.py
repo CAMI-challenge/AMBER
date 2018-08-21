@@ -7,14 +7,15 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import matplotlib.ticker as ticker
 import numpy as np
-import math
 import re
 import os, sys, inspect
+from collections import OrderedDict
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 from src.utils import load_data
 from src.utils import labels
+from src.utils import load_ncbi_taxinfo
 
 LEGEND2 = False
 
@@ -111,26 +112,17 @@ def plot_heatmap(df_confusion, output_dir, separate_bar=False):
     plt.close(fig)
 
 
-def plot_boxplot(data_list, binning_labels, metric_name, output_dir, order=None):
-    precision_all = []
-    for metrics in data_list:
-        precision = []
-        for metric in metrics:
-            if not math.isnan(metric[metric_name]):
-                precision.append(metric[metric_name])
-        precision_all.append(precision)
-
-    if order:
-        # sort binning_labels and precision_all by order
-        enum_order = [(v, k) for k, v in enumerate(order)]
-        enum_order = sorted(enum_order, key=lambda x: x[0])
-        binning_labels = [binning_labels[i[1]] for i in enum_order]
-        precision_all = [precision_all[i[1]] for i in enum_order]
+def plot_boxplot(pd_bins, metric_name, output_dir):
+    metric_all = []
+    binning_labels = []
+    for tool, pd_bins_tool in pd_bins.groupby(labels.TOOL):
+        binning_labels.append(tool)
+        metric_all.append(pd_bins_tool[metric_name][pd_bins_tool[metric_name].notnull()].tolist())
 
     fig, axs = plt.subplots(figsize=(6, 5))
 
     medianprops = dict(linewidth=2.5, color='gold')
-    bplot = axs.boxplot(precision_all, notch=0, vert=0, patch_artist=True, labels=binning_labels, medianprops=medianprops, sym='k.')
+    bplot = axs.boxplot(metric_all, notch=0, vert=0, patch_artist=True, labels=binning_labels, medianprops=medianprops, sym='k.')
     colors_iter = iter(create_colors_list())
 
     # turn on grid
@@ -182,7 +174,6 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
     axs.set_xlim([0.0, 1.0])
     axs.set_ylim([0.0, 1.0])
 
-    plot_labels = []
     if plot_type == 'e':
         for i, (tool, pd_summary) in enumerate(df_groups):
             axs.errorbar(float(pd_summary[labels.AVG_PRECISION][0]), float(pd_summary[labels.AVG_RECALL][0]), xerr=float(pd_summary[labels.AVG_PRECISION_SEM][0]), yerr=float(pd_summary[labels.AVG_RECALL_SEM][0]),
@@ -192,15 +183,12 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
                          mfc=colors_list[i],
                          capsize=3,
                          markersize=8)
-            plot_labels.append(tool)
     if plot_type == 'w':
         for i, (tool, pd_summary) in enumerate(df_groups):
             axs.plot(float(pd_summary[labels.AVG_PRECISION_PER_BP][0]), float(pd_summary[labels.AVG_RECALL_PER_BP][0]), marker='o', color=colors_list[i], markersize=10)
-            plot_labels.append(tool)
     elif plot_type == 'p':
         for i, (tool, pd_summary) in enumerate(df_groups):
             axs.plot(float(pd_summary[labels.ARI_BY_BP][0]), float(pd_summary[labels.PERCENTAGE_ASSIGNED_BPS][0]), marker='o', color=colors_list[i], markersize=10)
-            plot_labels.append(tool)
 
     # turn on grid
     axs.minorticks_on()
@@ -223,7 +211,7 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
     for x in range(len(df_groups)):
         circles.append(Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=11, markerfacecolor=next(colors_iter)))
 
-    lgd = plt.legend(circles, plot_labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False, fontsize=12)
+    lgd = plt.legend(circles, list(df_groups.groups.keys()), bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False, fontsize=12)
 
     fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
@@ -255,3 +243,40 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
                  'ari_vs_assigned_bps',
                  'Adjusted Rand Index (%)' if LEGEND2 else 'Adjusted Rand Index',
                  'Percentage of assigned base pairs (%)' if LEGEND2 else 'Percentage of assigned base pairs')
+
+
+def plot_taxonomic_results(df_summary, metric, metric_sem, output_dir):
+    df_summary_t = df_summary[df_summary[labels.BINNING_TYPE] == 'taxonomic']
+
+    if len(df_summary_t) == 0:
+        return
+
+    fig, axs = plt.subplots(figsize=(6, 5))
+
+    # force axes to be from 0 to 100%
+    axs.set_xlim([0, 7])
+    axs.set_ylim([0.0, 1.0])
+    x_values = range(len(load_ncbi_taxinfo.RANKS))
+
+    for tool, pd_results in df_summary_t.groupby(labels.TOOL):
+        rank_to_precision = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+        rank_to_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+        for index, row in pd_results.iterrows():
+            rank_to_precision[row[labels.RANK]] = .0 if np.isnan(row[metric]) else row[metric]
+            rank_to_error[row[labels.RANK]] = .0 if np.isnan(row[metric_sem]) else row[metric_sem]
+
+        y_values = list(rank_to_precision.values())
+        sem = list(rank_to_error.values())
+
+        axs.plot(x_values, y_values)
+        plt.fill_between(x_values, np.subtract(y_values, sem).tolist(), np.add(y_values, sem).tolist(), color='lightblue')
+
+        plt.xticks(x_values, load_ncbi_taxinfo.RANKS, rotation='vertical')
+        plt.ylabel(metric[0:].capitalize() + ' (%)', fontsize=14)
+
+        vals = axs.get_yticks()
+        axs.set_yticklabels(['{:3.0f}'.format(x * 100) for x in vals])
+
+        plt.tight_layout()
+        fig.savefig(os.path.join(output_dir, metric.replace(' ', '_') + '_taxonomic.png'), dpi=100, format='png', bbox_inches='tight')
+

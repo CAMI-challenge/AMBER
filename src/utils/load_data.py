@@ -256,7 +256,7 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                         else:
                             bin = g_query.get_bin_by_id(bin_id)
                         g_query.sequence_id_to_bin_id = (sequence_id, bin_id)
-                        bin.add_sequence_id(sequence_id, binning_classes.Bin.sequence_id_to_length[sequence_id])
+                        bin.add_sequence_id(sequence_id)
                         if is_gs:
                             bin.mapping_id = bin_id
 
@@ -276,7 +276,7 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                             bin = t_query.get_bin_by_id(tax_id)
                         t_query.rank_to_sequence_id_to_bin_id = (tax_id_to_rank[tax_id], sequence_id, tax_id)
                         bin.rank = tax_id_to_rank[tax_id]
-                        bin.add_sequence_id(sequence_id, binning_classes.Bin.sequence_id_to_length[sequence_id])
+                        bin.add_sequence_id(sequence_id)
         except BaseException as e:
             traceback.print_exc()
             exit("Error. File {} is malformed. {}".format(file_path_query, e))

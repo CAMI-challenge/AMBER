@@ -231,9 +231,10 @@ class Bin(ABC):
     def recall(self, recall):
         self.__recall = recall
 
-    def add_sequence_id(self, sequence_id, sequence_length):
-        self.__sequence_ids.add(sequence_id)
-        self.__length += sequence_length
+    def add_sequence_id(self, sequence_id):
+        if sequence_id not in self.__sequence_ids:
+            self.__sequence_ids.add(sequence_id)
+            self.__length += self.sequence_id_to_length[sequence_id]
 
     @abstractmethod
     def compute_confusion_matrix(self, gold_standard_query):

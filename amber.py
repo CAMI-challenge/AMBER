@@ -39,8 +39,8 @@ def create_output_directories(output_dir, labels):
 def get_labels(labels, bin_files):
     if labels:
         labels_list = [x.strip() for x in labels.split(',')]
-        if len(labels_list) != len(bin_files):
-            exit('Number of labels does not match the number of binning files. Please check parameter -l, --labels.')
+        if len(set(labels_list)) != len(bin_files):
+            exit('Number of different labels does not match the number of binning files. Please check parameter -l, --labels.')
         return labels_list
     tool_id = []
     for bin_file in bin_files:
@@ -83,7 +83,8 @@ def evaluate_all(gold_standard,
         gs_tax_bins_metrics = gold_standard.taxonomic_query.get_bins_metrics(gold_standard)
         gs_pd_tax_bins = pd.DataFrame.from_dict(gs_tax_bins_metrics)
 
-    df_all = pd.DataFrame()
+    pd_bins_all = pd.DataFrame()
+    df_summary = pd.DataFrame()
     for query in queries_list:
         # Compute metrics per bin
         query.compute_true_positives(gold_standard)
@@ -91,11 +92,14 @@ def evaluate_all(gold_standard,
         bins_metrics = query.get_bins_metrics(gold_standard)
 
         pd_bins = pd.DataFrame.from_dict(bins_metrics)
+        pd_bins[utils_labels.TOOL] = query.label
+
         if isinstance(query, binning_classes.GenomeQuery):
             pd_bins['rank'] = 'NA'
             gs_pd_bins = gs_pd_genome_bins
         else:
             gs_pd_bins = gs_pd_tax_bins
+        pd_bins_all = pd.concat([pd_bins_all, pd_bins], ignore_index=True)
 
         # Compute metrics over bins
         for rank, pd_bins_rank in pd_bins.groupby('rank'):
@@ -136,8 +140,8 @@ def evaluate_all(gold_standard,
                                utils_labels.ARI_BY_SEQ: [ari_by_seq],})
             df_genome_recovery = pd.DataFrame.from_dict(genome_recovery_val, orient='index').T
             df = df.join(df_genome_recovery)
-            df_all = pd.concat([df_all, df], ignore_index=True)
-    return df_all
+            df_summary = pd.concat([df_summary, df], ignore_index=True)
+    return df_summary, pd_bins_all
 
 
 def create_legend(df_results, output_dir):
@@ -151,33 +155,31 @@ def create_legend(df_results, output_dir):
     plt.close(fig)
 
 
-def compute_rankings(summary_per_query, output_dir):
-    f = open(os.path.normpath(output_dir + '/rankings.txt'), 'w')
-    f.write("Tool\tAverage purity\n")
-    sorted_by = sorted(summary_per_query, key=lambda x: x[utils_labels.AVG_PRECISION], reverse=True)
-    for summary in sorted_by:
-        f.write("%s \t %1.3f\n" % (summary[utils_labels.TOOL], summary[utils_labels.AVG_PRECISION]))
-
-    sorted_by = sorted(summary_per_query, key=lambda x: x[utils_labels.AVG_RECALL], reverse=True)
-    f.write("\nTool\tAverage completeness\n")
-    for summary in sorted_by:
-        f.write("%s \t %1.3f\n" % (summary[utils_labels.TOOL], summary[utils_labels.AVG_RECALL]))
-
-    sorted_by = sorted(summary_per_query, key=lambda x: x[utils_labels.AVG_PRECISION] + x[utils_labels.AVG_RECALL], reverse=True)
-    f.write("\nTool\tAverage purity + Average completeness\tAverage purity\tAverage completeness\n")
-    for summary in sorted_by:
-        f.write("%s\t%1.3f\t%1.3f\t%1.3f\n" % (summary[utils_labels.TOOL],
-                                               summary[utils_labels.AVG_PRECISION] + summary[utils_labels.AVG_RECALL],
-                                               summary[utils_labels.AVG_PRECISION],
-                                               summary[utils_labels.AVG_RECALL]))
-    f.close()
-
-
 def plot_heat_maps(gold_standard, queries_list, output_dir):
     for query in queries_list:
         if isinstance(query, binning_classes.GenomeQuery):
             df_confusion = precision_recall_per_bin.transform_confusion_matrix(gold_standard, query)
             plots.plot_heatmap(df_confusion, os.path.join(output_dir, query.label))
+
+
+def plot_genome_binning(gold_standard, queries_list, df_summary, pd_bins, plot_heatmaps, output_dir):
+    df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
+    if len(df_summary_g) == 0:
+        return
+
+    if plot_heatmaps:
+        plot_heat_maps(gold_standard, queries_list, output_dir)
+
+    create_legend(df_summary_g, output_dir)
+    plots.plot_avg_precision_recall(df_summary_g, output_dir)
+    plots.plot_weighed_precision_recall(df_summary_g, output_dir)
+    plots.plot_adjusted_rand_index_vs_assigned_bps(df_summary_g, output_dir)
+
+    pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
+    plots.plot_boxplot(pd_bins_g, 'purity', output_dir)
+    plots.plot_boxplot(pd_bins_g, 'completeness', output_dir)
+
+    plot_by_genome.plot_precision_recall_per_bin(pd_bins_g, output_dir)
 
 
 def main():
@@ -216,27 +218,18 @@ def main():
                                                          args.min_length,
                                                          labels)
 
-    df_results = evaluate_all(gold_standard,
-                              queries_list,
-                              min_completeness, max_contamination)
-    df_results.to_csv('summary.tsv', sep='\t', index=False, float_format='%.3f')
+    df_summary, pd_bins = evaluate_all(gold_standard,
+                                       queries_list,
+                                       min_completeness, max_contamination)
+    df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
 
-    if args.plot_heatmaps:
-        plot_heat_maps(gold_standard, queries_list, args.output_dir)
+    plot_genome_binning(gold_standard, queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
 
-    df_results_g = df_results[df_results[utils_labels.BINNING_TYPE] == 'genome']
-    create_legend(df_results_g, args.output_dir)
-    plots.plot_avg_precision_recall(df_results_g, args.output_dir)
-    plots.plot_weighed_precision_recall(df_results_g, args.output_dir)
-    plots.plot_adjusted_rand_index_vs_assigned_bps(df_results_g, args.output_dir)
+    # TODO fix: results of multiple tools will overwrite each other
+    plots.plot_taxonomic_results(df_summary, utils_labels.AVG_PRECISION, utils_labels.AVG_PRECISION_SEM, output_dir)
+    plots.plot_taxonomic_results(df_summary, utils_labels.AVG_RECALL, utils_labels.AVG_RECALL_SEM, output_dir)
 
     exit()
-
-    plots.plot_boxplot(bin_metrics_per_query, labels, 'purity', args.output_dir)
-    plots.plot_boxplot(bin_metrics_per_query, labels, 'completeness', args.output_dir)
-
-    plot_by_genome.plot_by_genome2(bin_metrics_per_query, labels, args.output_dir)
-    compute_rankings(summary_per_query, args.output_dir)
 
     precision_recall_files = []
     for query_file, label in zip(args.bin_files, labels):
@@ -247,7 +240,7 @@ def main():
     html_plots.build_html(precision_recall_files,
                           labels,
                           df,
-                          os.path.join(args.output_dir, "summary.html"))
+                          os.path.join(args.output_dir, "index.html"))
 
 
 if __name__ == "__main__":
