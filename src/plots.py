@@ -14,7 +14,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 from src.utils import load_data
-from src.utils import labels
+from src.utils import labels as utils_labels
 from src.utils import load_ncbi_taxinfo
 
 LEGEND2 = False
@@ -30,6 +30,17 @@ def create_colors_list():
     for color in plt.cm.Set3(np.linspace(0, 1, 12)):
         colors_list.append(tuple(color))
     return colors_list
+
+
+def create_legend(df_results, output_dir):
+    colors_iter = iter(create_colors_list())
+    labels = list(df_results.groupby(utils_labels.TOOL).groups.keys())
+    circles = [Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=10, markerfacecolor=next(colors_iter)) for label in labels]
+
+    fig = plt.figure(figsize=(0.5, 0.5))
+    fig.legend(circles, labels, loc='center', frameon=False, ncol=5, handletextpad=0.1)
+    fig.savefig(os.path.join(output_dir, 'genome', 'legend.eps'), dpi=100, format='eps', bbox_inches='tight')
+    plt.close(fig)
 
 
 def load_results(files):
@@ -115,7 +126,7 @@ def plot_heatmap(df_confusion, output_dir, separate_bar=False):
 def plot_boxplot(pd_bins, metric_name, output_dir):
     metric_all = []
     binning_labels = []
-    for tool, pd_bins_tool in pd_bins.groupby(labels.TOOL):
+    for tool, pd_bins_tool in pd_bins.groupby(utils_labels.TOOL):
         binning_labels.append(tool)
         metric_all.append(pd_bins_tool[metric_name][pd_bins_tool[metric_name].notnull()].tolist())
 
@@ -148,22 +159,23 @@ def plot_boxplot(pd_bins, metric_name, output_dir):
     else:
         axs.set_xlabel('Completeness per genome $r$ (%)' if LEGEND2 else 'Completeness per genome (%)', fontsize=14)
 
-    fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
-    fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.png'), dpi=100, format='png', bbox_inches='tight')
-    fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '.eps'), dpi=100, format='eps', bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '.png'), dpi=100, format='png', bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '.eps'), dpi=100, format='eps', bbox_inches='tight')
 
     # remove labels but keep grid
     axs.get_yaxis().set_ticklabels([])
     for tic in axs.yaxis.get_major_ticks():
         tic.tick1On = tic.tick2On = False
         tic.label1On = tic.label2On = False
-    fig.savefig(os.path.normpath(output_dir + '/boxplot_' + metric_name + '_wo_legend.eps'), dpi=100, format='eps', bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '_wo_legend.eps'), dpi=100, format='eps', bbox_inches='tight')
     plt.close(fig)
 
 
 def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
     colors_list = create_colors_list()
-    df_groups = df_results.groupby(labels.TOOL)
+    df_groups = df_results.groupby(utils_labels.TOOL)
+    binning_type = df_groups.head(1)[utils_labels.BINNING_TYPE].iloc[0]
 
     if len(df_groups) > len(colors_list):
         raise RuntimeError("Plot only supports 29 colors")
@@ -176,7 +188,7 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
 
     if plot_type == 'e':
         for i, (tool, pd_summary) in enumerate(df_groups):
-            axs.errorbar(float(pd_summary[labels.AVG_PRECISION][0]), float(pd_summary[labels.AVG_RECALL][0]), xerr=float(pd_summary[labels.AVG_PRECISION_SEM][0]), yerr=float(pd_summary[labels.AVG_RECALL_SEM][0]),
+            axs.errorbar(float(pd_summary[utils_labels.AVG_PRECISION][0]), float(pd_summary[utils_labels.AVG_RECALL][0]), xerr=float(pd_summary[utils_labels.AVG_PRECISION_SEM][0]), yerr=float(pd_summary[utils_labels.AVG_RECALL_SEM][0]),
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
@@ -185,10 +197,10 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
                          markersize=8)
     if plot_type == 'w':
         for i, (tool, pd_summary) in enumerate(df_groups):
-            axs.plot(float(pd_summary[labels.AVG_PRECISION_PER_BP][0]), float(pd_summary[labels.AVG_RECALL_PER_BP][0]), marker='o', color=colors_list[i], markersize=10)
+            axs.plot(float(pd_summary[utils_labels.AVG_PRECISION_PER_BP][0]), float(pd_summary[utils_labels.AVG_RECALL_PER_BP][0]), marker='o', color=colors_list[i], markersize=10)
     elif plot_type == 'p':
         for i, (tool, pd_summary) in enumerate(df_groups):
-            axs.plot(float(pd_summary[labels.ARI_BY_BP][0]), float(pd_summary[labels.PERCENTAGE_ASSIGNED_BPS][0]), marker='o', color=colors_list[i], markersize=10)
+            axs.plot(float(pd_summary[utils_labels.ARI_BY_BP][0]), float(pd_summary[utils_labels.PERCENTAGE_ASSIGNED_BPS][0]), marker='o', color=colors_list[i], markersize=10)
 
     # turn on grid
     axs.minorticks_on()
@@ -204,7 +216,7 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
     plt.xlabel(xlabel, fontsize=14)
     plt.ylabel(ylabel, fontsize=14)
     plt.tight_layout()
-    fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.eps'), dpi=100, format='eps', bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, binning_type, file_name + '.eps'), dpi=100, format='eps', bbox_inches='tight')
 
     colors_iter = iter(colors_list)
     circles = []
@@ -213,8 +225,8 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
 
     lgd = plt.legend(circles, list(df_groups.groups.keys()), bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False, fontsize=12)
 
-    fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.normpath(output_dir + '/' + file_name + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, binning_type, file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, binning_type, file_name + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close(fig)
 
 
@@ -245,8 +257,8 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
                  'Percentage of assigned base pairs (%)' if LEGEND2 else 'Percentage of assigned base pairs')
 
 
-def plot_taxonomic_results(df_summary, metric, metric_sem, output_dir):
-    df_summary_t = df_summary[df_summary[labels.BINNING_TYPE] == 'taxonomic']
+def plot_taxonomic_results(df_summary, output_dir):
+    df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
 
     if len(df_summary_t) == 0:
         return
@@ -258,25 +270,35 @@ def plot_taxonomic_results(df_summary, metric, metric_sem, output_dir):
     axs.set_ylim([0.0, 1.0])
     x_values = range(len(load_ncbi_taxinfo.RANKS))
 
-    for tool, pd_results in df_summary_t.groupby(labels.TOOL):
+    for tool, pd_results in df_summary_t.groupby(utils_labels.TOOL):
         rank_to_precision = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
-        rank_to_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+        rank_to_precision_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+        rank_to_recall = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+        rank_to_recall_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
         for index, row in pd_results.iterrows():
-            rank_to_precision[row[labels.RANK]] = .0 if np.isnan(row[metric]) else row[metric]
-            rank_to_error[row[labels.RANK]] = .0 if np.isnan(row[metric_sem]) else row[metric_sem]
+            rank_to_precision[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION]) else row[utils_labels.AVG_PRECISION]
+            rank_to_precision_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION_SEM]) else row[utils_labels.AVG_PRECISION_SEM]
+            rank_to_recall[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL]) else row[utils_labels.AVG_RECALL]
+            rank_to_recall_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL_SEM]) else row[utils_labels.AVG_RECALL_SEM]
 
-        y_values = list(rank_to_precision.values())
-        sem = list(rank_to_error.values())
+        y_values1 = list(rank_to_precision.values())
+        y_values2 = list(rank_to_recall.values())
+        sem1 = list(rank_to_precision_error.values())
+        sem2 = list(rank_to_recall_error.values())
 
-        axs.plot(x_values, y_values)
-        plt.fill_between(x_values, np.subtract(y_values, sem).tolist(), np.add(y_values, sem).tolist(), color='lightblue')
+        axs.plot(x_values, y_values1, color='blue')
+        plt.fill_between(x_values, np.subtract(y_values1, sem1).tolist(), np.add(y_values1, sem1).tolist(), color='blue', alpha=0.5)
+
+        axs.plot(x_values, y_values2, color='green')
+        plt.fill_between(x_values, np.subtract(y_values2, sem2).tolist(), np.add(y_values2, sem2).tolist(), color='green', alpha=0.5)
 
         plt.xticks(x_values, load_ncbi_taxinfo.RANKS, rotation='vertical')
-        plt.ylabel(metric[0:].capitalize() + ' (%)', fontsize=14)
 
         vals = axs.get_yticks()
-        axs.set_yticklabels(['{:3.0f}'.format(x * 100) for x in vals])
+        axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
+
+        lgd = plt.legend([utils_labels.AVG_PRECISION[0:].capitalize(), utils_labels.AVG_RECALL[0:].capitalize()], loc=1, borderaxespad=0., handlelength=2, frameon=False)
 
         plt.tight_layout()
-        fig.savefig(os.path.join(output_dir, metric.replace(' ', '_') + '_taxonomic.png'), dpi=100, format='png', bbox_inches='tight')
+        fig.savefig(os.path.join(output_dir, 'taxonomic', tool, 'avg_precision_recall.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
 

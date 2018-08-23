@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import collections
 import os
 import errno
 import matplotlib
@@ -13,8 +12,6 @@ from src import plots
 from src import precision_recall_per_bin
 from src import rand_index
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 import pandas as pd
 from src.utils import load_data
 from src.utils import argparse_parents
@@ -30,10 +27,9 @@ def make_sure_path_exists(path):
             raise
 
 
-def create_output_directories(output_dir, labels):
-    make_sure_path_exists(output_dir)
-    for label in labels:
-        make_sure_path_exists(os.path.join(output_dir, label))
+def create_output_directories(output_dir, queries_list):
+    for query in queries_list:
+        make_sure_path_exists(os.path.join(output_dir, query.binning_type, query.label))
 
 
 def get_labels(labels, bin_files):
@@ -144,17 +140,6 @@ def evaluate_all(gold_standard,
     return df_summary, pd_bins_all
 
 
-def create_legend(df_results, output_dir):
-    colors_iter = iter(plots.create_colors_list())
-    labels = list(df_results.groupby(utils_labels.TOOL).groups.keys())
-    circles = [Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=10, markerfacecolor=next(colors_iter)) for label in labels]
-
-    fig = plt.figure(figsize=(0.5, 0.5))
-    fig.legend(circles, labels, loc='center', frameon=False, ncol=5, handletextpad=0.1)
-    fig.savefig(os.path.normpath(output_dir + '/legend.eps'), dpi=100, format='eps', bbox_inches='tight')
-    plt.close(fig)
-
-
 def plot_heat_maps(gold_standard, queries_list, output_dir):
     for query in queries_list:
         if isinstance(query, binning_classes.GenomeQuery):
@@ -170,7 +155,7 @@ def plot_genome_binning(gold_standard, queries_list, df_summary, pd_bins, plot_h
     if plot_heatmaps:
         plot_heat_maps(gold_standard, queries_list, output_dir)
 
-    create_legend(df_summary_g, output_dir)
+    plots.create_legend(df_summary_g, output_dir)
     plots.plot_avg_precision_recall(df_summary_g, output_dir)
     plots.plot_weighed_precision_recall(df_summary_g, output_dir)
     plots.plot_adjusted_rand_index_vs_assigned_bps(df_summary_g, output_dir)
@@ -204,8 +189,6 @@ def main():
         max_contamination = [int(x.strip())/100.0 for x in args.max_contamination.split(',')]
 
     labels = get_labels(args.labels, args.bin_files)
-    output_dir = os.path.abspath(args.output_dir)
-    create_output_directories(output_dir, labels)
 
     gold_standard, queries_list = load_data.load_queries(args.gold_standard_file,
                                                          args.fasta_file,
@@ -218,16 +201,28 @@ def main():
                                                          args.min_length,
                                                          labels)
 
+    output_dir = os.path.abspath(args.output_dir)
+    create_output_directories(output_dir, queries_list)
+
     df_summary, pd_bins = evaluate_all(gold_standard,
                                        queries_list,
                                        min_completeness, max_contamination)
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
 
     plot_genome_binning(gold_standard, queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
+    plots.plot_taxonomic_results(df_summary, output_dir)
 
-    # TODO fix: results of multiple tools will overwrite each other
-    plots.plot_taxonomic_results(df_summary, utils_labels.AVG_PRECISION, utils_labels.AVG_PRECISION_SEM, output_dir)
-    plots.plot_taxonomic_results(df_summary, utils_labels.AVG_RECALL, utils_labels.AVG_RECALL_SEM, output_dir)
+    pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
+    for tool, pd_group in pd_bins_g.groupby(utils_labels.TOOL):
+        columns = ['id', 'mapping_id', 'purity', 'completeness', 'predicted_size', 'true_positives', 'real_size']
+        table = pd_group[columns].rename(columns={'id': 'bin_id', 'mapping_id': 'mapped_genome'})
+        table.to_csv(os.path.join(output_dir, 'genome', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
+
+    pd_bins_t = pd_bins[pd_bins['rank'] != 'NA']
+    for tool, pd_group in pd_bins_t.groupby(utils_labels.TOOL):
+        columns = ['id', 'rank', 'purity', 'completeness', 'predicted_size', 'true_positives', 'real_size']
+        table = pd_group[columns].rename(columns={'id': 'tax_id'})
+        table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
 
     exit()
 
