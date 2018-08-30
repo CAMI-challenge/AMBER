@@ -11,6 +11,7 @@ from src import plot_by_genome
 from src import plots
 from src import precision_recall_per_bin
 from src import rand_index
+from src import amber_html
 matplotlib.use('Agg')
 import pandas as pd
 from src.utils import load_data
@@ -223,6 +224,8 @@ def main():
         columns = ['id', 'rank', 'purity', 'completeness', 'predicted_size', 'true_positives', 'real_size']
         table = pd_group[columns].rename(columns={'id': 'tax_id'})
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
+
+    amber_html.create_html(df_summary, pd_bins, args.output_dir, "my desc")
 
     exit()
 

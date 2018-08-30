@@ -41,8 +41,3 @@ def get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank):
         if tax_id_to_rank[id] == "superkingdom":
             break
     return path
-
-#
-# tax_id_to_parent, tax_id_to_rank = load_tax_info("/home/fmeyer/tmp/taxdump/nodes.dmp")
-# print(get_id_path("1385", tax_id_to_parent, tax_id_to_rank))
-# print(tax_id_to_rank["1385"])
