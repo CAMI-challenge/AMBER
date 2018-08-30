@@ -25,6 +25,7 @@ ARI_BY_SEQ = "adjusted Rand index by sequence counts"
 
 PERCENTAGE_ASSIGNED_BPS = "percentage of assigned bps"
 ACCURACY = "accuracy"
+MISCLASSIFICATION = "misclassification rate"
 
 # PRECISION = "avg_purity_per_bp"
 # RECALL = "avg_completeness_per_bp"

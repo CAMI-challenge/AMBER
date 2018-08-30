@@ -48,7 +48,9 @@ def get_labels(labels, bin_files):
 def compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query):
     true_positives_all_bins = pd_bins_rank['true_positives'].sum()
     all_bins_length = pd_bins_rank['predicted_size'].sum()
+    all_bins_false_positives = all_bins_length - true_positives_all_bins
     precision_by_bp = float(true_positives_all_bins) / float(all_bins_length)
+    misclassification_rate = all_bins_false_positives / float(all_bins_length)
 
     true_positives_recall = 0
     for gs_index, gs_row in gs_pd_bins_rank.iterrows():
@@ -66,7 +68,7 @@ def compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query):
     accuracy = float(true_positives_all_bins) / float(gs_length)
     percentage_of_assigned_bps = float(all_bins_length) / float(gs_length)
 
-    return precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps
+    return precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps, misclassification_rate
 
 
 def evaluate_all(gold_standard,
@@ -111,7 +113,8 @@ def evaluate_all(gold_standard,
             sem_recall = recall_rows.sem()
             std_recall = recall_rows.std()
 
-            precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps = compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query)
+            precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps, misclassification_rate = compute_metrics_per_bp(
+                gs_pd_bins_rank, pd_bins_rank, query)
 
             bin_ids = pd_bins_rank['id'][pd_bins_rank['id'].notnull()].tolist()
             ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq = rand_index.compute_metrics(bin_ids, query, gold_standard)
@@ -134,7 +137,8 @@ def evaluate_all(gold_standard,
                                utils_labels.RI_BY_BP: [ri_by_bp],
                                utils_labels.RI_BY_SEQ: [ri_by_seq],
                                utils_labels.ARI_BY_BP: [ari_by_bp],
-                               utils_labels.ARI_BY_SEQ: [ari_by_seq],})
+                               utils_labels.ARI_BY_SEQ: [ari_by_seq],
+                               utils_labels.MISCLASSIFICATION: [misclassification_rate]})
             df_genome_recovery = pd.DataFrame.from_dict(genome_recovery_val, orient='index').T
             df = df.join(df_genome_recovery)
             df_summary = pd.concat([df_summary, df], ignore_index=True)

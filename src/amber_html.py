@@ -7,6 +7,7 @@ import math
 import re
 from jinja2 import Template
 from statistics import median
+from src import plots
 from src.utils import labels as utils_labels
 from src.utils import load_ncbi_taxinfo
 
@@ -118,32 +119,74 @@ def create_title_div(id, name, info):
 
 
 def create_table_html(df_summary):
+    metrics1 = [utils_labels.AVG_PRECISION,
+                utils_labels.AVG_PRECISION_STD,
+                utils_labels.AVG_PRECISION_SEM,
+                utils_labels.AVG_RECALL,
+                utils_labels.AVG_RECALL_STD,
+                utils_labels.AVG_RECALL_SEM]
+    metrics2 = [utils_labels.AVG_PRECISION_PER_BP,
+                utils_labels.AVG_RECALL_PER_BP,
+                utils_labels.RI_BY_SEQ,
+                utils_labels.ARI_BY_SEQ,
+                utils_labels.RI_BY_BP,
+                utils_labels.ARI_BY_BP,
+                utils_labels.PERCENTAGE_ASSIGNED_BPS,
+                utils_labels.ACCURACY,
+                utils_labels.MISCLASSIFICATION]
+    all_metrics = [metrics1, metrics2]
+    metrics1_label = 'Quality of bins: all bins have the same weight'
+    metrics2_label = 'Quality for sample: quality weighted by bin sizes'
+    all_metrics_labels = [metrics1_label, metrics2_label]
+
     styles = [{'selector': 'td', 'props': [('width', '90pt')]},
               {'selector': 'th', 'props': [('width', '90pt'), ('text-align', 'left')]},
               {'selector': 'th:nth-child(1)', 'props': [('width', '205pt'), ('font-weight', 'normal')]},
               {'selector': '', 'props': [('width', 'max-content'), ('width', '-moz-max-content'), ('border-top', '1px solid lightgray'), ('border-spacing', '0px')]},
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
-    df_summary.index.name = None
-    df_summary = df_summary.loc[[utils_labels.AVG_PRECISION,
-                                 utils_labels.AVG_PRECISION_STD,
-                                 utils_labels.AVG_PRECISION_SEM,
-                                 utils_labels.AVG_RECALL,
-                                 utils_labels.AVG_RECALL_STD,
-                                 utils_labels.AVG_RECALL_SEM,
-                                 utils_labels.AVG_PRECISION_PER_BP,
-                                 utils_labels.AVG_RECALL_PER_BP,
-                                 utils_labels.RI_BY_SEQ,
-                                 utils_labels.ARI_BY_SEQ,
-                                 utils_labels.RI_BY_BP,
-                                 utils_labels.ARI_BY_BP,
-                                 utils_labels.PERCENTAGE_ASSIGNED_BPS,
-                                 utils_labels.ACCURACY]]
-    df_summary.index = [x[:1].upper() + x[1:] for x in df_summary.index.values]
+    styles_hidden_thead = styles + [{'selector': 'thead', 'props': [('display', 'none')]}]
 
-    sorted_columns = df_summary.columns.tolist()
-    df_summary = df_summary.loc[:, sorted_columns]
-    html = df_summary.style.set_table_styles(styles).render()
+    df_summary.index.name = None
+
+    html = ''
+    first_metrics = True
+    for metrics, metrics_label in zip(all_metrics, all_metrics_labels):
+        html += '<p style="margin-bottom: auto"><b>{}</b></p>'.format(metrics_label)
+        df_metrics = df_summary.loc[metrics]
+        df_metrics.index = [x[:1].upper() + x[1:] for x in df_metrics.index.values]
+        sorted_columns = df_metrics.columns.tolist()
+        df_metrics = df_metrics.loc[:, sorted_columns]
+
+        if first_metrics:
+            this_style = styles
+            first_metrics = False
+        else:
+            this_style = styles_hidden_thead
+        html += df_metrics.style.set_table_styles(this_style).render()
+
     return html
+
+
+def create_genome_binning_html(df_summary):
+    df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
+    if df_summary_g.size == 0:
+        return None
+
+    colors_list = plots.create_colors_list()
+    bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
+
+    p = figure(title=None, plot_width=430, plot_height=400, x_range=(0, 1), y_range=(0, 1))
+    p.xaxis.axis_label = utils_labels.AVG_PRECISION[:1].upper() + utils_labels.AVG_PRECISION[1:]
+    p.yaxis.axis_label = utils_labels.AVG_RECALL[:1].upper() + utils_labels.AVG_RECALL[1:]
+    for color, (tool, pd_bins_tool) in zip(bokeh_colors, df_summary_g.groupby(utils_labels.TOOL)):
+        source = ColumnDataSource(data=pd_bins_tool)
+        p.circle(utils_labels.AVG_PRECISION, utils_labels.AVG_RECALL, source=source, legend=tool, color=color, fill_alpha=0.2, size=10)
+
+    genome_html = create_table_html(df_summary_g.rename(columns={'tool': 'Tool'}).set_index('Tool').T)
+    genome_div = Div(text="""<div>{}</div>""".format(genome_html), css_classes=['bk-width-auto'])
+    metrics_row_g = row(column(genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(column(p), sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
+
+    return metrics_row_g
 
 
 def create_taxonomic_binning_html(df_summary):
@@ -152,22 +195,12 @@ def create_taxonomic_binning_html(df_summary):
     for rank, pd_group in df_summary_t.groupby('rank'):
         pd_rank = pd_group.set_index('Tool').T
         rank_to_html[rank] = [create_table_html(pd_rank)]
-    return rank_to_html
 
+    if not rank_to_html:
+        return None
 
-def create_genome_binning_html(df_summary):
-    df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome'].rename(columns={'tool': 'Tool'}).set_index('Tool').T
-    return create_table_html(df_summary_g)
-
-
-def create_html(df_summary, pd_bins, output_dir, desc_text):
-
-    genome_html = create_genome_binning_html(df_summary)
-    genome_div = Div(text="""<div>{}</div>""".format(genome_html), css_classes=['bk-width-auto'])
-
-    taxonomic_rank_to_html = create_taxonomic_binning_html(df_summary)
-    taxonomic_div = Div(text="""<div>{}</div>""".format(taxonomic_rank_to_html[load_ncbi_taxinfo.RANKS[0]][0]), css_classes=['bk-width-auto'])
-    source = ColumnDataSource(data=taxonomic_rank_to_html)
+    taxonomic_div = Div(text="""<div>{}</div>""".format(rank_to_html[load_ncbi_taxinfo.RANKS[0]][0]), css_classes=['bk-width-auto'])
+    source = ColumnDataSource(data=rank_to_html)
 
     select_rank = Select(title="Taxonomic rank:", value=load_ncbi_taxinfo.RANKS[0], options=load_ncbi_taxinfo.RANKS, css_classes=['bk-fit-content'])
     select_rank_callback = CustomJS(args=dict(source=source), code="""
@@ -176,13 +209,20 @@ def create_html(df_summary, pd_bins, output_dir, desc_text):
     select_rank.js_on_change('value', select_rank_callback)
     select_rank_callback.args["mytable"] = taxonomic_div
     select_rank_callback.args["select_rank"] = select_rank
-
-
-    metrics_row_g = row(column(genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_row_t = row(column(select_rank, taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
+    return metrics_row_t
 
-    tabs_list = [Panel(child=metrics_row_g, title="Genome binning"),
-                 Panel(child=metrics_row_t, title="Taxonomic binning")]
+
+def create_html(df_summary, pd_bins, output_dir, desc_text):
+    tabs_list = []
+
+    metrics_row_g = create_genome_binning_html(df_summary)
+    if metrics_row_g:
+        tabs_list.append(Panel(child=metrics_row_g, title="Genome binning"))
+
+    metrics_row_t = create_taxonomic_binning_html(df_summary)
+    if metrics_row_t:
+        tabs_list.append(Panel(child=metrics_row_t, title="Taxonomic binning"))
 
     tabs = Tabs(tabs=tabs_list, css_classes=['bk-tabs-margin'])
 
