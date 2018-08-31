@@ -1,6 +1,6 @@
-numpy==1.13.0
+numpy==1.15.1
 biopython==1.69.0
 matplotlib==2.0.2
 bokeh==0.13.0
-pandas==0.20.3
+pandas==0.23.4
 seaborn==0.8.1

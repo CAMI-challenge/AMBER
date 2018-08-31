@@ -98,7 +98,7 @@ def evaluate_all(gold_standard,
             gs_pd_bins = gs_pd_genome_bins
         else:
             gs_pd_bins = gs_pd_tax_bins
-        pd_bins_all = pd.concat([pd_bins_all, pd_bins], ignore_index=True)
+        pd_bins_all = pd.concat([pd_bins_all, pd_bins], ignore_index=True, sort=False)
 
         # Compute metrics over bins
         for rank, pd_bins_rank in pd_bins.groupby('rank'):

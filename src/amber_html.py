@@ -1,5 +1,6 @@
 import os
 from collections import defaultdict
+from collections import OrderedDict
 import pandas as pd
 import datetime
 import numpy as np
@@ -167,7 +168,37 @@ def create_table_html(df_summary):
     return html
 
 
-def create_genome_binning_html(df_summary):
+def create_metrics_per_bin_panel(pd_bins, bins_columns):
+    styles = [{'selector': 'td', 'props': [('width', '80pt')]},
+              {'selector': 'th', 'props': [('width', '80pt'), ('text-align', 'left')]},
+              {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
+
+    pd_groups = pd_bins.groupby(utils_labels.TOOL)
+    tools = list(pd_groups.groups.keys())
+    tool_to_html = OrderedDict([(x, '') for x in tools])
+
+    for tool, pd_group in pd_groups:
+        table = pd_group[list(bins_columns.keys())].rename(columns=dict(bins_columns))
+        tool_to_html[tool] = [table.style.set_table_styles(styles).hide_index().render()]
+
+    table_div = Div(text="""<div>{}</div>""".format(tool_to_html[tools[0]][0]), css_classes=['bk-width-auto'])
+
+    source = ColumnDataSource(data=tool_to_html)
+
+    select_tool = Select(title="Binner:", value=tools[0], options=tools, css_classes=['bk-fit-content'])
+    select_tool_callback = CustomJS(args=dict(source=source), code="""
+        mytable.text = source.data[select_tool.value][0];
+    """)
+    select_tool.js_on_change('value', select_tool_callback)
+    select_tool_callback.args["mytable"] = table_div
+    select_tool_callback.args["select_tool"] = select_tool
+
+    table_column = row(column(select_tool, table_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width') # column(table_div, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-width-auto-main'])
+    metrics_bins_panel = Panel(child=table_column, title="Metrics per bin")
+    return metrics_bins_panel
+
+
+def create_genome_binning_html(df_summary, pd_bins):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
     if df_summary_g.size == 0:
         return None
@@ -185,11 +216,17 @@ def create_genome_binning_html(df_summary):
     genome_html = create_table_html(df_summary_g.rename(columns={'tool': 'Tool'}).set_index('Tool').T)
     genome_div = Div(text="""<div>{}</div>""".format(genome_html), css_classes=['bk-width-auto'])
     metrics_row_g = row(column(genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(column(p), sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
+    metrics_panel = Panel(child=metrics_row_g, title="Metrics")
 
-    return metrics_row_g
+    bins_columns = OrderedDict([('id', 'Bin ID'), ('mapping_id', 'Mapped genome'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
+    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins[pd_bins['rank'] == 'NA'], bins_columns)
+
+    tabs = Tabs(tabs=[metrics_panel, metrics_bins_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
+
+    return tabs
 
 
-def create_taxonomic_binning_html(df_summary):
+def create_taxonomic_binning_html(df_summary, pd_bins):
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic'].rename(columns={'tool': 'Tool'})
     rank_to_html = {}
     for rank, pd_group in df_summary_t.groupby('rank'):
@@ -210,17 +247,24 @@ def create_taxonomic_binning_html(df_summary):
     select_rank_callback.args["mytable"] = taxonomic_div
     select_rank_callback.args["select_rank"] = select_rank
     metrics_row_t = row(column(select_rank, taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
-    return metrics_row_t
+    metrics_panel = Panel(child=metrics_row_t, title="Metrics")
+
+    bins_columns = OrderedDict([('id', 'Taxon ID'), ('rank', 'Rank'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
+    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins[pd_bins['rank'] != 'NA'], bins_columns)
+
+    tabs = Tabs(tabs=[metrics_panel, metrics_bins_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
+
+    return tabs
 
 
 def create_html(df_summary, pd_bins, output_dir, desc_text):
     tabs_list = []
 
-    metrics_row_g = create_genome_binning_html(df_summary)
+    metrics_row_g = create_genome_binning_html(df_summary, pd_bins)
     if metrics_row_g:
         tabs_list.append(Panel(child=metrics_row_g, title="Genome binning"))
 
-    metrics_row_t = create_taxonomic_binning_html(df_summary)
+    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins)
     if metrics_row_t:
         tabs_list.append(Panel(child=metrics_row_t, title="Taxonomic binning"))
 

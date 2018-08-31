@@ -264,7 +264,10 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                     if not is_gs and sequence_id not in t_sequence_ids:
                         continue
                     if not tax_id_to_parent:
-                        warnings.warn("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.", Warning)
+                        if is_gs:
+                            continue
+                        else:
+                            exit("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.")
                     tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank)
                     for tax_id in tax_id_path:
                         if not tax_id: # tax_id may be empty
