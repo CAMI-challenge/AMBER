@@ -188,7 +188,7 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
 
     if plot_type == 'e':
         for i, (tool, pd_summary) in enumerate(df_groups):
-            axs.errorbar(float(pd_summary[utils_labels.AVG_PRECISION][0]), float(pd_summary[utils_labels.AVG_RECALL][0]), xerr=float(pd_summary[utils_labels.AVG_PRECISION_SEM][0]), yerr=float(pd_summary[utils_labels.AVG_RECALL_SEM][0]),
+            axs.errorbar(float(pd_summary[utils_labels.AVG_PRECISION].iloc[0]), float(pd_summary[utils_labels.AVG_RECALL].iloc[0]), xerr=float(pd_summary[utils_labels.AVG_PRECISION_SEM].iloc[0]), yerr=float(pd_summary[utils_labels.AVG_RECALL_SEM].iloc[0]),
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
@@ -197,10 +197,10 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
                          markersize=8)
     if plot_type == 'w':
         for i, (tool, pd_summary) in enumerate(df_groups):
-            axs.plot(float(pd_summary[utils_labels.AVG_PRECISION_PER_BP][0]), float(pd_summary[utils_labels.AVG_RECALL_PER_BP][0]), marker='o', color=colors_list[i], markersize=10)
+            axs.plot(float(pd_summary[utils_labels.AVG_PRECISION_PER_BP].iloc[0]), float(pd_summary[utils_labels.AVG_RECALL_PER_BP].iloc[0]), marker='o', color=colors_list[i], markersize=10)
     elif plot_type == 'p':
         for i, (tool, pd_summary) in enumerate(df_groups):
-            axs.plot(float(pd_summary[utils_labels.ARI_BY_BP][0]), float(pd_summary[utils_labels.PERCENTAGE_ASSIGNED_BPS][0]), marker='o', color=colors_list[i], markersize=10)
+            axs.plot(float(pd_summary[utils_labels.ARI_BY_BP].iloc[0]), float(pd_summary[utils_labels.PERCENTAGE_ASSIGNED_BPS].iloc[0]), marker='o', color=colors_list[i], markersize=10)
 
     # turn on grid
     axs.minorticks_on()

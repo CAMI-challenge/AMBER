@@ -1,5 +1,4 @@
 import os
-from collections import defaultdict
 from collections import OrderedDict
 import pandas as pd
 import datetime
@@ -22,8 +21,8 @@ from matplotlib.colors import Normalize
 from version import __version__
 
 from bokeh.plotting import figure
-from bokeh.layouts import column, row
-from bokeh.models.widgets import TableColumn, Slider, Div, Select, Panel, Tabs, CheckboxGroup
+from bokeh.layouts import column, row, widgetbox
+from bokeh.models.widgets import TableColumn, Div, Select, Panel, Tabs, CheckboxGroup
 from bokeh.models import (DataTable,
                           CustomJS)
 from bokeh.embed import components
@@ -114,58 +113,82 @@ TEMPLATE = Template('''<!DOCTYPE html>
     ''')
 
 
+def create_heatmap_bar(output_dir):
+    fig = pltx.figure(figsize=(2, 2))
+    x = np.arange(25).reshape(5, 5)
+    cm = sns.diverging_palette(12, 250, sep=30, l=50, n=15, s=90, as_cmap=True)
+    ax = sns.heatmap(x, cmap=cm, cbar=False)
+    cbar = pltx.colorbar(ax.get_children()[0], orientation='horizontal')
+
+    # hide border
+    cbar.outline.set_visible(False)
+
+    # hide ticks
+    cbar.set_ticks([])
+
+    # hide heatmap
+    pltx.gca().set_visible(False)
+
+    fig.savefig(os.path.join(output_dir, 'heatmap_bar.png'), dpi=100, format='png', bbox_inches='tight', pad_inches=-.035, transparent=True)
+    pltx.close(fig)
+
+
+class MidpointNormalize(Normalize):
+    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+        self.midpoint = midpoint
+        Normalize.__init__(self, vmin, vmax, clip)
+
+    def __call__(self, value, clip=None):
+        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+        return np.ma.masked_array(np.interp(value, x, y))
+
+
+def upper1(x):
+        return x[:1].upper() + x[1:]
+
+
+def get_colors_and_ranges(name):
+    color1 = 'dodgerblue'
+    color2 = 'red'
+    hue1 = 12
+    hue2 = 240
+
+    if name == upper1(utils_labels.MISCLASSIFICATION):
+        return color2, color1, hue2, hue1, 0, 1
+    return color1, color2, hue1, hue2, 0, 1
+
+
+def get_heatmap_colors(pd_series, **args):
+    values = pd_series.tolist()
+    notnan_values = [x for x in values if isinstance(x, (float, int)) and not np.isnan(x)]
+
+    if pd_series.name == upper1(utils_labels.AVG_PRECISION_SEM) or pd_series.name == upper1(utils_labels.AVG_PRECISION_STD) or\
+        pd_series.name == upper1(utils_labels.AVG_RECALL_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_STD):
+        return ['background-color: white' for x in values]
+
+    color1, color2, hue1, hue2, min_value, max_value = get_colors_and_ranges(pd_series.name)
+
+    cm = sns.diverging_palette(hue1, hue2, sep=50, l=80, n=15, s=90, as_cmap=True)
+    norm = MidpointNormalize(vmin=min_value, vmax=max_value, midpoint=median(notnan_values))
+
+    normed = norm([round(x, 3) if not math.isnan(x) else max_value for x in values])
+    heatmap_colors = [rgb2hex(x) for x in pltx.cm.get_cmap(cm)(normed)]
+    return_colors = []
+    for val, x in zip(values, heatmap_colors):
+        if val == min_value:
+            return_colors.append('background-color: {}'. format(color2))
+        elif val == max_value:
+            return_colors.append('background-color: {}'. format(color1))
+        elif math.isnan(val):
+            return_colors.append('background-color: red')
+        else:
+            return_colors.append('background-color: {}'. format(x))
+    return return_colors
+
+
 def create_title_div(id, name, info):
     div = Div(text="""<div style="text-align:left;font-size: 20pt;font-weight: bold;">{1}<span style="float: right;font-size: 10pt;font-weight:normal;">{2}</span>""".format(id, name, info), css_classes=['bk-width-auto']) # width=DIV_WIDTH, height=DIV_HEIGHT)
     return div
-
-
-def create_table_html(df_summary):
-    metrics1 = [utils_labels.AVG_PRECISION,
-                utils_labels.AVG_PRECISION_STD,
-                utils_labels.AVG_PRECISION_SEM,
-                utils_labels.AVG_RECALL,
-                utils_labels.AVG_RECALL_STD,
-                utils_labels.AVG_RECALL_SEM]
-    metrics2 = [utils_labels.AVG_PRECISION_PER_BP,
-                utils_labels.AVG_RECALL_PER_BP,
-                utils_labels.RI_BY_SEQ,
-                utils_labels.ARI_BY_SEQ,
-                utils_labels.RI_BY_BP,
-                utils_labels.ARI_BY_BP,
-                utils_labels.PERCENTAGE_ASSIGNED_BPS,
-                utils_labels.ACCURACY,
-                utils_labels.MISCLASSIFICATION]
-    all_metrics = [metrics1, metrics2]
-    metrics1_label = 'Quality of bins: all bins have the same weight'
-    metrics2_label = 'Quality for sample: quality weighted by bin sizes'
-    all_metrics_labels = [metrics1_label, metrics2_label]
-
-    styles = [{'selector': 'td', 'props': [('width', '90pt')]},
-              {'selector': 'th', 'props': [('width', '90pt'), ('text-align', 'left')]},
-              {'selector': 'th:nth-child(1)', 'props': [('width', '205pt'), ('font-weight', 'normal')]},
-              {'selector': '', 'props': [('width', 'max-content'), ('width', '-moz-max-content'), ('border-top', '1px solid lightgray'), ('border-spacing', '0px')]},
-              {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
-    styles_hidden_thead = styles + [{'selector': 'thead', 'props': [('display', 'none')]}]
-
-    df_summary.index.name = None
-
-    html = ''
-    first_metrics = True
-    for metrics, metrics_label in zip(all_metrics, all_metrics_labels):
-        html += '<p style="margin-bottom: auto"><b>{}</b></p>'.format(metrics_label)
-        df_metrics = df_summary.loc[metrics]
-        df_metrics.index = [x[:1].upper() + x[1:] for x in df_metrics.index.values]
-        sorted_columns = df_metrics.columns.tolist()
-        df_metrics = df_metrics.loc[:, sorted_columns]
-
-        if first_metrics:
-            this_style = styles
-            first_metrics = False
-        else:
-            this_style = styles_hidden_thead
-        html += df_metrics.style.set_table_styles(this_style).render()
-
-    return html
 
 
 def create_metrics_per_bin_panel(pd_bins, bins_columns):
@@ -198,6 +221,107 @@ def create_metrics_per_bin_panel(pd_bins, bins_columns):
     return metrics_bins_panel
 
 
+def get_contamination_completeness_thresholds(df):
+    contamination_completeness_cols = [c for c in df.columns]
+    completeness_thr = []
+    contamination_thr = []
+    for col in contamination_completeness_cols:
+        values = col.split('<')
+        completeness_item = values[0]
+        contamination_item = '<' + values[1]
+        if completeness_item not in completeness_thr:
+            completeness_thr.append(completeness_item)
+        if contamination_item not in contamination_thr:
+            contamination_thr.append(contamination_item)
+    return completeness_thr, contamination_thr
+
+
+def create_contamination_completeness_table(df):
+    contamination_completeness_cols = [c for c in df.columns if c.startswith('>')]
+    completeness_thr, contamination_thr = get_contamination_completeness_thresholds(df[contamination_completeness_cols])
+
+    contamination_completenes_row_arr = []
+    for index, row in df.iterrows():
+        for contamination_item in contamination_thr:
+            cols = OrderedDict()
+            contamination_val = format(float(re.match("\d+\.\d+", contamination_item[1:]).group()) * 100, '.0f')
+            cols['Tool'] = '{} <{}% contamination'.format(row[utils_labels.TOOL], contamination_val)
+            for completeness_item in completeness_thr:
+                cols[completeness_item] = row['{}{}'.format(completeness_item, contamination_item)]
+            contamination_completenes_row_arr.append(cols)
+
+    df = pd.DataFrame(contamination_completenes_row_arr)
+
+    def create_table_column(field):
+        if field == "Tool":
+            return TableColumn(title=field, field=field, width=600)
+        else:
+            completeness_val = format(float(re.match("\d+\.\d+", field[1:]).group()) * 100, '.0f')
+            return TableColumn(title='>{}% completeness'.format(completeness_val), field=field)
+
+    dt = DataTable(source=ColumnDataSource(df),
+                   columns=list(map(lambda x: create_table_column(x), df.columns.values)),
+                   width=750,
+                   reorderable=True,
+                   selectable=True)
+    return [widgetbox(dt)]
+
+
+def create_heatmap_div():
+    heatmap_legend = '<img src="heatmap_bar.png" /><div style="text-align:left;font-size: 11px;">Worst<span style="float:right;">Best</span><span style="margin-right: 36px;float:right;">Median</span></div>'
+    heatmap_legend_div = Div(text=heatmap_legend, style={"width": "155px", "margin-bottom": "-10px"})
+    return  heatmap_legend_div
+
+
+def create_table_html(df_summary):
+    metrics1 = [utils_labels.AVG_PRECISION,
+                utils_labels.AVG_PRECISION_STD,
+                utils_labels.AVG_PRECISION_SEM,
+                utils_labels.AVG_RECALL,
+                utils_labels.AVG_RECALL_STD,
+                utils_labels.AVG_RECALL_SEM]
+    metrics2 = [utils_labels.AVG_PRECISION_PER_BP,
+                utils_labels.AVG_RECALL_PER_BP,
+                utils_labels.RI_BY_SEQ,
+                utils_labels.ARI_BY_SEQ,
+                utils_labels.RI_BY_BP,
+                utils_labels.ARI_BY_BP,
+                utils_labels.PERCENTAGE_ASSIGNED_BPS,
+                utils_labels.ACCURACY,
+                utils_labels.MISCLASSIFICATION]
+    all_metrics = [metrics1, metrics2]
+    metrics1_label = 'Quality of bins: all bins have the same weight'
+    metrics2_label = 'Quality for sample: quality weighted by bin sizes'
+    all_metrics_labels = [metrics1_label, metrics2_label]
+
+    styles = [{'selector': 'td', 'props': [('width', '100pt')]},
+              {'selector': 'th', 'props': [('width', '100pt'), ('text-align', 'left')]},
+              {'selector': 'th:nth-child(1)', 'props': [('width', '205pt'), ('font-weight', 'normal')]},
+              {'selector': '', 'props': [('width', 'max-content'), ('width', '-moz-max-content'), ('border-top', '1px solid lightgray'), ('border-spacing', '0px')]},
+              {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
+    styles_hidden_thead = styles + [{'selector': 'thead', 'props': [('display', 'none')]}]
+
+    df_summary.index.name = None
+
+    html = ''
+    first_metrics = True
+    for metrics, metrics_label in zip(all_metrics, all_metrics_labels):
+        html += '<p style="margin-bottom: auto"><b>{}</b></p>'.format(metrics_label)
+        df_metrics = df_summary.loc[metrics]
+        df_metrics.index = [x[:1].upper() + x[1:] for x in df_metrics.index.values]
+        sorted_columns = df_metrics.columns.tolist()
+        df_metrics = df_metrics.loc[:, sorted_columns]
+
+        if first_metrics:
+            this_style = styles
+            first_metrics = False
+        else:
+            this_style = styles_hidden_thead
+        html += df_metrics.style.apply(get_heatmap_colors, df_metrics=df_metrics, axis=1).set_precision(3).set_table_styles(this_style).render()
+
+    return html
+
+
 def create_genome_binning_html(df_summary, pd_bins):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
     if df_summary_g.size == 0:
@@ -215,13 +339,16 @@ def create_genome_binning_html(df_summary, pd_bins):
 
     genome_html = create_table_html(df_summary_g.rename(columns={'tool': 'Tool'}).set_index('Tool').T)
     genome_div = Div(text="""<div>{}</div>""".format(genome_html), css_classes=['bk-width-auto'])
-    metrics_row_g = row(column(genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(column(p), sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
+    metrics_row_g = row(column(create_heatmap_div(), genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(column(p), sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_row_g, title="Metrics")
 
     bins_columns = OrderedDict([('id', 'Bin ID'), ('mapping_id', 'Mapped genome'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
     metrics_bins_panel = create_metrics_per_bin_panel(pd_bins[pd_bins['rank'] == 'NA'], bins_columns)
 
-    tabs = Tabs(tabs=[metrics_panel, metrics_bins_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
+    cc_table = create_contamination_completeness_table(df_summary_g)
+    cc_panel = Panel(child=row(cc_table), title="#Recovered bins")
+
+    tabs = Tabs(tabs=[metrics_panel, metrics_bins_panel, cc_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
 
     return tabs
 
@@ -246,7 +373,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     select_rank.js_on_change('value', select_rank_callback)
     select_rank_callback.args["mytable"] = taxonomic_div
     select_rank_callback.args["select_rank"] = select_rank
-    metrics_row_t = row(column(select_rank, taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
+    metrics_row_t = row(column(select_rank, create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_row_t, title="Metrics")
 
     bins_columns = OrderedDict([('id', 'Taxon ID'), ('rank', 'Rank'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
@@ -258,6 +385,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
 
 
 def create_html(df_summary, pd_bins, output_dir, desc_text):
+    create_heatmap_bar(output_dir)
     tabs_list = []
 
     metrics_row_g = create_genome_binning_html(df_summary, pd_bins)
