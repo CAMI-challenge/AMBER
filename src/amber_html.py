@@ -24,7 +24,11 @@ from bokeh.plotting import figure
 from bokeh.layouts import column, row, widgetbox
 from bokeh.models.widgets import TableColumn, Div, Select, Panel, Tabs, CheckboxGroup
 from bokeh.models import (DataTable,
-                          CustomJS)
+                          CustomJS,
+                          Legend,
+                          Band,
+                          FuncTickFormatter)
+from bokeh.models.tickers import FixedTicker
 from bokeh.embed import components
 from bokeh.resources import INLINE
 from bokeh.plotting import ColumnDataSource
@@ -322,24 +326,83 @@ def create_table_html(df_summary):
     return html
 
 
+def create_figure(df_summary, xname, yname):
+    colors_list = plots.create_colors_list()
+    bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
+
+    legend_it = []
+    fig = figure(title=None, plot_width=450, plot_height=500, x_range=(0, 1), y_range=(0, 1), toolbar_location="right")
+    fig.xaxis.axis_label = upper1(xname)
+    fig.yaxis.axis_label = upper1(yname)
+    for color, (tool, pd_bins_tool) in zip(bokeh_colors, df_summary.groupby(utils_labels.TOOL)):
+        source = ColumnDataSource(data=pd_bins_tool)
+        p = fig.circle(xname, yname, source=source, color=color, fill_alpha=0.2, size=10)
+        legend_it.append((tool, [p]))
+    legend = Legend(items=legend_it)
+    fig.add_layout(legend, 'above')
+    return fig
+
+
+def create_tax_figure(tool, df_summary):
+    rank_indices = list(range(len(load_ncbi_taxinfo.RANKS)))
+
+    rank_to_precision = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+    rank_to_precision_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+    rank_to_recall = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+    rank_to_recall_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+    for index, row in df_summary.iterrows():
+        rank_to_precision[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION]) else row[utils_labels.AVG_PRECISION]
+        rank_to_precision_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION_SEM]) else row[utils_labels.AVG_PRECISION_SEM]
+        rank_to_recall[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL]) else row[utils_labels.AVG_RECALL]
+        rank_to_recall_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL_SEM]) else row[utils_labels.AVG_RECALL_SEM]
+
+    y_values1 = list(rank_to_precision.values())
+    y_values2 = list(rank_to_recall.values())
+    sem1 = list(rank_to_precision_error.values())
+    sem2 = list(rank_to_recall_error.values())
+    lower1 = np.subtract(y_values1, sem1).tolist()
+    lower2 = np.subtract(y_values2, sem2).tolist()
+    upper1 = np.add(y_values1, sem1).tolist()
+    upper2 = np.add(y_values2, sem2).tolist()
+
+    df = pd.DataFrame({'x': rank_indices, 'y1': y_values1, 'y2': y_values2, 'lower1': lower1, 'upper1': upper1, 'lower2': lower2, 'upper2': upper2})
+    source = ColumnDataSource(df.reset_index())
+
+    p = figure(plot_width=450, plot_height=500)
+    pline1 = p.line(x='x', y='y1', line_color='#006cba', source=source, line_width=2)
+    pline2 = p.line(x='x', y='y2', line_color='#008000', source=source, line_width=2)
+    p.xaxis.ticker = FixedTicker(ticks=rank_indices)
+    p.xaxis.formatter = FuncTickFormatter(code="""
+        var mapping = {0: "superkingdom", 1: "phylum", 2: "class", 3: "order", 4: "family", 5: "genus", 6: "species", 7: "strain"};
+        return mapping[tick];
+    """)
+    band1 = Band(base='x', lower='lower1', upper='upper1', source=source, level='underlay',
+                fill_alpha=.3, line_width=1, line_color='black', fill_color='#006cba')
+    band2 = Band(base='x', lower='lower2', upper='upper2', source=source, level='underlay',
+                fill_alpha=.3, line_width=1, line_color='black', fill_color='#008000')
+    p.add_layout(band1)
+    p.add_layout(band2)
+    legend_it = [('Average purity', [pline1]), ('Average completeness', [pline2])]
+    legend = Legend(items=legend_it)
+    p.add_layout(legend, 'above')
+
+    p.xgrid[0].grid_line_color=None
+    p.ygrid[0].grid_line_alpha=0.5
+    p.title.text = tool
+    return p
+
+
 def create_genome_binning_html(df_summary, pd_bins):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
     if df_summary_g.size == 0:
         return None
 
-    colors_list = plots.create_colors_list()
-    bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
-
-    p = figure(title=None, plot_width=430, plot_height=400, x_range=(0, 1), y_range=(0, 1))
-    p.xaxis.axis_label = utils_labels.AVG_PRECISION[:1].upper() + utils_labels.AVG_PRECISION[1:]
-    p.yaxis.axis_label = utils_labels.AVG_RECALL[:1].upper() + utils_labels.AVG_RECALL[1:]
-    for color, (tool, pd_bins_tool) in zip(bokeh_colors, df_summary_g.groupby(utils_labels.TOOL)):
-        source = ColumnDataSource(data=pd_bins_tool)
-        p.circle(utils_labels.AVG_PRECISION, utils_labels.AVG_RECALL, source=source, legend=tool, color=color, fill_alpha=0.2, size=10)
+    purity_completeness_plot = create_figure(df_summary_g, utils_labels.AVG_PRECISION, utils_labels.AVG_RECALL)
+    purity_completeness_bp_plot = create_figure(df_summary_g, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP)
 
     genome_html = create_table_html(df_summary_g.rename(columns={'tool': 'Tool'}).set_index('Tool').T)
     genome_div = Div(text="""<div>{}</div>""".format(genome_html), css_classes=['bk-width-auto'])
-    metrics_row_g = row(column(create_heatmap_div(), genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(column(p), sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
+    metrics_row_g = row(column(create_heatmap_div(), genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(row(purity_completeness_plot, purity_completeness_bp_plot), sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_row_g, title="Metrics")
 
     bins_columns = OrderedDict([('id', 'Bin ID'), ('mapping_id', 'Mapped genome'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
@@ -363,6 +426,8 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     if not rank_to_html:
         return None
 
+    figures = [create_tax_figure(tool, df_tool) for tool, df_tool in df_summary_t.groupby('Tool')]
+
     taxonomic_div = Div(text="""<div>{}</div>""".format(rank_to_html[load_ncbi_taxinfo.RANKS[0]][0]), css_classes=['bk-width-auto'])
     source = ColumnDataSource(data=rank_to_html)
 
@@ -373,7 +438,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     select_rank.js_on_change('value', select_rank_callback)
     select_rank_callback.args["mytable"] = taxonomic_div
     select_rank_callback.args["select_rank"] = select_rank
-    metrics_row_t = row(column(select_rank, create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
+    metrics_row_t = row(column(select_rank, create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(row(figures), sizing_mode='scale_width', css_classes=['bk-width-auto']),css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_row_t, title="Metrics")
 
     bins_columns = OrderedDict([('id', 'Taxon ID'), ('rank', 'Rank'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
