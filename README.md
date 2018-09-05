@@ -40,7 +40,7 @@ You can also run [AMBER as a Biobox](#run-amber-as-a-biobox).
 # User Guide
 
 ## Input
-As input, AMBER's main tool [_amber.py_](#evaluatepy) uses three files:
+As input, AMBER uses three files:
 1. A gold standard mapping of contigs or read IDs to genomes in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format). Columns are tab separated. Example:
 ~~~BASH
 @Version:0.9.1
@@ -60,32 +60,19 @@ See [here](./test/gsa_mapping.binning) another example. Note: column _LENGTH is 
 
 Additional parameters may be specified - see below.
 
-## List of metrics and abbreviations
+## Computed metrics
 
-* **avg_purity**: purity averaged over genome bins
-* **std_dev_purity**: standard deviation of purity averaged over genome bins
-* **sem_purity**: standard error of the mean of purity averaged over genome bins
-* **avg_completeness**: completeness averaged over genome bins
-* **std_dev_completeness**: standard deviation of completeness averaged over genome bins
-* **sem_completeness**: standard error of the mean of completeness averaged over genome bins
-* **avg_purity_per_bp**: average purity per base pair
-* **avg_completeness_per_bp**: average completeness per base pair
-* **rand_index_by_bp**: Rand index weighed by base pairs
-* **rand_index_by_seq**: Rand index weighed by sequence counts
-* **a_rand_index_by_bp**: adjusted Rand index weighed by base pairs
-* **a_rand_index_by_seq**: adjusted Rand index weighed by sequence counts
-* **percent_assigned_bps**: percentage of base pairs that were assigned to bins
-* **accuracy**: accuracy
-* **\>0.5compl<0.1cont**: number of bins with more than 50% completeness and less than 10% contamination
-* **\>0.7compl<0.1cont**: number of bins with more than 70% completeness and less than 10% contamination
-* **\>0.9compl<0.1cont**: number of bins with more than 90% completeness and less than 10% contamination
-* **\>0.5compl<0.05cont**: number of bins with more than 50% completeness and less than 5% contamination
-* **\>0.7compl<0.05cont**: number of bins with more than 70% completeness and less than 5% contamination
-* **\>0.9compl<0.05cont**: number of bins with more than 90% completeness and less than 5% contamination
+* Average purity (averaged over recovered genome bins)
+* Average completeness (averaged over recovered genome bins)
+* Average purity per base pair
+* Average completeness per base pair
+* (Adjusted) Rand index by sequence and base pair counts
+* Percentage of assigned base pairs
+* Accuracy
+* Number of genomes recovered within levels of completeness and contamination
 
-## Tools
+## Running _amber.py_
 
-### amber.py
 ~~~BASH
 usage: amber.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
                 [-p FILTER] [-r REMOVE_GENOMES] [-k KEYWORD] -o OUTPUT_DIR
@@ -162,10 +149,7 @@ In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and
 <!---* **genomes_sorted_by_purity.png + .pdf**: figure of purity and completeness per genome with genomes sorted by purity-->
 <!---* **genomes_sorted_by_completeness.png + .pdf**: figure of purity and completeness per genome with genomes sorted by completeness-->
 
-### For a complete list of tools, see [README_TOOLS.md](./README_TOOLS.md).
-
-## Run AMBER as a Biobox
-
+## Running AMBER as a Biobox
 
 Build and run the AMBER docker image with the commands:
 
@@ -188,7 +172,76 @@ arguments:
   - predictions:
       value: /bbx/input/test_query.binning
       type: binning
-~~~ 
+~~~
+
+# Other tools
+
+### src/utils/add_length_column.py
+Adds column _LENGTH to the gold standard mapping file, eliminating the need to provide a FASTA or FASTQ file to amber.py.
+
+~~~BASH
+usage: add_length_column.py [-h] -g GOLD_STANDARD_FILE -f FASTA_FILE
+
+Add length column _LENGTH to gold standard mapping and print mapping on the
+standard output
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
+                        Gold standard - ground truth - file
+  -f FASTA_FILE, --fasta_file FASTA_FILE
+                        FASTA or FASTQ file with sequences of gold standard
+~~~
+**Example:**
+File CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz used in the example can be downloaded [here](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz).
+~~~BASH
+python3 src/utils/add_length_column.py -g test/gsa_mapping.binning \
+-f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz
+~~~
+**Output:**
+~~~BASH
+@Version:0.9.1
+@SampleID:gsa
+
+@@SEQUENCEID BINID           _LENGTH
+RL|S1|C10817 Sample18_57     20518
+RL|S1|C11497 Sample22_57     37672
+RL|S1|C6571  evo_1286_AP.033 69914
+RL|S1|C10560 evo_1286_AP.033 995657
+...
+~~~
+
+### src/utils/convert_fasta_bins_to_biobox_format.py
+~~~BASH
+usage: convert_fasta_bins_to_biobox_format.py [-h] [-o OUTPUT_FILE]
+                                              paths [paths ...]
+
+Convert bins in FASTA files to CAMI tsv format
+
+positional arguments:
+  paths                 FASTA files including full paths
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OUTPUT_FILE, --output_file OUTPUT_FILE
+                        Output file
+~~~
+**Example:**
+~~~BASH
+python3 src/utils/convert_fasta_bins_to_cami.py \
+/path/to/file/maxbin.out.001.fasta \
+/path/to/file/maxbin.out.002.fasta \
+/path/to/file/maxbin.out.003.fasta \
+/path/to/file/maxbin.out.004.fasta \
+/path/to/file/maxbin.out.005.fasta \
+-o bins.tsv
+~~~
+Alternatively:
+~~~BASH
+python3 src/utils/convert_fasta_bins_to_cami.py /path/to/file/maxbin.out.0* -o bins.tsv
+~~~
+**Output:**
+File bins.tsv is created in the working directory.
 
 # Developer Guide
 

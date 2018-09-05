@@ -6,7 +6,6 @@ import mimetypes
 import sys
 from Bio import SeqIO
 import numpy as np
-import warnings
 import traceback
 import inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -269,6 +268,9 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                         else:
                             exit("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.")
                     tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank)
+                    # TODO: tax id not found in ncbi or has "no rank". handle properly.
+                    if not tax_id_path:
+                        continue
                     for tax_id in tax_id_path:
                         if not tax_id: # tax_id may be empty
                             continue
