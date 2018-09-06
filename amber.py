@@ -4,6 +4,7 @@ import argparse
 import os
 import errno
 import matplotlib
+from collections import OrderedDict
 from version import __version__
 from src import genome_recovery
 from src import plot_by_genome
@@ -120,24 +121,24 @@ def evaluate_all(gold_standard,
 
             genome_recovery_val = genome_recovery.calc_dict(pd_bins_rank, min_completeness, max_contamination)
 
-            df = pd.DataFrame({utils_labels.TOOL: query.label,
-                               utils_labels.BINNING_TYPE: query.binning_type,
-                               utils_labels.RANK: rank,
-                               utils_labels.AVG_PRECISION: [avg_precision],
-                               utils_labels.AVG_PRECISION_STD: [std_precision],
-                               utils_labels.AVG_PRECISION_SEM: [sem_precision],
-                               utils_labels.AVG_RECALL: [avg_recall],
-                               utils_labels.AVG_RECALL_STD: [std_recall],
-                               utils_labels.AVG_RECALL_SEM: [sem_recall],
-                               utils_labels.AVG_PRECISION_PER_BP: [precision_by_bp],
-                               utils_labels.AVG_RECALL_PER_BP: [recall_by_bp],
-                               utils_labels.ACCURACY: [accuracy],
-                               utils_labels.PERCENTAGE_ASSIGNED_BPS: [percentage_of_assigned_bps],
-                               utils_labels.RI_BY_BP: [ri_by_bp],
-                               utils_labels.RI_BY_SEQ: [ri_by_seq],
-                               utils_labels.ARI_BY_BP: [ari_by_bp],
-                               utils_labels.ARI_BY_SEQ: [ari_by_seq],
-                               utils_labels.MISCLASSIFICATION: [misclassification_rate]})
+            df = pd.DataFrame(OrderedDict([(utils_labels.TOOL, query.label),
+                                           (utils_labels.BINNING_TYPE, query.binning_type),
+                                           (utils_labels.RANK, rank),
+                                           (utils_labels.AVG_PRECISION, [avg_precision]),
+                                           (utils_labels.AVG_PRECISION_STD, [std_precision]),
+                                           (utils_labels.AVG_PRECISION_SEM, [sem_precision]),
+                                           (utils_labels.AVG_RECALL, [avg_recall]),
+                                           (utils_labels.AVG_RECALL_STD, [std_recall]),
+                                           (utils_labels.AVG_RECALL_SEM, [sem_recall]),
+                                           (utils_labels.AVG_PRECISION_PER_BP, [precision_by_bp]),
+                                           (utils_labels.AVG_RECALL_PER_BP, [recall_by_bp]),
+                                           (utils_labels.ACCURACY, [accuracy]),
+                                           (utils_labels.PERCENTAGE_ASSIGNED_BPS, [percentage_of_assigned_bps]),
+                                           (utils_labels.RI_BY_BP, [ri_by_bp]),
+                                           (utils_labels.RI_BY_SEQ, [ri_by_seq]),
+                                           (utils_labels.ARI_BY_BP, [ari_by_bp]),
+                                           (utils_labels.ARI_BY_SEQ, [ari_by_seq]),
+                                           (utils_labels.MISCLASSIFICATION, [misclassification_rate])]))
             df_genome_recovery = pd.DataFrame.from_dict(genome_recovery_val, orient='index').T
             df = df.join(df_genome_recovery)
             df_summary = pd.concat([df_summary, df], ignore_index=True)
@@ -169,6 +170,14 @@ def plot_genome_binning(gold_standard, queries_list, df_summary, pd_bins, plot_h
     plots.plot_boxplot(pd_bins_g, 'completeness', output_dir)
 
     plot_by_genome.plot_precision_recall_per_bin(pd_bins_g, output_dir)
+
+
+def plot_taxonomic_binning(df_summary, output_dir):
+    df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
+    for rank, pd_group in df_summary_t.groupby('rank'):
+        plots.plot_avg_precision_recall(pd_group, output_dir, rank)
+        plots.plot_weighed_precision_recall(pd_group, output_dir, rank)
+        plots.plot_adjusted_rand_index_vs_assigned_bps(pd_group, output_dir, rank)
 
 
 def main():
@@ -214,6 +223,7 @@ def main():
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
 
     plot_genome_binning(gold_standard, queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
+    plot_taxonomic_binning(df_summary, output_dir)
     plots.plot_taxonomic_results(df_summary, output_dir)
 
     pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']

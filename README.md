@@ -9,14 +9,9 @@ AMBER produces print-ready and interactive plots. See a produced example page at
 
 See [default.txt](requirements/default.txt) for all dependencies.
 
-Optional:
-
-* tox, for automatic tests
-* LaTeX, for combining plots into a PDF file with tool [_src/create_summary_pdf.py_](README_TOOLS.md#srccreate_summary_pdfpy)
-
 ## Installation
 
-Install pip first (tested on Linux Ubuntu 17.10):
+Install pip first (tested on Linux Ubuntu 18.04):
 
 ~~~BASH
 sudo apt install python3-pip
@@ -125,29 +120,6 @@ test/goofy_hypatia_2 \
 test/elated_franklin_0 \
 -o output_dir/
 ~~~
-**Output:**
-~~~BASH
-tool       avg_purity std_dev_purity sem_purity avg_completeness std_dev_completeness sem_completeness avg_purity_per_bp avg_completeness_per_bp rand_index_by_bp rand_index_by_seq a_rand_index_by_bp a_rand_index_by_seq percent_assigned_bps accuracy >0.5compl<0.1cont >0.7compl<0.1cont >0.9compl<0.1cont >0.5compl<0.05cont >0.7compl<0.05cont >0.9compl<0.05cont
-MaxBin 2.0 0.948      0.095          0.016      0.799            0.364                0.058            0.934             0.838                   0.995            0.951             0.917              0.782               0.864                0.807    28                28                24                23                 23                 21
-CONCOCT    0.837      0.266          0.052      0.517            0.476                0.069            0.684             0.936                   0.972            0.946             0.644              0.751               0.967                0.661    18                17                15                16                 16                 14
-MetaBAT    0.822      0.256          0.047      0.57             0.428                0.065            0.724             0.825                   0.976            0.965             0.674              0.860               0.917                0.664    17                16                12                17                 16                 12
-~~~
-Directory _output_dir_ will contain:
-* **summary.tsv**: contains the same table as the output above with tab-separated values
-* **summary.html**: HTML page with results summary and interactive graphs
-* **avg_purity_completeness.png + .pdf**: figure of average purity vs. average completeness
-* **avg_purity_completeness_per_bp.png + .pdf**: figure of purity vs. completeness per base pair
-* **ari_vs_assigned_bps.png + .pdf**: figure of adjusted Rand index weighed by number of base pairs vs. percentage of assigned base pairs
-* **rankings.txt**: tools sorted by average purity, average completeness, and sum of average purity and average completeness
-
-In the same directory, subdirectories _naughty_carson_2_, _goofy_hypatia_2_, and _elated_franklin_0_ will be created with the following files:
-* **rand_index.tsv**: contains value of (adjusted) Rand index and percentage of assigned/binned bases. Rand index is both weighed and unweighed by base pairs
-* **purity_completeness.tsv**: contains purity and completeness per genome bin
-* **purity_completeness_avg.tsv**: contains purity and completeness averaged over genome bins. Includes standard deviation and standard error of the mean
-* **purity_completeness_by_bpcount.tsv**: contains purity and completeness weighed by base pairs
-* **heatmap.png + .pdf**: heatmap representing base pair assignments to predicted bins vs. their true origins from the underlying genomes
-<!---* **genomes_sorted_by_purity.png + .pdf**: figure of purity and completeness per genome with genomes sorted by purity-->
-<!---* **genomes_sorted_by_completeness.png + .pdf**: figure of purity and completeness per genome with genomes sorted by completeness-->
 
 ## Running AMBER as a Biobox
 
@@ -174,7 +146,7 @@ arguments:
       type: binning
 ~~~
 
-# Other tools
+# Utilities
 
 ### src/utils/add_length_column.py
 Adds column _LENGTH to the gold standard mapping file, eliminating the need to provide a FASTA or FASTQ file to amber.py.

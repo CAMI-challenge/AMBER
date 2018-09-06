@@ -172,7 +172,7 @@ def plot_boxplot(pd_bins, metric_name, output_dir):
     plt.close(fig)
 
 
-def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
+def plot_summary(df_results, output_dir, rank, plot_type, file_name, xlabel, ylabel):
     colors_list = create_colors_list()
     df_groups = df_results.groupby(utils_labels.TOOL)
     binning_type = df_groups.head(1)[utils_labels.BINNING_TYPE].iloc[0]
@@ -213,6 +213,11 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
     vals = axs.get_yticks()
     axs.set_yticklabels(['{:3.0f}'.format(x * 100) for x in vals])
 
+    if rank:
+        file_name = rank + '_' + file_name
+        plt.title(rank)
+        ylabel = ylabel.replace('genome', 'taxon')
+
     plt.xlabel(xlabel, fontsize=14)
     plt.ylabel(ylabel, fontsize=14)
     plt.tight_layout()
@@ -230,27 +235,30 @@ def plot_summary(df_results, output_dir, plot_type, file_name, xlabel, ylabel):
     plt.close(fig)
 
 
-def plot_avg_precision_recall(df_results_g, output_dir):
-    plot_summary(df_results_g,
+def plot_avg_precision_recall(df_results, output_dir, rank=None):
+    plot_summary(df_results,
                  output_dir,
+                 rank,
                  'e',
                  'avg_purity_completeness',
                  'Truncated average purity per bin $\overline{p}_{99}$ (%)' if LEGEND2 else 'Average purity per bin (%)',
                  'Average completeness per genome $\overline{r}$ (%)' if LEGEND2 else 'Average completeness per genome (%)')
 
 
-def plot_weighed_precision_recall(summary_per_query, output_dir):
+def plot_weighed_precision_recall(summary_per_query, output_dir, rank=None):
     plot_summary(summary_per_query,
                  output_dir,
+                 rank,
                  'w',
                  'avg_purity_completeness_per_bp',
                  'Average purity per base pair $\overline{p}_{bp}$ (%)' if LEGEND2 else 'Average purity per base pair (%)',
                  'Average completeness per base pair $\overline{r}_{bp}$ (%)' if LEGEND2 else 'Average completeness per base pair (%)')
 
 
-def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir):
+def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir, rank=None):
     plot_summary(summary_per_query,
                  output_dir,
+                 rank,
                  'p',
                  'ari_vs_assigned_bps',
                  'Adjusted Rand Index (%)' if LEGEND2 else 'Adjusted Rand Index',
@@ -262,13 +270,6 @@ def plot_taxonomic_results(df_summary, output_dir):
 
     if len(df_summary_t) == 0:
         return
-
-    fig, axs = plt.subplots(figsize=(6, 5))
-
-    # force axes to be from 0 to 100%
-    axs.set_xlim([0, 7])
-    axs.set_ylim([0.0, 1.0])
-    x_values = range(len(load_ncbi_taxinfo.RANKS))
 
     for tool, pd_results in df_summary_t.groupby(utils_labels.TOOL):
         rank_to_precision = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
@@ -286,6 +287,13 @@ def plot_taxonomic_results(df_summary, output_dir):
         sem1 = list(rank_to_precision_error.values())
         sem2 = list(rank_to_recall_error.values())
 
+        fig, axs = plt.subplots(figsize=(6, 5))
+
+        # force axes to be from 0 to 100%
+        axs.set_xlim([0, 7])
+        axs.set_ylim([0.0, 1.0])
+        x_values = range(len(load_ncbi_taxinfo.RANKS))
+
         axs.plot(x_values, y_values1, color='blue')
         plt.fill_between(x_values, np.subtract(y_values1, sem1).tolist(), np.add(y_values1, sem1).tolist(), color='blue', alpha=0.5)
 
@@ -301,4 +309,5 @@ def plot_taxonomic_results(df_summary, output_dir):
 
         plt.tight_layout()
         fig.savefig(os.path.join(output_dir, 'taxonomic', tool, 'avg_precision_recall.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-
+        fig.savefig(os.path.join(output_dir, 'taxonomic', tool, 'avg_precision_recall.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.close(fig)
