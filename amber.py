@@ -6,7 +6,6 @@ import errno
 import matplotlib
 from version import __version__
 from src import genome_recovery
-# from src import html_plots
 from src import plot_by_genome
 from src import plots
 from src import precision_recall_per_bin
@@ -229,20 +228,7 @@ def main():
         table = pd_group[columns].rename(columns={'id': 'tax_id'})
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
 
-    amber_html.create_html(df_summary, pd_bins, args.output_dir, "my desc")
-
-    exit()
-
-    precision_recall_files = []
-    for query_file, label in zip(args.bin_files, labels):
-        precision_recall_files.append(os.path.join(args.output_dir, label, "purity_completeness.tsv"))
-    df = pd.DataFrame.from_dict(summary_per_query)
-    df.rename(columns={utils_labels.TOOL: 'Tool'}, inplace=True)
-    df.set_index('Tool', inplace=True)
-    html_plots.build_html(precision_recall_files,
-                          labels,
-                          df,
-                          os.path.join(args.output_dir, "index.html"))
+    amber_html.create_html(gold_standard, df_summary, pd_bins, args.output_dir, "my desc")
 
 
 if __name__ == "__main__":
