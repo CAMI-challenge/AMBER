@@ -19,13 +19,13 @@ Optional:
 Install pip first (tested on Linux Ubuntu 17.10):
 
 ~~~BASH
-sudo apt install python3-pip
+python3 -m ensurepip
 ~~~
 
 Then run:
 
 ~~~BASH
-pip3 install cami-amber 
+python3 -m pip install cami-amber
 ~~~
 
 Make sure to add AMBER to your PATH:
