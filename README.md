@@ -7,6 +7,8 @@ AMBER produces print-ready and interactive plots. See a produced example page at
 
 # Requirements
 
+AMBER requires Python 3.5 or above.
+
 See [default.txt](requirements/default.txt) for all dependencies.
 
 ## Installation
@@ -14,13 +16,13 @@ See [default.txt](requirements/default.txt) for all dependencies.
 Install pip first (tested on Linux Ubuntu 18.04):
 
 ~~~BASH
-sudo apt install python3-pip
+sudo apt install python-pip
 ~~~
 
 Then run:
 
 ~~~BASH
-pip3 install cami-amber 
+pip install cami-amber 
 ~~~
 
 Make sure to add AMBER to your PATH:
@@ -30,9 +32,9 @@ echo 'PATH=$PATH:${HOME}/.local/bin' >> ~/.bashrc
 source ~/.bashrc
 ~~~
 
-You can also run [AMBER unsing Docker](#running-amber-using-docker). 
+You can also run [AMBER using Docker](#running-amberpy-using-docker). 
 
-# User Guide
+# User guide
 
 ## Input
 As input, AMBER uses three files:
@@ -70,9 +72,10 @@ Additional parameters may be specified - see below.
 
 ~~~BASH
 usage: AMBER [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS] -o
-             OUTPUT_DIR [-v] [-n MIN_LENGTH] [-m] [-x MIN_COMPLETENESS]
-             [-y MAX_CONTAMINATION] [-c] [-p FILTER] [-r REMOVE_GENOMES]
-             [-k KEYWORD] [--ncbi_nodes_file NCBI_NODES_FILE]
+             OUTPUT_DIR [--stdout] [-v] [-n MIN_LENGTH] [-m]
+             [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION] [-c] [-p FILTER]
+             [-r REMOVE_GENOMES] [-k KEYWORD]
+             [--ncbi_nodes_file NCBI_NODES_FILE]
              bin_files [bin_files ...]
 
 AMBER: Assessment of Metagenome BinnERs
@@ -91,6 +94,7 @@ optional arguments:
                         Comma-separated binning names
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         Directory to write the results to
+  --stdout              Print summary to stdout
   -v, --version         show program's version number and exit
 
 genome binning-specific arguments:
@@ -132,7 +136,7 @@ test/elated_franklin_0 \
 -o output_dir/
 ~~~
 
-## Running AMBER using Docker
+## Running _amber.py_ using Docker
 
 In AMBER's root directory, build the Docker image with the command:
 
@@ -224,7 +228,7 @@ python3 src/utils/convert_fasta_bins_to_cami.py /path/to/file/maxbin.out.0* -o b
 **Output:**
 File bins.tsv is created in the working directory.
 
-# Developer Guide
+# Developer guide
 
 We are using [tox](https://tox.readthedocs.io/en/latest/) for project automation.
 
@@ -246,7 +250,7 @@ source  <project_directory>/.tox/py35/bin/activate
 
 In order to update *https://cami-challenge.github.io/AMBER*, modify file index.html.
 
-### Make a Release
+### Make a release
 
 If the dev branch is merged into the master branch:
 

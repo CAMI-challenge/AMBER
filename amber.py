@@ -184,6 +184,7 @@ def main():
     parser = argparse.ArgumentParser(description="AMBER: Assessment of Metagenome BinnERs",
                                      parents=[argparse_parents.PARSER_MULTI2], prog='AMBER')
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
+    parser.add_argument('--stdout', help="Print summary to stdout", action='store_true')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
     group_g = parser.add_argument_group('genome binning-specific arguments')
@@ -228,6 +229,8 @@ def main():
                                        queries_list,
                                        min_completeness, max_contamination)
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
+    if args.stdout:
+        print(df_summary.to_string(index=False))
 
     plot_genome_binning(gold_standard, queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
     plot_taxonomic_binning(df_summary, output_dir)
