@@ -1,5 +1,5 @@
 numpy==1.15.1
-biopython==1.69.0
+biopython==1.72.0
 matplotlib==2.0.2
 bokeh==0.13.0
 pandas==0.23.4

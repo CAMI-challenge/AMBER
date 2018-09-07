@@ -181,17 +181,24 @@ def plot_taxonomic_binning(df_summary, output_dir):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute all metrics and figures for one or more binning files; output summary to screen and results per binning file to chosen directory",
+    parser = argparse.ArgumentParser(description="AMBER: Assessment of Metagenome BinnERs",
                                      parents=[argparse_parents.PARSER_MULTI2], prog='AMBER')
-    parser.add_argument('-n', '--min_length', help="Minimum length of sequences", type=int, required=False)
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
-
-    parser.add_argument('--ncbi_nodes_file', help="NCBI nodes file", required=False)
-    parser.add_argument('-m', '--map_by_completeness', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
-    parser.add_argument('-x', '--min_completeness', help=argparse_parents.HELP_THRESHOLDS_COMPLETENESS, required=False)
-    parser.add_argument('-y', '--max_contamination', help=argparse_parents.HELP_THRESHOLDS_CONTAMINATION, required=False)
-    parser.add_argument('-c', '--plot_heatmaps', help="Plot heatmaps of confusion matrices (can take some minutes)", action='store_true')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+
+    group_g = parser.add_argument_group('genome binning-specific arguments')
+    group_g.add_argument('-n', '--min_length', help="Minimum length of sequences", type=int, required=False)
+    group_g.add_argument('-m', '--map_by_completeness', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
+    group_g.add_argument('-x', '--min_completeness', help=argparse_parents.HELP_THRESHOLDS_COMPLETENESS, required=False)
+    group_g.add_argument('-y', '--max_contamination', help=argparse_parents.HELP_THRESHOLDS_CONTAMINATION, required=False)
+    group_g.add_argument('-c', '--plot_heatmaps', help="Plot heatmaps of confusion matrices (can take some minutes)", action='store_true')
+    group_g.add_argument('-p', '--filter', help=argparse_parents.HELP_FILTER)
+    group_g.add_argument('-r', '--remove_genomes', help=argparse_parents.HELP_GENOMES_FILE, required=False)
+    group_g.add_argument('-k', '--keyword', help=argparse_parents.HELP_KEYWORD, required=False)
+
+    group_t = parser.add_argument_group('taxonomic binning-specific arguments')
+    group_t.add_argument('--ncbi_nodes_file', help="NCBI nodes file", required=False)
+
     args = parser.parse_args()
 
     min_completeness = None

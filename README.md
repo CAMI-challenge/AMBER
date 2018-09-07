@@ -30,7 +30,7 @@ echo 'PATH=$PATH:${HOME}/.local/bin' >> ~/.bashrc
 source ~/.bashrc
 ~~~
 
-You can also run [AMBER as a Biobox](#run-amber-as-a-biobox). 
+You can also run [AMBER unsing Docker](#running-amber-using-docker). 
 
 # User Guide
 
@@ -57,8 +57,8 @@ Additional parameters may be specified - see below.
 
 ## Computed metrics
 
-* Average purity (averaged over recovered genome bins)
-* Average completeness (averaged over recovered genome bins)
+* Average purity (averaged over recovered genome/taxonomic bins)
+* Average completeness (averaged over recovered genome/taxonomic bins)
 * Average purity per base pair
 * Average completeness per base pair
 * (Adjusted) Rand index by sequence and base pair counts
@@ -69,13 +69,13 @@ Additional parameters may be specified - see below.
 ## Running _amber.py_
 
 ~~~BASH
-usage: amber.py [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
-                [-p FILTER] [-r REMOVE_GENOMES] [-k KEYWORD] -o OUTPUT_DIR
-                [-m] [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION]
-                bin_files [bin_files ...]
+usage: AMBER [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS] -o
+             OUTPUT_DIR [-v] [-n MIN_LENGTH] [-m] [-x MIN_COMPLETENESS]
+             [-y MAX_CONTAMINATION] [-c] [-p FILTER] [-r REMOVE_GENOMES]
+             [-k KEYWORD] [--ncbi_nodes_file NCBI_NODES_FILE]
+             bin_files [bin_files ...]
 
-Compute all metrics and figures for one or more binning files; output summary
-to screen and results per binning file to chosen directory
+AMBER: Assessment of Metagenome BinnERs
 
 positional arguments:
   bin_files             Binning files
@@ -89,16 +89,13 @@ optional arguments:
                         (required if gold standard file misses column _LENGTH)
   -l LABELS, --labels LABELS
                         Comma-separated binning names
-  -p FILTER, --filter FILTER
-                        Filter out [FILTER]% smallest bins (default: 0)
-  -r REMOVE_GENOMES, --remove_genomes REMOVE_GENOMES
-                        File with list of genomes to be removed
-  -k KEYWORD, --keyword KEYWORD
-                        Keyword in the second column of file with list of
-                        genomes to be removed (no keyword=remove all genomes
-                        in list)
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         Directory to write the results to
+  -v, --version         show program's version number and exit
+
+genome binning-specific arguments:
+  -n MIN_LENGTH, --min_length MIN_LENGTH
+                        Minimum length of sequences
   -m, --map_by_completeness
                         Map genomes to bins by maximizing completeness
   -x MIN_COMPLETENESS, --min_completeness MIN_COMPLETENESS
@@ -107,6 +104,20 @@ optional arguments:
   -y MAX_CONTAMINATION, --max_contamination MAX_CONTAMINATION
                         Comma-separated list of max. contamination thresholds
                         (default %: 10,5)
+  -c, --plot_heatmaps   Plot heatmaps of confusion matrices (can take some
+                        minutes)
+  -p FILTER, --filter FILTER
+                        Filter out [FILTER]% smallest genome bins (default: 0)
+  -r REMOVE_GENOMES, --remove_genomes REMOVE_GENOMES
+                        File with list of genomes to be removed
+  -k KEYWORD, --keyword KEYWORD
+                        Keyword in the second column of file with list of
+                        genomes to be removed (no keyword=remove all genomes
+                        in list)
+
+taxonomic binning-specific arguments:
+  --ncbi_nodes_file NCBI_NODES_FILE
+                        NCBI nodes file
 ~~~
 **Example:**
 ~~~BASH
@@ -121,29 +132,27 @@ test/elated_franklin_0 \
 -o output_dir/
 ~~~
 
-## Running AMBER as a Biobox
+## Running AMBER using Docker
 
-Build and run the AMBER docker image with the commands:
+In AMBER's root directory, build the Docker image with the command:
 
 ~~~BASH
-docker build -t cami/amber:latest .
-docker run -v $(pwd)/input/gold_standard.fasta:/bbx/input/gold_standard.fasta -v $(pwd)/input/gsa_mapping.binning:/bbx/input/gsa_mapping.binning  -v  $(pwd)/input/test_query.binning:/bbx/input/test_query.binning  -v  $(pwd)/output:/bbx/output -v $(pwd)/input/biobox.yaml:/bbx/input/biobox.yaml cami/amber:latest default
+docker build -t amber:latest .
 ~~~
 
-where biobox.yaml contains the following:
+_amber.py_ can then be run with the `docker run` command. Example:
 
-~~~YAML
-version: 0.11.0
-arguments:
-  - fasta:
-      value: /bbx/input/gold_standard.fasta
-      type: contig
-  - labels:
-      value: /bbx/input/gsa_mapping.binning
-      type: binning
-  - predictions:
-      value: /bbx/input/test_query.binning
-      type: binning
+~~~BASH
+docker run -v /path/to/AMBER/test:/host amber:latest \
+amber.py \
+-l "CONCOCT (CAMI), MaxBin 2.0.2 (CAMI)" \
+-p 1 \
+-r /host/unique_common.tsv \
+-k "circular element" \
+-g /host/gsa_mapping.binning \
+/host/goofy_hypatia_2 \
+/host/naughty_carson_2 \
+-o /host/output_dir
 ~~~
 
 # Utilities

@@ -71,7 +71,7 @@ def compute_adjusted_rand_index(bin_id_to_mapping_id_to_counts, mapping_id_to_bi
     temp = bin_comb * mapping_comb / num_bp_comb
     ret = bin_mapping_comb - temp
     denominator = (((bin_comb + mapping_comb) / 2.0) - temp)
-    return ret / denominator if denominator != 0 else .0
+    return (ret / denominator) if denominator != 0 else .0
 
 
 def compute_rand_index(bin_id_to_mapping_id_to_counts, mapping_id_to_bin_id_to_counts):
