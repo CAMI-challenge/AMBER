@@ -201,11 +201,10 @@ def create_metrics_per_bin_panel(pd_bins, bins_columns):
               {'selector': 'th', 'props': [('width', '80pt'), ('text-align', 'left')]},
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
 
-    pd_groups = pd_bins.groupby(utils_labels.TOOL)
-    tools = list(pd_groups.groups.keys())
+    tools = pd_bins.tool.unique().tolist()
     tool_to_html = OrderedDict([(x, '') for x in tools])
 
-    for tool, pd_group in pd_groups:
+    for tool, pd_group in pd_bins.groupby(utils_labels.TOOL):
         table = pd_group[list(bins_columns.keys())].rename(columns=dict(bins_columns))
         tool_to_html[tool] = [table.style.set_table_styles(styles).hide_index().render()]
 
@@ -346,8 +345,9 @@ def create_precision_recall_figure(df_summary, xname, yname, title):
     p = figure(title=title, plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
     p.xaxis.axis_label = upper1(xname)
     p.yaxis.axis_label = upper1(yname)
-    for color, (tool, pd_bins_tool) in zip(bokeh_colors, df_summary.groupby(utils_labels.TOOL)):
-        source = ColumnDataSource(data=pd_bins_tool)
+    for color, (index, row) in zip(bokeh_colors, df_summary.iterrows()):
+        tool = row[utils_labels.TOOL]
+        source = ColumnDataSource(data=row.to_frame().T)
         pcircle = p.circle(xname, yname, source=source, color=color, fill_alpha=0.2, size=10)
         legend_it.append((tool, [pcircle]))
     p.add_layout(Legend(items=legend_it), 'right')
@@ -355,7 +355,7 @@ def create_precision_recall_figure(df_summary, xname, yname, title):
     return p
 
 
-def create_precision_recall_all_genomes_scatter(pd_bins):
+def create_precision_recall_all_genomes_scatter(pd_bins, tools):
     colors_list = plots.create_colors_list()
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
@@ -366,8 +366,8 @@ def create_precision_recall_all_genomes_scatter(pd_bins):
 
     pd_genome_bins = pd_bins[pd_bins['rank'] == 'NA']
     legend_it = []
-    for color, (tool, pd_tools) in zip(bokeh_colors, pd_genome_bins.groupby(utils_labels.TOOL)):
-        source = ColumnDataSource(data=pd_tools)
+    for color, tool in zip(bokeh_colors, tools):
+        source = ColumnDataSource(data=pd_genome_bins[pd_genome_bins[utils_labels.TOOL] == tool])
         pcircle = p.circle('purity', 'completeness', color=color, alpha=0.8, source=source)
         legend_it.append((tool, [pcircle]))
     p.add_layout(Legend(items=legend_it), 'right')
@@ -460,7 +460,7 @@ def create_genome_binning_html(gold_standard, df_summary, pd_bins):
 
     purity_completeness_plot = create_precision_recall_figure(df_summary_g, utils_labels.AVG_PRECISION, utils_labels.AVG_RECALL, None)
     purity_completeness_bp_plot = create_precision_recall_figure(df_summary_g, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, None)
-    all_genomes_plot = create_precision_recall_all_genomes_scatter(pd_bins)
+    all_genomes_plot = create_precision_recall_all_genomes_scatter(pd_bins, df_summary_g[utils_labels.TOOL].tolist())
 
     genome_html = create_table_html(df_summary_g.rename(columns={'tool': 'Tool'}).set_index('Tool').T)
     genome_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(genome_html), css_classes=['bk-width-auto'])
@@ -519,7 +519,8 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
 
     rankings_panel = Panel(child=row(create_rankings_table(df_summary_t, True)), title="Rankings")
 
-    tools_figures = [create_tax_figure(tool, df_tool) for tool, df_tool in df_summary_t.groupby(utils_labels.TOOL)]
+    tools = df_summary_t.tool.unique().tolist()
+    tools_figures = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool]) for tool in tools]
     tools_column = column(row(tools_figures), sizing_mode='scale_width', css_classes=['bk-width-auto'])
     tools_panel = Panel(child=tools_column, title="Plots per binner")
 
