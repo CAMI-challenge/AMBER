@@ -277,6 +277,7 @@ def create_contamination_completeness_table(gold_standard, df):
     dt = DataTable(source=ColumnDataSource(df),
                    columns=list(map(lambda x: create_table_column(x), df.columns.values)),
                    width=750,
+                   height=1000,
                    reorderable=True,
                    selectable=True)
     return [widgetbox(dt)]
@@ -309,8 +310,8 @@ def create_table_html(df_summary):
     metrics2_label = 'Quality for sample: quality weighted by bin sizes'
     all_metrics_labels = [metrics1_label, metrics2_label]
 
-    styles = [{'selector': 'td', 'props': [('width', '100pt')]},
-              {'selector': 'th', 'props': [('width', '100pt'), ('text-align', 'left')]},
+    styles = [{'selector': 'td', 'props': [('width', '95pt')]},
+              {'selector': 'th', 'props': [('width', '95pt'), ('text-align', 'left')]},
               {'selector': 'th:nth-child(1)', 'props': [('width', '205pt'), ('font-weight', 'normal')]},
               {'selector': '', 'props': [('width', 'max-content'), ('width', '-moz-max-content'), ('border-top', '1px solid lightgray'), ('border-spacing', '0px')]},
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
@@ -342,14 +343,14 @@ def create_precision_recall_figure(df_summary, xname, yname, title):
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
     legend_it = []
-    p = figure(title=title, plot_width=450, plot_height=500, x_range=(0, 1), y_range=(0, 1), toolbar_location="right")
+    p = figure(title=title, plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
     p.xaxis.axis_label = upper1(xname)
     p.yaxis.axis_label = upper1(yname)
     for color, (tool, pd_bins_tool) in zip(bokeh_colors, df_summary.groupby(utils_labels.TOOL)):
         source = ColumnDataSource(data=pd_bins_tool)
         pcircle = p.circle(xname, yname, source=source, color=color, fill_alpha=0.2, size=10)
         legend_it.append((tool, [pcircle]))
-    p.add_layout(Legend(items=legend_it), 'above')
+    p.add_layout(Legend(items=legend_it), 'right')
     p.legend.click_policy = 'hide'
     return p
 
@@ -358,7 +359,7 @@ def create_precision_recall_all_genomes_scatter(pd_bins):
     colors_list = plots.create_colors_list()
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
-    p = figure(plot_width=450, plot_height=500, x_range=(0, 1), y_range=(0, 1))
+    p = figure(plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
     p.add_tools(HoverTool(tooltips=[
         ("genome", "@mapping_id")
     ]))
@@ -369,7 +370,7 @@ def create_precision_recall_all_genomes_scatter(pd_bins):
         source = ColumnDataSource(data=pd_tools)
         pcircle = p.circle('purity', 'completeness', color=color, alpha=0.8, source=source)
         legend_it.append((tool, [pcircle]))
-    p.add_layout(Legend(items=legend_it), 'above')
+    p.add_layout(Legend(items=legend_it), 'right')
     p.xaxis.axis_label = 'Purity per bin'
     p.yaxis.axis_label = 'Completeness per bin'
     p.legend.click_policy = 'hide'
@@ -462,7 +463,7 @@ def create_genome_binning_html(gold_standard, df_summary, pd_bins):
     all_genomes_plot = create_precision_recall_all_genomes_scatter(pd_bins)
 
     genome_html = create_table_html(df_summary_g.rename(columns={'tool': 'Tool'}).set_index('Tool').T)
-    genome_div = Div(text="""<div>{}</div>""".format(genome_html), css_classes=['bk-width-auto'])
+    genome_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(genome_html), css_classes=['bk-width-auto'])
     metrics_row_g = column(column(create_heatmap_div(), genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(row(purity_completeness_plot, purity_completeness_bp_plot, all_genomes_plot), sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_row_g, title="Metrics")
 
@@ -499,7 +500,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     if not rank_to_html:
         return None
 
-    taxonomic_div = Div(text="""<div>{}</div>""".format(rank_to_html[load_ncbi_taxinfo.RANKS[0]][0]), css_classes=['bk-width-auto'])
+    taxonomic_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(rank_to_html[load_ncbi_taxinfo.RANKS[0]][0]), css_classes=['bk-width-auto'])
     source = ColumnDataSource(data=rank_to_html)
 
     select_rank = Select(title="Taxonomic rank:", value=load_ncbi_taxinfo.RANKS[0], options=load_ncbi_taxinfo.RANKS, css_classes=['bk-fit-content'])

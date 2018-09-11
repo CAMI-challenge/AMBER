@@ -53,13 +53,15 @@ def compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query):
     misclassification_rate = all_bins_false_positives / float(all_bins_length)
 
     true_positives_recall = 0
-    for gs_index, gs_row in gs_pd_bins_rank.iterrows():
+    for i in gs_pd_bins_rank.index:
+        mapping_id = gs_pd_bins_rank.at[i, 'mapping_id']
         bin_assigns = []
-        for index, row in pd_bins_rank.iterrows():
-            if row['id']:
-                bin = query.get_bin_by_id(row['id'])
-                if gs_row['mapping_id'] in bin.mapping_id_to_length:
-                    bin_assigns.append(bin.mapping_id_to_length[gs_row['mapping_id']])
+        for i2 in pd_bins_rank.index:
+            bin_id = pd_bins_rank.at[i2, 'id']
+            if bin_id:
+                bin = query.get_bin_by_id(bin_id)
+                if mapping_id in bin.mapping_id_to_length:
+                    bin_assigns.append(bin.mapping_id_to_length[mapping_id])
         if len(bin_assigns) > 0:
             true_positives_recall += max(bin_assigns)
 
@@ -185,6 +187,7 @@ def main():
                                      parents=[argparse_parents.PARSER_MULTI2], prog='AMBER')
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
     parser.add_argument('--stdout', help="Print summary to stdout", action='store_true')
+    parser.add_argument('-d', '--desc', help="Description for HTML page", required=False)
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
     group_g = parser.add_argument_group('genome binning-specific arguments')
@@ -248,7 +251,7 @@ def main():
         table = pd_group[columns].rename(columns={'id': 'tax_id'})
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
 
-    amber_html.create_html(gold_standard, df_summary, pd_bins, args.output_dir, "my desc")
+    amber_html.create_html(gold_standard, df_summary, pd_bins, args.output_dir, args.desc)
 
 
 if __name__ == "__main__":

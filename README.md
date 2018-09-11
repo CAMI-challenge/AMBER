@@ -13,16 +13,24 @@ See [default.txt](requirements/default.txt) for all dependencies.
 
 ## Installation
 
-Install pip first (tested on Linux Ubuntu 18.04):
+You can run [AMBER using Docker (see below)](#running-amberpy-using-docker) or install it as follows.
+
+Install pip if not already installed (tested on Linux Ubuntu 18.04):
 
 ~~~BASH
-sudo apt install python-pip
+sudo apt install python3-pip
+~~~
+Should you receive the message `Unable to locate package python3-pip`, enter the following commands and repeat the previous step.
+
+~~~BASH
+sudo add-apt-repository universe
+sudo apt update
 ~~~
 
 Then run:
 
 ~~~BASH
-pip install cami-amber 
+pip3 install cami-amber 
 ~~~
 
 Make sure to add AMBER to your PATH:
@@ -31,8 +39,6 @@ Make sure to add AMBER to your PATH:
 echo 'PATH=$PATH:${HOME}/.local/bin' >> ~/.bashrc
 source ~/.bashrc
 ~~~
-
-You can also run [AMBER using Docker](#running-amberpy-using-docker). 
 
 # User guide
 
@@ -72,7 +78,7 @@ Additional parameters may be specified - see below.
 
 ~~~BASH
 usage: AMBER [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS] -o
-             OUTPUT_DIR [--stdout] [-v] [-n MIN_LENGTH] [-m]
+             OUTPUT_DIR [--stdout] [-d DESC] [-v] [-n MIN_LENGTH] [-m]
              [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION] [-c] [-p FILTER]
              [-r REMOVE_GENOMES] [-k KEYWORD]
              [--ncbi_nodes_file NCBI_NODES_FILE]
@@ -95,6 +101,7 @@ optional arguments:
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         Directory to write the results to
   --stdout              Print summary to stdout
+  -d DESC, --desc DESC  Description for HTML page
   -v, --version         show program's version number and exit
 
 genome binning-specific arguments:
@@ -125,7 +132,7 @@ taxonomic binning-specific arguments:
 ~~~
 **Example:**
 ~~~BASH
-python3 amber.py -g test/gsa_mapping.binning \
+amber.py -g test/gsa_mapping.binning \
 -l "MaxBin 2.0, CONCOCT, MetaBAT" \
 -p 1 \
 -r test/unique_common.tsv \
@@ -138,7 +145,7 @@ test/elated_franklin_0 \
 
 ## Running _amber.py_ using Docker
 
-In AMBER's root directory, build the Docker image with the command:
+Download or git-clone AMBER from GitHub. In AMBER's directory, build the Docker image with the command:
 
 ~~~BASH
 docker build -t amber:latest .
