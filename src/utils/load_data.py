@@ -276,11 +276,11 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                             continue
                         if tax_id not in t_query.get_bin_ids():
                             bin = binning_classes.TaxonomicBin(tax_id)
+                            bin.rank = tax_id_to_rank[tax_id]
                             t_query.add_bin(bin)
                         else:
                             bin = t_query.get_bin_by_id(tax_id)
                         t_query.rank_to_sequence_id_to_bin_id = (tax_id_to_rank[tax_id], sequence_id, tax_id)
-                        bin.rank = tax_id_to_rank[tax_id]
                         bin.add_sequence_id(sequence_id)
         except BaseException as e:
             traceback.print_exc()

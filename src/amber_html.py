@@ -44,6 +44,8 @@ TEMPLATE = Template('''<!DOCTYPE html>
             {{ css_resources }}
             <style>.bk-fit-content {width: fit-content; width: -moz-fit-content;}
             .bk-width-auto {width: auto !important; height: auto !important;}
+            .bk-display-block {display: block !important;}
+            .bk-float-left {float: left;}
             .bk-width-auto-main>div {width: -webkit-fill-available !important;}
             div.bk-width-auto-main {width: -webkit-fill-available !important;}
             .bk-tabs-margin{margin-top: 20px !important;}
@@ -334,7 +336,7 @@ def create_table_html(df_summary):
             this_style = styles_hidden_thead
         html += df_metrics.style.apply(get_heatmap_colors, df_metrics=df_metrics, axis=1).set_precision(3).set_table_styles(this_style).render()
 
-    return html
+    return '<div style="margin-bottom:10pt;">{}</div>'.format(html)
 
 
 def create_precision_recall_figure(df_summary, xname, yname, title):
@@ -473,7 +475,8 @@ def create_genome_binning_html(gold_standard, df_summary, pd_bins):
     cc_table = create_contamination_completeness_table(gold_standard, df_summary_g)
     cc_panel = Panel(child=row(cc_table), title="#Recovered genomes")
 
-    rankings_panel = Panel(child=row(create_rankings_table(df_summary_g)), title="Rankings")
+    rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
+                                        row(create_rankings_table(df_summary_g))]), title="Rankings")
 
     tabs = Tabs(tabs=[metrics_panel, metrics_bins_panel, rankings_panel, cc_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
 
@@ -486,6 +489,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     plots_list = []
     pd_groups_rank = df_summary_t.groupby('rank')
     available_ranks = list(pd_groups_rank.groups.keys())
+    available_ranks_sorted = [rank for rank in load_ncbi_taxinfo.RANKS if rank in available_ranks]
 
     for rank in load_ncbi_taxinfo.RANKS:
         if rank not in available_ranks:
@@ -503,7 +507,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     taxonomic_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(rank_to_html[load_ncbi_taxinfo.RANKS[0]][0]), css_classes=['bk-width-auto'])
     source = ColumnDataSource(data=rank_to_html)
 
-    select_rank = Select(title="Taxonomic rank:", value=load_ncbi_taxinfo.RANKS[0], options=load_ncbi_taxinfo.RANKS, css_classes=['bk-fit-content'])
+    select_rank = Select(title="Taxonomic rank:", value=load_ncbi_taxinfo.RANKS[0], options=available_ranks_sorted, css_classes=['bk-fit-content'])
     select_rank_callback = CustomJS(args=dict(source=source), code="""
         mytable.text = source.data[select_rank.value][0];
     """)
@@ -517,11 +521,13 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     bins_columns = OrderedDict([('id', 'Taxon ID'), ('rank', 'Taxonomic rank'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
     metrics_bins_panel = create_metrics_per_bin_panel(pd_bins[pd_bins['rank'] != 'NA'], bins_columns)
 
-    rankings_panel = Panel(child=row(create_rankings_table(df_summary_t, True)), title="Rankings")
+    rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
+                                        row(create_rankings_table(df_summary_t, True))]), title="Rankings")
 
     tools = df_summary_t.tool.unique().tolist()
     tools_figures = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool]) for tool in tools]
-    tools_column = column(row(tools_figures), sizing_mode='scale_width', css_classes=['bk-width-auto'])
+    tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures]
+    tools_column = column(tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
     tools_panel = Panel(child=tools_column, title="Plots per binner")
 
     tabs = Tabs(tabs=[metrics_panel, metrics_bins_panel, rankings_panel, tools_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
