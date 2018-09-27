@@ -68,7 +68,7 @@ def combinations(bin_id_to_mapping_id_to_counts, mapping_id_to_bin_id_to_counts)
 
 def compute_adjusted_rand_index(bin_id_to_mapping_id_to_counts, mapping_id_to_bin_id_to_counts):
     bin_comb, mapping_comb, bin_mapping_comb, num_bp_comb = combinations(bin_id_to_mapping_id_to_counts, mapping_id_to_bin_id_to_counts)
-    temp = bin_comb * mapping_comb / num_bp_comb
+    temp = (bin_comb * mapping_comb / num_bp_comb) if num_bp_comb != 0 else .0
     ret = bin_mapping_comb - temp
     denominator = (((bin_comb + mapping_comb) / 2.0) - temp)
     return (ret / denominator) if denominator != 0 else .0
@@ -76,7 +76,7 @@ def compute_adjusted_rand_index(bin_id_to_mapping_id_to_counts, mapping_id_to_bi
 
 def compute_rand_index(bin_id_to_mapping_id_to_counts, mapping_id_to_bin_id_to_counts):
     bin_comb, mapping_comb, bin_mapping_comb, num_bp_comb = combinations(bin_id_to_mapping_id_to_counts, mapping_id_to_bin_id_to_counts)
-    return (num_bp_comb - bin_comb - mapping_comb + 2 * bin_mapping_comb) / num_bp_comb
+    return ((num_bp_comb - bin_comb - mapping_comb + 2 * bin_mapping_comb) / num_bp_comb) if num_bp_comb != 0 else .0
 
 
 def print_rand_indices(ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq, percentage_of_assigned_bps, stream=sys.stdout):

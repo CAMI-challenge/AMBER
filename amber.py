@@ -5,6 +5,7 @@ import os
 import errno
 import matplotlib
 from collections import OrderedDict
+from collections import defaultdict
 from version import __version__
 from src import genome_recovery
 from src import plot_by_genome
@@ -73,6 +74,24 @@ def compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query):
     return precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps, misclassification_rate
 
 
+def compute_percentage_of_assigned_seqs(gold_standard, query):
+    percentage_of_assigned_seqs = {}
+    if isinstance(query, binning_classes.GenomeQuery):
+        num_seqs = len(query.get_sequence_ids())
+        gs_num_seqs = len(gold_standard.genome_query.get_sequence_ids())
+        percentage_of_assigned_seqs['NA'] = num_seqs / gs_num_seqs
+    else:
+        num_seqs = defaultdict(int)
+        gs_num_seqs = defaultdict(int)
+        for bin in gold_standard.taxonomic_query.bins:
+            gs_num_seqs[bin.rank] += len(bin.sequence_ids)
+        for bin in query.bins:
+            num_seqs[bin.rank] += len(bin.sequence_ids)
+        for rank in num_seqs.keys():
+            percentage_of_assigned_seqs[rank] = num_seqs[rank] / gs_num_seqs[rank]
+    return percentage_of_assigned_seqs
+
+
 def evaluate_all(gold_standard,
                  queries_list,
                  min_completeness, max_contamination):
@@ -87,6 +106,8 @@ def evaluate_all(gold_standard,
     pd_bins_all = pd.DataFrame()
     df_summary = pd.DataFrame()
     for query in queries_list:
+        percentage_of_assigned_seqs = compute_percentage_of_assigned_seqs(gold_standard, query)
+
         # Compute metrics per bin
         query.compute_true_positives(gold_standard)
         precision_recall_per_bin.compute_precision_recall(gold_standard, query)
@@ -136,6 +157,7 @@ def evaluate_all(gold_standard,
                                            (utils_labels.AVG_RECALL_PER_BP, [recall_by_bp]),
                                            (utils_labels.ACCURACY, [accuracy]),
                                            (utils_labels.PERCENTAGE_ASSIGNED_BPS, [percentage_of_assigned_bps]),
+                                           (utils_labels.PERCENTAGE_ASSIGNED_SEQS, [percentage_of_assigned_seqs[rank]]),
                                            (utils_labels.RI_BY_BP, [ri_by_bp]),
                                            (utils_labels.RI_BY_SEQ, [ri_by_seq]),
                                            (utils_labels.ARI_BY_BP, [ari_by_bp]),

@@ -224,12 +224,10 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
     g_query = binning_classes.GenomeQuery()
     t_query = binning_classes.TaxonomicQuery()
     t_query.tax_id_to_rank = tax_id_to_rank
-    is_length_column_av = False
 
     with open(file_path_query) as read_handler:
         if is_gs and not binning_classes.Bin.sequence_id_to_length:
-            is_length_column_av = is_length_column_available(read_handler)
-            if not is_length_column_av:
+            if not is_length_column_available(read_handler):
                 if not fastx_file:
                     exit("Sequences length could not be determined. Please provide a FASTA or FASTQ file using option -f or add column _LENGTH to gold standard.")
                 binning_classes.Bin.sequence_id_to_length = read_lengths_from_fastx_file(fastx_file)
@@ -244,31 +242,44 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
 
         try:
             for sequence_id, bin_id, tax_id, length in read_binning_file(read_handler, is_gs):
-                if is_gs and is_length_column_av:
+                if is_gs:
                     binning_classes.Bin.sequence_id_to_length[sequence_id] = length
+                elif sequence_id not in binning_classes.Bin.sequence_id_to_length:
+                    print("Length of sequence unknown: {} (file {})".format(sequence_id, file_path_query), file=sys.stderr)
+                    continue
 
                 if bin_id:
-                    if not is_gs and sequence_id in g_sequence_ids or binning_classes.Bin.sequence_id_to_length[sequence_id] >= min_length:
-                        if bin_id not in g_query.get_bin_ids():
-                            bin = binning_classes.GenomeBin(bin_id)
-                            g_query.add_bin(bin)
+                    if binning_classes.Bin.sequence_id_to_length[sequence_id] >= min_length:
+                        if not is_gs and sequence_id not in g_sequence_ids:
+                            print("Sequence not found in the gold standard: {} (file {})".format(sequence_id, file_path_query), file=sys.stderr)
                         else:
-                            bin = g_query.get_bin_by_id(bin_id)
-                        g_query.sequence_id_to_bin_id = (sequence_id, bin_id)
-                        bin.add_sequence_id(sequence_id)
-                        if is_gs:
-                            bin.mapping_id = bin_id
+                            if bin_id not in g_query.get_bin_ids():
+                                bin = binning_classes.GenomeBin(bin_id)
+                                g_query.add_bin(bin)
+                            else:
+                                bin = g_query.get_bin_by_id(bin_id)
+                            g_query.sequence_id_to_bin_id = (sequence_id, bin_id)
+                            bin.add_sequence_id(sequence_id)
+                            if is_gs:
+                                bin.mapping_id = bin_id
 
                 if tax_id:
-                    if not is_gs and sequence_id not in t_sequence_ids:
-                        continue
                     if not tax_id_to_parent:
                         if is_gs:
                             continue
                         else:
                             exit("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.")
+
+                    if tax_id not in tax_id_to_rank:
+                        print("Not a valid NCBI taxonomic ID: {} (file {})".format(tax_id, file_path_query), file=sys.stderr)
+                        continue
+
+                    if not is_gs and sequence_id not in t_sequence_ids:
+                        print("Sequence not found in the gold standard: {} (file {})".format(sequence_id, file_path_query), file=sys.stderr)
+                        continue
+
                     tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank)
-                    # TODO: tax id not found in ncbi or has "no rank". handle properly.
+
                     if not tax_id_path:
                         continue
                     for tax_id in tax_id_path:

@@ -182,9 +182,9 @@ def get_heatmap_colors(pd_series, **args):
     heatmap_colors = [rgb2hex(x) for x in pltx.cm.get_cmap(cm)(normed)]
     return_colors = []
     for val, x in zip(values, heatmap_colors):
-        if val == min_value:
+        if val <= min_value:
             return_colors.append('background-color: {}'. format(color2))
-        elif val == max_value:
+        elif val >= max_value:
             return_colors.append('background-color: {}'. format(color1))
         elif math.isnan(val):
             return_colors.append('background-color: red')
@@ -304,6 +304,7 @@ def create_table_html(df_summary):
                 utils_labels.RI_BY_BP,
                 utils_labels.ARI_BY_BP,
                 utils_labels.PERCENTAGE_ASSIGNED_BPS,
+                utils_labels.PERCENTAGE_ASSIGNED_SEQS,
                 utils_labels.ACCURACY,
                 utils_labels.MISCLASSIFICATION]
     all_metrics = [metrics1, metrics2]

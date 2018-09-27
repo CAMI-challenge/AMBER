@@ -43,7 +43,7 @@ source ~/.bashrc
 # User guide
 
 ## Input
-As input, AMBER uses three files:
+As input, AMBER uses three files and an additional file for assessing taxonomic binning:
 1. A gold standard mapping of contigs or read IDs to genomes and/or taxon IDs in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format). Columns are tab separated. Example:
 ~~~BASH
 @Version:0.9.1
@@ -59,7 +59,8 @@ RH|P|C20873  1053046    765201 339258
 See [here](./test/gsa_mapping.binning) another example. Note: column BINID (TAXID) is required to assess genome (taxonomic) binning. column _LENGTH is optional, but eliminates the need for a FASTA or FASTQ file (input 3 below).
 
 2. One or more files with bin assignments for the sequences also in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format), with each file containing all the bin assignments from a binning program. A tool for converting FASTA files, such that each file represents a bin, is available (see [_src/utils/convert_fasta_bins_to_biobox_format.py_](README_TOOLS.md#srcutilsconvert_fasta_bins_to_biobox_formatpy)).
-3. A FASTA or FASTQ file with the sequences for obtaining their lengths. Optionally, the lenghts may be added to the gold standard mapping file at column _LENGTH using tool [_src/utils/add_length_column.py_](README_TOOLS.md#srcutilsadd_length_columnpy). In this way, _amber.py_ no longer requires a FASTA or FASTQ file.
+3. A FASTA or FASTQ file with the sequences for obtaining their lengths. Optionally, the lenghts may be added to the gold standard mapping file at column _LENGTH using tool [_src/utils/add_length_column.py_](README_TOOLS.md#srcutilsadd_length_columnpy). In this way, AMBER no longer requires a FASTA or FASTQ file.
+4. For assessing **taxonomic binning**, AMBER also requires the file **nodes.dmp** from NCBI. Download taxdump.tar.gz from [ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz), extract nodes.tmp and specify it to AMBER with option `--ncbi_nodes_file`. 
 
 ## Computed metrics
 
