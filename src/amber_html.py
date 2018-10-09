@@ -405,14 +405,15 @@ def create_tax_figure(tool, df_summary):
     df = pd.DataFrame({'x': rank_indices, 'y1': y_values1, 'y2': y_values2, 'lower1': lower1, 'upper1': upper1, 'lower2': lower2, 'upper2': upper2})
     source = ColumnDataSource(df.reset_index())
 
-    p = figure(plot_width=500, plot_height=550, x_range=(0, 7), y_range=(0, 1))
+    p = figure(plot_width=500, plot_height=550, x_range=(0, 6), y_range=(0, 1))
     pline1 = p.line(x='x', y='y1', line_color='#006cba', source=source, line_width=2)
     pline2 = p.line(x='x', y='y2', line_color='#008000', source=source, line_width=2)
     p.xaxis.ticker = FixedTicker(ticks=rank_indices)
     p.xaxis.formatter = FuncTickFormatter(code="""
-        var mapping = {0: "superkingdom", 1: "phylum", 2: "class", 3: "order", 4: "family", 5: "genus", 6: "species", 7: "strain"};
+        var mapping = {0: "superkingdom", 1: "phylum", 2: "class", 3: "order", 4: "family", 5: "genus", 6: "species"};
         return mapping[tick];
     """)
+    p.xaxis.major_label_orientation = 1.2
     band1 = Band(base='x', lower='lower1', upper='upper1', source=source, level='underlay',
                 fill_alpha=.3, line_width=1, line_color='black', fill_color='#006cba')
     band2 = Band(base='x', lower='lower2', upper='upper2', source=source, level='underlay',

@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-RANKS = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain']
+RANKS = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 DICT_RANK_TO_INDEX = dict(zip(RANKS, list(range(len(RANKS)))))
+RANKS_LOW2HIGH = list(reversed(RANKS))
 
 
 def load_tax_info(ncbi_nodes_file):

@@ -220,6 +220,33 @@ def read_binning_file(input_stream, is_gs):
     return read_rows(input_stream, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs)
 
 
+def update_tax_id_path(sequence_id, tax_id_path, tax_id_to_parent, tax_id_to_rank, gold_standard):
+    # check if the lowest rank of sequence in gs is higher than in the query
+    # if so, update tax_id_path to skip lower ranks
+    if not tax_id_path:
+        return None
+
+    lowest_rank = tax_id_to_rank[tax_id_path[-1]]
+    for gs_rank in load_ncbi_taxinfo.RANKS_LOW2HIGH:
+        if sequence_id in gold_standard.taxonomic_query.rank_to_sequence_id_to_bin_id[gs_rank]:
+            index_gs_rank = load_ncbi_taxinfo.RANKS_LOW2HIGH.index(gs_rank)
+            index_rank = load_ncbi_taxinfo.RANKS_LOW2HIGH.index(lowest_rank)
+            if index_gs_rank > index_rank:
+                # get tax_id matching the rank in gs
+                reversed_tax_id_path = iter(reversed(tax_id_path))
+                next(reversed_tax_id_path)
+                while index_gs_rank > index_rank:
+                    try:
+                        tax_id = next(reversed_tax_id_path)
+                    except StopIteration:
+                        break
+                    if tax_id:
+                        index_rank = load_ncbi_taxinfo.RANKS_LOW2HIGH.index(tax_id_to_rank[tax_id])
+                tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank)
+            break
+    return tax_id_path
+
+
 def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_rank, gold_standard, min_length=0):
     g_query = binning_classes.GenomeQuery()
     t_query = binning_classes.TaxonomicQuery()
@@ -245,13 +272,13 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                 if is_gs:
                     binning_classes.Bin.sequence_id_to_length[sequence_id] = length
                 elif sequence_id not in binning_classes.Bin.sequence_id_to_length:
-                    print("Length of sequence unknown: {} (file {})".format(sequence_id, file_path_query), file=sys.stderr)
+                    print("Ignoring sequence {} - length unknown (file {})".format(sequence_id, file_path_query), file=sys.stderr)
                     continue
 
                 if bin_id:
                     if binning_classes.Bin.sequence_id_to_length[sequence_id] >= min_length:
                         if not is_gs and sequence_id not in g_sequence_ids:
-                            print("Sequence not found in the gold standard: {} (file {})".format(sequence_id, file_path_query), file=sys.stderr)
+                            print("Ignoring sequence {} - not found in the genome binning gold standard: (file {})".format(sequence_id, file_path_query), file=sys.stderr)
                         else:
                             if bin_id not in g_query.get_bin_ids():
                                 bin = binning_classes.GenomeBin(bin_id)
@@ -270,15 +297,18 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                         else:
                             exit("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.")
 
-                    if tax_id not in tax_id_to_rank:
-                        print("Not a valid NCBI taxonomic ID: {} (file {})".format(tax_id, file_path_query), file=sys.stderr)
+                    if not is_gs and sequence_id not in t_sequence_ids:
+                        print("Ignoring sequence {} - not found in the taxonomic binning gold standard: (file {})".format(sequence_id, file_path_query), file=sys.stderr)
                         continue
 
-                    if not is_gs and sequence_id not in t_sequence_ids:
-                        print("Sequence not found in the gold standard: {} (file {})".format(sequence_id, file_path_query), file=sys.stderr)
+                    if tax_id not in tax_id_to_rank:
+                        print("Ignoring sequence {} - not a valid NCBI taxonomic ID: {} (file {})".format(sequence_id, tax_id, file_path_query), file=sys.stderr)
                         continue
 
                     tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank)
+
+                    if not is_gs:
+                        tax_id_path = update_tax_id_path(sequence_id, tax_id_path, tax_id_to_parent, tax_id_to_rank, gold_standard)
 
                     if not tax_id_path:
                         continue
