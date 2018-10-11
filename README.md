@@ -60,7 +60,7 @@ See [here](./test/gsa_mapping.binning) another example. Note: column BINID (TAXI
 
 2. One or more files with bin assignments for the sequences also in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format), with each file containing all the bin assignments from a binning program. A tool for converting FASTA files, such that each file represents a bin, is available (see [_src/utils/convert_fasta_bins_to_biobox_format.py_](README_TOOLS.md#srcutilsconvert_fasta_bins_to_biobox_formatpy)).
 3. A FASTA or FASTQ file with the sequences for obtaining their lengths. Optionally, the lenghts may be added to the gold standard mapping file at column _LENGTH using tool [_src/utils/add_length_column.py_](README_TOOLS.md#srcutilsadd_length_columnpy). In this way, AMBER no longer requires a FASTA or FASTQ file.
-4. For assessing **taxonomic binning**, AMBER also requires the file **nodes.dmp** from NCBI. Download taxdump.tar.gz from [ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz), extract nodes.tmp and specify it to AMBER with option `--ncbi_nodes_file`. 
+4. For assessing **taxonomic binning**, AMBER also requires the file **nodes.dmp** from NCBI. Download taxdump.tar.gz from [ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz), extract nodes.tmp, and specify it to AMBER with option `--ncbi_nodes_file`. 
 
 ## Computed metrics
 
@@ -184,7 +184,7 @@ optional arguments:
                         FASTA or FASTQ file with sequences of gold standard
 ~~~
 **Example:**
-File CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz used in the example can be downloaded [here](https://s3-eu-west-1.amazonaws.com/cami-data-eu/CAMI_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz).
+File CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz used in the example can be downloaded [here](https://data.cami-challenge.org/participate).
 ~~~BASH
 python3 src/utils/add_length_column.py -g test/gsa_mapping.binning \
 -f test/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta.gz

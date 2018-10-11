@@ -46,7 +46,7 @@ def get_labels(labels, bin_files):
     return tool_id
 
 
-def compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query):
+def compute_metrics_per_bp(rank, gs_pd_bins_rank, pd_bins_rank, query):
     true_positives_all_bins = pd_bins_rank['true_positives'].sum()
     all_bins_length = pd_bins_rank['predicted_size'].sum()
     all_bins_false_positives = all_bins_length - true_positives_all_bins
@@ -71,11 +71,18 @@ def compute_metrics_per_bp(gs_pd_bins_rank, pd_bins_rank, query):
     accuracy = float(true_positives_all_bins) / float(gs_length)
     percentage_of_assigned_bps = float(all_bins_length) / float(gs_length)
 
-    return precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps, misclassification_rate
+    percentage_of_overbinned_bps = .0
+    if isinstance(query, binning_classes.TaxonomicQuery):
+        if rank in query.rank_to_overbinned_seqs:
+            length_overbinned_seqs = sum([binning_classes.Bin.sequence_id_to_length[sequence_id] for sequence_id in query.rank_to_overbinned_seqs[rank]])
+            percentage_of_overbinned_bps = length_overbinned_seqs / (all_bins_length + length_overbinned_seqs)
+
+    return precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps, percentage_of_overbinned_bps, misclassification_rate
 
 
 def compute_percentage_of_assigned_seqs(gold_standard, query):
     percentage_of_assigned_seqs = {}
+    percentage_of_overbinned_seqs = {}
     if isinstance(query, binning_classes.GenomeQuery):
         num_seqs = len(query.get_sequence_ids())
         gs_num_seqs = len(gold_standard.genome_query.get_sequence_ids())
@@ -88,8 +95,11 @@ def compute_percentage_of_assigned_seqs(gold_standard, query):
         for bin in query.bins:
             num_seqs[bin.rank] += len(bin.sequence_ids)
         for rank in num_seqs.keys():
-            percentage_of_assigned_seqs[rank] = num_seqs[rank] / gs_num_seqs[rank]
-    return percentage_of_assigned_seqs
+            percentage_of_assigned_seqs[rank] = float(num_seqs[rank]) / float(gs_num_seqs[rank])
+        for rank in query.rank_to_overbinned_seqs.keys():
+            if rank in num_seqs:
+                percentage_of_overbinned_seqs[rank] = float(len(query.rank_to_overbinned_seqs[rank])) / float(num_seqs[rank] + len(query.rank_to_overbinned_seqs[rank]))
+    return percentage_of_assigned_seqs, percentage_of_overbinned_seqs
 
 
 def evaluate_all(gold_standard,
@@ -106,7 +116,7 @@ def evaluate_all(gold_standard,
     pd_bins_all = pd.DataFrame()
     df_summary = pd.DataFrame()
     for query in queries_list:
-        percentage_of_assigned_seqs = compute_percentage_of_assigned_seqs(gold_standard, query)
+        percentage_of_assigned_seqs, percentage_of_overbinned_seqs = compute_percentage_of_assigned_seqs(gold_standard, query)
 
         # Compute metrics per bin
         query.compute_true_positives(gold_standard)
@@ -136,8 +146,8 @@ def evaluate_all(gold_standard,
             sem_recall = recall_rows.sem()
             std_recall = recall_rows.std()
 
-            precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps, misclassification_rate = compute_metrics_per_bp(
-                gs_pd_bins_rank, pd_bins_rank, query)
+            precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps, percentage_of_overbinned_bps, misclassification_rate = compute_metrics_per_bp(
+                rank, gs_pd_bins_rank, pd_bins_rank, query)
 
             bin_ids = pd_bins_rank['id'][pd_bins_rank['id'].notnull()].tolist()
             ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq = rand_index.compute_metrics(bin_ids, query, gold_standard)
@@ -158,6 +168,8 @@ def evaluate_all(gold_standard,
                                            (utils_labels.ACCURACY, [accuracy]),
                                            (utils_labels.PERCENTAGE_ASSIGNED_BPS, [percentage_of_assigned_bps]),
                                            (utils_labels.PERCENTAGE_ASSIGNED_SEQS, [percentage_of_assigned_seqs[rank]]),
+                                           (utils_labels.PERCENTAGE_OVERBINNED_BPS, [percentage_of_overbinned_bps]),
+                                           (utils_labels.PERCENTAGE_OVERBINNED_SEQS, [percentage_of_overbinned_seqs[rank] if rank in percentage_of_overbinned_seqs else .0]),
                                            (utils_labels.RI_BY_BP, [ri_by_bp]),
                                            (utils_labels.RI_BY_SEQ, [ri_by_seq]),
                                            (utils_labels.ARI_BY_BP, [ari_by_bp]),

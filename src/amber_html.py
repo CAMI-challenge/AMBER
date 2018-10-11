@@ -160,7 +160,7 @@ def get_colors_and_ranges(name):
     hue1 = 12
     hue2 = 240
 
-    if name == upper1(utils_labels.MISCLASSIFICATION):
+    if name == upper1(utils_labels.MISCLASSIFICATION) or name == upper1(utils_labels.PERCENTAGE_OVERBINNED_SEQS) or name == upper1(utils_labels.PERCENTAGE_OVERBINNED_BPS):
         return color2, color1, hue2, hue1, 0, 1
     return color1, color2, hue1, hue2, 0, 1
 
@@ -290,7 +290,7 @@ def create_heatmap_div():
     return  heatmap_legend_div
 
 
-def create_table_html(df_summary):
+def create_table_html(df_summary, is_genome):
     metrics1 = [utils_labels.AVG_PRECISION,
                 utils_labels.AVG_PRECISION_STD,
                 utils_labels.AVG_PRECISION_SEM,
@@ -305,8 +305,13 @@ def create_table_html(df_summary):
                 utils_labels.ARI_BY_BP,
                 utils_labels.PERCENTAGE_ASSIGNED_BPS,
                 utils_labels.PERCENTAGE_ASSIGNED_SEQS,
+                utils_labels.PERCENTAGE_OVERBINNED_BPS,
+                utils_labels.PERCENTAGE_OVERBINNED_SEQS,
                 utils_labels.ACCURACY,
                 utils_labels.MISCLASSIFICATION]
+    if is_genome:
+        metrics2.remove(utils_labels.PERCENTAGE_OVERBINNED_BPS)
+        metrics2.remove(utils_labels.PERCENTAGE_OVERBINNED_SEQS)
     all_metrics = [metrics1, metrics2]
     metrics1_label = 'Quality of bins: all bins have the same weight'
     metrics2_label = 'Quality for sample: quality weighted by bin sizes'
@@ -466,7 +471,7 @@ def create_genome_binning_html(gold_standard, df_summary, pd_bins):
     purity_completeness_bp_plot = create_precision_recall_figure(df_summary_g, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, None)
     all_genomes_plot = create_precision_recall_all_genomes_scatter(pd_bins, df_summary_g[utils_labels.TOOL].tolist())
 
-    genome_html = create_table_html(df_summary_g.rename(columns={'tool': 'Tool'}).set_index('Tool').T)
+    genome_html = create_table_html(df_summary_g.rename(columns={'tool': 'Tool'}).set_index('Tool').T, True)
     genome_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(genome_html), css_classes=['bk-width-auto'])
     metrics_row_g = column(column(create_heatmap_div(), genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(row(purity_completeness_plot, purity_completeness_bp_plot, all_genomes_plot), sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_row_g, title="Metrics")
@@ -498,7 +503,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
             continue
         pd_group = pd_groups_rank.get_group(rank)
         pd_rank = pd_group.rename(columns={'tool': 'Tool'}).set_index('Tool').T
-        rank_to_html[rank] = [create_table_html(pd_rank)]
+        rank_to_html[rank] = [create_table_html(pd_rank, False)]
         purity_completeness_plot = create_precision_recall_figure(pd_group, utils_labels.AVG_PRECISION, utils_labels.AVG_RECALL, rank)
         purity_completeness_bp_plot = create_precision_recall_figure(pd_group, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, rank)
         plots_list.append(row(purity_completeness_plot, purity_completeness_bp_plot))

@@ -131,6 +131,7 @@ class GenomeQuery(Query):
 class TaxonomicQuery(Query):
     tax_id_to_rank = None
     binning_type = 'taxonomic'
+    rank_to_overbinned_seqs = defaultdict(list)
 
     def __init__(self):
         super().__init__()

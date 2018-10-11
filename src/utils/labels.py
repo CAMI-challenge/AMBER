@@ -23,5 +23,9 @@ ARI_BY_SEQ = "adjusted Rand index by sequence counts"
 
 PERCENTAGE_ASSIGNED_BPS = "percentage of assigned bps"
 PERCENTAGE_ASSIGNED_SEQS = "percentage of assigned sequences"
+
+PERCENTAGE_OVERBINNED_BPS = "percentage of overbinned bps"
+PERCENTAGE_OVERBINNED_SEQS = "percentage of overbinned sequences"
+
 ACCURACY = "accuracy"
 MISCLASSIFICATION = "misclassification rate"
