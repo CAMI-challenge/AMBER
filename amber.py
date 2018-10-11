@@ -4,6 +4,7 @@ import argparse
 import os
 import errno
 import matplotlib
+import numpy as np
 from collections import OrderedDict
 from collections import defaultdict
 from version import __version__
@@ -71,11 +72,14 @@ def compute_metrics_per_bp(rank, gs_pd_bins_rank, pd_bins_rank, query):
     accuracy = float(true_positives_all_bins) / float(gs_length)
     percentage_of_assigned_bps = float(all_bins_length) / float(gs_length)
 
-    percentage_of_overbinned_bps = .0
     if isinstance(query, binning_classes.TaxonomicQuery):
         if rank in query.rank_to_overbinned_seqs:
             length_overbinned_seqs = sum([binning_classes.Bin.sequence_id_to_length[sequence_id] for sequence_id in query.rank_to_overbinned_seqs[rank]])
             percentage_of_overbinned_bps = length_overbinned_seqs / (all_bins_length + length_overbinned_seqs)
+        else:
+            percentage_of_overbinned_bps = .0
+    else:
+        percentage_of_overbinned_bps = np.nan
 
     return precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps, percentage_of_overbinned_bps, misclassification_rate
 
@@ -87,6 +91,7 @@ def compute_percentage_of_assigned_seqs(gold_standard, query):
         num_seqs = len(query.get_sequence_ids())
         gs_num_seqs = len(gold_standard.genome_query.get_sequence_ids())
         percentage_of_assigned_seqs['NA'] = num_seqs / gs_num_seqs
+        percentage_of_overbinned_seqs['NA'] = np.nan
     else:
         num_seqs = defaultdict(int)
         gs_num_seqs = defaultdict(int)
