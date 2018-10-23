@@ -1,23 +1,62 @@
 #!/usr/bin/env python
 
 import argparse
-import sys
 import os
+import gzip
+import mimetypes
+import sys
+from Bio import SeqIO
 
 try:
     import argparse_parents
-    import load_data
 except ImportError:
     sys.path.append(os.path.dirname(__file__))
     try:
         import argparse_parents
-        import load_data
     finally:
         sys.path.remove(os.path.dirname(__file__))
 
 
+def read_lengths_from_fastx_file(fastx_file):
+    """
+
+    @param fastx_file: file path
+    @type fastx_file: str
+    @rtype: dict[str, int]
+    """
+    file_type = mimetypes.guess_type(fastx_file)[1]
+    if file_type == 'gzip':
+        f = gzip.open(fastx_file, "rt")
+    elif not file_type:
+        f = open(fastx_file, "rt")
+    else:
+        raise RuntimeError("Unknown type of file: '{}".format(fastx_file))
+
+    length = {}
+    if os.path.getsize(fastx_file) == 0:
+        return length
+
+    file_format = None
+    line = f.readline()
+    if line.startswith('@'):
+        file_format = "fastq"
+    elif line.startswith(">"):
+        file_format = "fasta"
+    f.seek(0)
+
+    if not file_format:
+        raise RuntimeError("Invalid sequence file: '{}".format(fastx_file))
+
+    for seq_record in SeqIO.parse(f, file_format):
+        length[seq_record.id] = len(seq_record.seq)
+
+    f.close()
+
+    return length
+
+
 def add_column(mapping_file, fasta_file):
-    lengths = load_data.read_lengths_from_fastx_file(fasta_file)
+    lengths = read_lengths_from_fastx_file(fasta_file)
     sequence_id_column_index = 0
     with open(mapping_file, 'r') as read_handler:
         for line in read_handler:

@@ -57,9 +57,6 @@ class GenomeQuery(Query):
         super().__init__()
         self.__sequence_id_to_bin_id = {}
         self.__map_by_completeness = False
-        self.__filter_tail_percentage = .0
-        self.__filter_genomes_file = None
-        self.__filter_keyword = None
 
     @property
     def sequence_id_to_bin_id(self):
@@ -69,18 +66,6 @@ class GenomeQuery(Query):
     def map_by_completeness(self):
         return self.__map_by_completeness
 
-    @property
-    def filter_tail_percentage(self):
-        return self.__filter_tail_percentage
-
-    @property
-    def filter_genomes_file(self):
-        return self.__filter_genomes_file
-
-    @property
-    def filter_keyword(self):
-        return self.__filter_keyword
-
     @sequence_id_to_bin_id.setter
     def sequence_id_to_bin_id(self, sequence_id_bin_id):
         (sequence_id, bin_id) = sequence_id_bin_id
@@ -89,18 +74,6 @@ class GenomeQuery(Query):
     @map_by_completeness.setter
     def map_by_completeness(self, map_by_completeness):
         self.__map_by_completeness = map_by_completeness
-
-    @filter_tail_percentage.setter
-    def filter_tail_percentage(self, filter_tail_percentage):
-        self.__filter_tail_percentage = filter_tail_percentage
-
-    @filter_genomes_file.setter
-    def filter_genomes_file(self, filter_genomes_file):
-        self.__filter_genomes_file = filter_genomes_file
-
-    @filter_keyword.setter
-    def filter_keyword(self, filter_keyword):
-        self.__filter_keyword = filter_keyword
 
     def compute_true_positives(self, gold_standard):
         for bin in self.bins:
@@ -119,10 +92,10 @@ class GenomeQuery(Query):
                                      'true_positives': 0,
                                      'real_size': gs_bin.length})
 
-        if self.filter_tail_percentage:
-            filter_tail.filter_tail(bins_metrics, self.filter_tail_percentage)
-        if self.filter_genomes_file:
-            bins_metrics = exclude_genomes.filter_data(bins_metrics, self.filter_genomes_file, self.filter_keyword)
+        if gold_standard.filter_tail_percentage:
+            filter_tail.filter_tail(bins_metrics, gold_standard.filter_tail_percentage)
+        if gold_standard.filter_genomes_file:
+            bins_metrics = exclude_genomes.filter_data(bins_metrics, gold_standard.filter_genomes_file, gold_standard.filter_keyword)
 
         # sort bins by completeness
         return sorted(bins_metrics, key=lambda t: t['completeness'], reverse=True)
@@ -342,6 +315,9 @@ class GoldStandard:
     def __init__(self, genome_query, taxonomic_query):
         self.__genome_query = genome_query
         self.__taxonomic_query = taxonomic_query
+        self.__filter_tail_percentage = .0
+        self.__filter_genomes_file = None
+        self.__filter_keyword = None
 
     @property
     def genome_query(self):
@@ -351,6 +327,18 @@ class GoldStandard:
     def taxonomic_query(self):
         return self.__taxonomic_query
 
+    @property
+    def filter_tail_percentage(self):
+        return self.__filter_tail_percentage
+
+    @property
+    def filter_genomes_file(self):
+        return self.__filter_genomes_file
+
+    @property
+    def filter_keyword(self):
+        return self.__filter_keyword
+
     @genome_query.setter
     def genome_query(self, genome_query):
         self.__genome_query = genome_query
@@ -358,3 +346,15 @@ class GoldStandard:
     @taxonomic_query.setter
     def taxonomic_query(self, taxonomic_query):
         self.__taxonomic_query = taxonomic_query
+
+    @filter_tail_percentage.setter
+    def filter_tail_percentage(self, filter_tail_percentage):
+        self.__filter_tail_percentage = filter_tail_percentage
+
+    @filter_genomes_file.setter
+    def filter_genomes_file(self, filter_genomes_file):
+        self.__filter_genomes_file = filter_genomes_file
+
+    @filter_keyword.setter
+    def filter_keyword(self, filter_keyword):
+        self.__filter_keyword = filter_keyword

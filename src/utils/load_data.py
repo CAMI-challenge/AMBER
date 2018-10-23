@@ -1,24 +1,19 @@
 #!/usr/bin/env python
 
 import os
-import gzip
-import mimetypes
 import sys
-from Bio import SeqIO
 import numpy as np
 import traceback
-import inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
 from src import binning_classes
 
 try:
     import load_ncbi_taxinfo
+    import add_length_column
 except ImportError:
     sys.path.append(os.path.dirname(__file__))
     try:
         import load_ncbi_taxinfo
+        import add_length_column
     finally:
         sys.path.remove(os.path.dirname(__file__))
 
@@ -52,44 +47,6 @@ def load_tsv_table(stream):
         data.append({'mapped_genome': mapped_genome, 'precision': precision, 'recall': float(row_data[2]),
                      'predicted_size': predicted_size, 'correctly_predicted': correctly_predicted, 'real_size': real_size})
     return data
-
-
-def read_lengths_from_fastx_file(fastx_file):
-    """
-
-    @param fastx_file: file path
-    @type fastx_file: str
-    @rtype: dict[str, int]
-    """
-    file_type = mimetypes.guess_type(fastx_file)[1]
-    if file_type == 'gzip':
-        f = gzip.open(fastx_file, "rt")
-    elif not file_type:
-        f = open(fastx_file, "rt")
-    else:
-        raise RuntimeError("Unknown type of file: '{}".format(fastx_file))
-
-    length = {}
-    if os.path.getsize(fastx_file) == 0:
-        return length
-
-    file_format = None
-    line = f.readline()
-    if line.startswith('@'):
-        file_format = "fastq"
-    elif line.startswith(">"):
-        file_format = "fasta"
-    f.seek(0)
-
-    if not file_format:
-        raise RuntimeError("Invalid sequence file: '{}".format(fastx_file))
-
-    for seq_record in SeqIO.parse(f, file_format):
-        length[seq_record.id] = len(seq_record.seq)
-
-    f.close()
-
-    return length
 
 
 def get_genome_mapping_without_lenghts(mapping_file, remove_genomes_file=None, keyword=None):
@@ -261,7 +218,7 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
             if not is_length_column_available(read_handler):
                 if not fastx_file:
                     exit("Sequences length could not be determined. Please provide a FASTA or FASTQ file using option -f or add column _LENGTH to gold standard.")
-                binning_classes.Bin.sequence_id_to_length = read_lengths_from_fastx_file(fastx_file)
+                binning_classes.Bin.sequence_id_to_length = add_length_column.read_lengths_from_fastx_file(fastx_file)
 
         g_sequence_ids = {}
         t_sequence_ids = {}
@@ -301,12 +258,12 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                         else:
                             exit("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.")
 
-                    if not is_gs and sequence_id not in t_sequence_ids:
-                        print("Ignoring sequence {} - not found in the taxonomic binning gold standard: (file {})".format(sequence_id, file_path_query), file=sys.stderr)
-                        continue
-
                     if tax_id not in tax_id_to_rank:
                         print("Ignoring sequence {} - not a valid NCBI taxonomic ID: {} (file {})".format(sequence_id, tax_id, file_path_query), file=sys.stderr)
+                        continue
+
+                    if not is_gs and sequence_id not in t_sequence_ids:
+                        print("Ignoring sequence {} - not found in the taxonomic binning gold standard: (file {})".format(sequence_id, file_path_query), file=sys.stderr)
                         continue
 
                     tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank)
@@ -354,9 +311,14 @@ def load_queries(gold_standard_file, fastx_file, query_files, map_by_completenes
                                                   tax_id_to_parent, tax_id_to_rank,
                                                   None,
                                                   min_length)
-    g_gold_standard.filter_genomes_file = filter_genomes_file
-    g_gold_standard.filter_keyword = filter_keyword
+
     gold_standard = binning_classes.GoldStandard(g_gold_standard, t_gold_standard)
+    if filter_genomes_file:
+        gold_standard.filter_genomes_file = filter_genomes_file
+    if filter_keyword:
+        gold_standard.filter_keyword = filter_keyword
+    if filter_tail_percentage:
+        gold_standard.filter_tail_percentage = filter_tail_percentage
 
     queries_list = []
     for query_file, label in zip(query_files, labels):
@@ -369,9 +331,6 @@ def load_queries(gold_standard_file, fastx_file, query_files, map_by_completenes
         if g_query:
             g_query.label = label
             g_query.map_by_completeness = map_by_completeness
-            g_query.filter_tail_percentage = filter_tail_percentage
-            g_query.filter_genomes_file = filter_genomes_file
-            g_query.filter_keyword = filter_keyword
             queries_list.append(g_query)
         if t_query:
             t_query.label = label
