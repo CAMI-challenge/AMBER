@@ -385,48 +385,35 @@ def create_precision_recall_all_genomes_scatter(pd_bins, tools):
     return p
 
 
-def create_tax_figure(tool, df_summary):
+def create_tax_figure(tool, df_summary, metrics_list, errors_list):
     rank_indices = list(range(len(load_ncbi_taxinfo.RANKS)))
 
-    rank_to_precision = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
-    rank_to_precision_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
-    rank_to_recall = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
-    rank_to_recall_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
-    for index, row in df_summary.iterrows():
-        rank_to_precision[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION]) else row[utils_labels.AVG_PRECISION]
-        rank_to_precision_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION_SEM]) else row[utils_labels.AVG_PRECISION_SEM]
-        rank_to_recall[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL]) else row[utils_labels.AVG_RECALL]
-        rank_to_recall_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL_SEM]) else row[utils_labels.AVG_RECALL_SEM]
-
-    y_values1 = list(rank_to_precision.values())
-    y_values2 = list(rank_to_recall.values())
-    sem1 = list(rank_to_precision_error.values())
-    sem2 = list(rank_to_recall_error.values())
-    lower1 = np.subtract(y_values1, sem1).tolist()
-    lower2 = np.subtract(y_values2, sem2).tolist()
-    upper1 = np.add(y_values1, sem1).tolist()
-    upper2 = np.add(y_values2, sem2).tolist()
-
-    df = pd.DataFrame({'x': rank_indices, 'y1': y_values1, 'y2': y_values2, 'lower1': lower1, 'upper1': upper1, 'lower2': lower2, 'upper2': upper2})
+    df = df_summary.set_index("rank").loc[load_ncbi_taxinfo.RANKS]
+    df["x"] = rank_indices
+    for metric, error in zip(metrics_list, errors_list):
+        if error:
+            df[metric + "upper"] = df[metric] + df[error]
+            df[metric + "lower"] = df[metric] - df[error]
     source = ColumnDataSource(df.reset_index())
 
     p = figure(plot_width=500, plot_height=550, x_range=(0, 6), y_range=(0, 1))
-    pline1 = p.line(x='x', y='y1', line_color='#006cba', source=source, line_width=2)
-    pline2 = p.line(x='x', y='y2', line_color='#008000', source=source, line_width=2)
+    plines = []
+    line_colors = ["#006cba", "#008000", "#ba9e00"]
+    for metric, color in zip(metrics_list, line_colors):
+        plines.append([p.line(x='x', y=metric, line_color=color, source=source, line_width=2)])
+
     p.xaxis.ticker = FixedTicker(ticks=rank_indices)
     p.xaxis.formatter = FuncTickFormatter(code="""
         var mapping = {0: "superkingdom", 1: "phylum", 2: "class", 3: "order", 4: "family", 5: "genus", 6: "species"};
         return mapping[tick];
     """)
     p.xaxis.major_label_orientation = 1.2
-    band1 = Band(base='x', lower='lower1', upper='upper1', source=source, level='underlay',
-                fill_alpha=.3, line_width=1, line_color='black', fill_color='#006cba')
-    band2 = Band(base='x', lower='lower2', upper='upper2', source=source, level='underlay',
-                fill_alpha=.3, line_width=1, line_color='black', fill_color='#008000')
-    p.add_layout(band1)
-    p.add_layout(band2)
-    legend_it = [('Average purity', [pline1]), ('Average completeness', [pline2])]
-    legend = Legend(items=legend_it)
+
+    for metric, error, color in zip(metrics_list, errors_list, line_colors):
+        if error:
+            p.add_layout(Band(base='x', lower=metric + "lower", upper=metric + "upper", source=source, level='underlay',
+                              fill_alpha=.3, line_width=1, line_color='black', fill_color=color))
+    legend = Legend(items=list(zip(metrics_list, plines)))
     p.add_layout(legend, 'above')
 
     p.xgrid[0].grid_line_color=None
@@ -490,6 +477,27 @@ def create_genome_binning_html(gold_standard, df_summary, pd_bins):
     return tabs
 
 
+def create_plots_per_binner(df_summary_t):
+    tools = df_summary_t.tool.unique().tolist()
+
+    metrics_list = [utils_labels.AVG_PRECISION, utils_labels.AVG_RECALL]
+    errors_list = [utils_labels.AVG_PRECISION_SEM, utils_labels.AVG_RECALL_SEM]
+    tools_figures = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
+    tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures]
+    tools_column_unweighted = column(tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
+
+    metrics_list = [utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, utils_labels.ACCURACY]
+    errors_list = ["", "", ""]
+    tools_figures_weighted = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
+    tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures_weighted]
+    tools_column_weighted = column(tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
+
+    tools_unweighted_panel = Panel(child=tools_column_unweighted, title="Unweighted by bin sizes")
+    tools_weighted_panel = Panel(child=tools_column_weighted, title="Weighted by bin sizes")
+    tools_tabs = Tabs(tabs=[tools_unweighted_panel, tools_weighted_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
+    return tools_tabs
+
+
 def create_taxonomic_binning_html(df_summary, pd_bins):
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
     rank_to_html = {}
@@ -531,11 +539,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
                                         row(create_rankings_table(df_summary_t, True))]), title="Rankings")
 
-    tools = df_summary_t.tool.unique().tolist()
-    tools_figures = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool]) for tool in tools]
-    tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures]
-    tools_column = column(tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
-    tools_panel = Panel(child=tools_column, title="Plots per binner")
+    tools_panel = Panel(child=create_plots_per_binner(df_summary_t), title="Plots per binner")
 
     tabs = Tabs(tabs=[metrics_panel, metrics_bins_panel, rankings_panel, tools_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
 
