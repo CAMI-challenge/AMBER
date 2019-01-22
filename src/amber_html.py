@@ -297,7 +297,9 @@ def create_table_html(df_summary, is_genome):
                 utils_labels.AVG_RECALL,
                 utils_labels.AVG_RECALL_STD,
                 utils_labels.AVG_RECALL_SEM]
-    metrics2 = [utils_labels.AVG_PRECISION_PER_BP,
+    metrics2 = [utils_labels.ACCURACY,
+                utils_labels.MISCLASSIFICATION,
+                utils_labels.AVG_PRECISION_PER_BP,
                 utils_labels.AVG_RECALL_PER_BP,
                 utils_labels.RI_BY_SEQ,
                 utils_labels.ARI_BY_SEQ,
@@ -306,9 +308,7 @@ def create_table_html(df_summary, is_genome):
                 utils_labels.PERCENTAGE_ASSIGNED_BPS,
                 utils_labels.PERCENTAGE_ASSIGNED_SEQS,
                 utils_labels.PERCENTAGE_OVERBINNED_BPS,
-                utils_labels.PERCENTAGE_OVERBINNED_SEQS,
-                utils_labels.ACCURACY,
-                utils_labels.MISCLASSIFICATION]
+                utils_labels.PERCENTAGE_OVERBINNED_SEQS]
     if is_genome:
         metrics2.remove(utils_labels.PERCENTAGE_OVERBINNED_BPS)
         metrics2.remove(utils_labels.PERCENTAGE_OVERBINNED_SEQS)
