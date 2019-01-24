@@ -103,6 +103,7 @@ class GenomeQuery(Query):
 
 class TaxonomicQuery(Query):
     tax_id_to_rank = None
+    tax_id_to_name = None
     binning_type = 'taxonomic'
     rank_to_overbinned_seqs = defaultdict(list)
 
@@ -301,6 +302,7 @@ class TaxonomicBin(Bin):
     def get_metrics_dict(self, gold_standard):
         gold_standard_query = gold_standard.taxonomic_query
         return {'id': self.id,
+                'name': gold_standard_query.tax_id_to_name[self.id] if gold_standard_query.tax_id_to_name else np.nan,
                 'rank': gold_standard_query.tax_id_to_rank[self.id],
                 'mapping_id': self.id,
                 'purity': self.precision,

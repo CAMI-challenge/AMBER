@@ -1,8 +1,43 @@
 #!/usr/bin/env python
 
-RANKS = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
+RANKS = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain']
 DICT_RANK_TO_INDEX = dict(zip(RANKS, list(range(len(RANKS)))))
 RANKS_LOW2HIGH = list(reversed(RANKS))
+
+
+def load_names(tax_id_to_rank, names_file_path):
+    tax_id_to_name = {}
+    with open(names_file_path) as read_handler:
+        for line in read_handler:
+            if len(line.strip()) == 0:
+                continue
+            line = line.split('|')
+            line = list(map(str.strip, line))
+            tax_id = line[0]
+
+            if line[3] == "scientific name":
+                tax_id_to_name[tax_id] = line[1]
+            else:
+                continue
+
+            if tax_id_to_rank[tax_id] == "species" or tax_id_to_rank[tax_id] == "strain":
+                names = tax_id_to_name[tax_id].split(" ")
+                if len(names) > 2:
+                    if tax_id_to_rank[tax_id] == "strain":
+                        tax_id_to_name[tax_id] = "{} {} strain".format(names[0], names[1])
+                    else:
+                        tax_id_to_name[tax_id] = "{} {}".format(names[0], names[1])
+    tax_id_to_name[""] = ""
+    return tax_id_to_name
+
+
+def check_parent_is_species(tax_id_to_parent, tax_id_to_rank, tax_id):
+    if tax_id_to_parent[tax_id] in tax_id_to_parent:
+        if tax_id_to_rank[tax_id_to_parent[tax_id]] == "species":
+            return True
+        elif tax_id_to_parent[tax_id] != '1' and tax_id_to_rank[tax_id_to_parent[tax_id]] not in RANKS:
+            return check_parent_is_species(tax_id_to_parent, tax_id_to_rank, tax_id_to_parent[tax_id])
+    return False
 
 
 def load_tax_info(ncbi_nodes_file):
@@ -17,6 +52,10 @@ def load_tax_info(ncbi_nodes_file):
             tax_id = line[0]
             tax_id_to_parent[tax_id] = line[1]
             tax_id_to_rank[tax_id] = line[2]
+
+    for tax_id, rank in tax_id_to_rank.items():
+        if tax_id_to_rank[tax_id] == "no rank" and check_parent_is_species(tax_id_to_parent, tax_id_to_rank, tax_id):
+            tax_id_to_rank[tax_id] = "strain"
 
     return tax_id_to_parent, tax_id_to_rank
 

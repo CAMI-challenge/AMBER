@@ -396,7 +396,7 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
             df[metric + "lower"] = df[metric] - df[error]
     source = ColumnDataSource(df.reset_index())
 
-    p = figure(plot_width=500, plot_height=550, x_range=(0, 6), y_range=(0, 1))
+    p = figure(plot_width=500, plot_height=550, x_range=(0, 7), y_range=(0, 1))
     plines = []
     line_colors = ["#006cba", "#008000", "#ba9e00"]
     for metric, color in zip(metrics_list, line_colors):
@@ -404,7 +404,7 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
 
     p.xaxis.ticker = FixedTicker(ticks=rank_indices)
     p.xaxis.formatter = FuncTickFormatter(code="""
-        var mapping = {0: "superkingdom", 1: "phylum", 2: "class", 3: "order", 4: "family", 5: "genus", 6: "species"};
+        var mapping = {0: "superkingdom", 1: "phylum", 2: "class", 3: "order", 4: "family", 5: "genus", 6: "species", 7: "strain"};
         return mapping[tick];
     """)
     p.xaxis.major_label_orientation = 1.2
@@ -533,8 +533,11 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     metrics_column = column(column(select_rank, create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_column, title="Metrics")
 
-    bins_columns = OrderedDict([('id', 'Taxon ID'), ('rank', 'Taxonomic rank'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
-    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins[pd_bins['rank'] != 'NA'], bins_columns)
+    bins_columns = OrderedDict([('id', 'Taxon ID'), ('name', 'Scientific name'), ('rank', 'Taxonomic rank'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
+    tax_bins = pd_bins[pd_bins['rank'] != 'NA']
+    if tax_bins['name'].isnull().any():
+        del bins_columns['name']
+    metrics_bins_panel = create_metrics_per_bin_panel(tax_bins, bins_columns)
 
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
                                         row(create_rankings_table(df_summary_t, True))]), title="Rankings")

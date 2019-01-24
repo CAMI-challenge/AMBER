@@ -241,6 +241,7 @@ def main():
 
     group_t = parser.add_argument_group('taxonomic binning-specific arguments')
     group_t.add_argument('--ncbi_nodes_file', help="NCBI nodes file", required=False)
+    group_t.add_argument('--ncbi_names_file', help="NCBI names file", required=False)
 
     args = parser.parse_args()
 
@@ -261,6 +262,7 @@ def main():
                                                          args.remove_genomes,
                                                          args.keyword,
                                                          args.ncbi_nodes_file,
+                                                         args.ncbi_names_file,
                                                          args.min_length,
                                                          labels)
 

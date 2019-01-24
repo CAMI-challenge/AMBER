@@ -208,10 +208,11 @@ def update_tax_id_path(rank_to_overbinned_seqs, sequence_id, tax_id_path, tax_id
     return None
 
 
-def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_rank, gold_standard, min_length=0):
+def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_rank, tax_id_to_name, gold_standard, min_length=0):
     g_query = binning_classes.GenomeQuery()
     t_query = binning_classes.TaxonomicQuery()
     t_query.tax_id_to_rank = tax_id_to_rank
+    t_query.tax_id_to_name = tax_id_to_name
 
     with open(file_path_query) as read_handler:
         if is_gs and not binning_classes.Bin.sequence_id_to_length:
@@ -296,19 +297,23 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
 
 
 def load_queries(gold_standard_file, fastx_file, query_files, map_by_completeness, filter_tail_percentage,
-                 filter_genomes_file, filter_keyword, ncbi_nodes_file, min_length, labels):
+                 filter_genomes_file, filter_keyword, ncbi_nodes_file, ncbi_names_file, min_length, labels):
     if not min_length:
         min_length = 0
 
     if ncbi_nodes_file:
         tax_id_to_parent, tax_id_to_rank = load_ncbi_taxinfo.load_tax_info(ncbi_nodes_file)
+        if ncbi_names_file:
+            tax_id_to_name = load_ncbi_taxinfo.load_names(tax_id_to_rank, ncbi_names_file)
+        else:
+            tax_id_to_name = None
     else:
-        tax_id_to_parent = tax_id_to_rank = None
+        tax_id_to_parent = tax_id_to_rank = tax_id_to_name = None
 
     g_gold_standard, t_gold_standard = open_query(gold_standard_file,
                                                   True,
                                                   fastx_file,
-                                                  tax_id_to_parent, tax_id_to_rank,
+                                                  tax_id_to_parent, tax_id_to_rank, tax_id_to_name,
                                                   None,
                                                   min_length)
 
@@ -325,7 +330,7 @@ def load_queries(gold_standard_file, fastx_file, query_files, map_by_completenes
         g_query, t_query = open_query(query_file,
                                       False,
                                       None,
-                                      tax_id_to_parent, tax_id_to_rank,
+                                      tax_id_to_parent, tax_id_to_rank, tax_id_to_name,
                                       gold_standard,
                                       0)
         if g_query:
