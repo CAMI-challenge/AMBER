@@ -21,11 +21,11 @@ RI_BY_SEQ = "Rand index by sequence counts"
 ARI_BY_BP = "adjusted Rand index by bp counts"
 ARI_BY_SEQ = "adjusted Rand index by sequence counts"
 
-PERCENTAGE_ASSIGNED_BPS = "percentage of assigned bps"
-PERCENTAGE_ASSIGNED_SEQS = "percentage of assigned sequences"
+PERCENTAGE_ASSIGNED_BPS = "% assigned bps of known origin"
+PERCENTAGE_ASSIGNED_SEQS = "% assigned sequences of known origin"
 
-PERCENTAGE_OVERBINNED_BPS = "percentage of overbinned bps"
-PERCENTAGE_OVERBINNED_SEQS = "percentage of overbinned sequences"
+PERCENTAGE_ASSIGNED_BPS_UNKNOWN = "% assigned bps of unknown origin"
+PERCENTAGE_ASSIGNED_SEQS_UNKNOWN = "% assigned sequences of unknown origin"
 
 ACCURACY = "accuracy"
 MISCLASSIFICATION = "misclassification rate"

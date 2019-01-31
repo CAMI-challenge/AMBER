@@ -160,7 +160,7 @@ def get_colors_and_ranges(name):
     hue1 = 12
     hue2 = 240
 
-    if name == upper1(utils_labels.MISCLASSIFICATION) or name == upper1(utils_labels.PERCENTAGE_OVERBINNED_SEQS) or name == upper1(utils_labels.PERCENTAGE_OVERBINNED_BPS):
+    if name == upper1(utils_labels.MISCLASSIFICATION) or name == upper1(utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN) or name == upper1(utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN):
         return color2, color1, hue2, hue1, 0, 1
     return color1, color2, hue1, hue2, 0, 1
 
@@ -307,11 +307,11 @@ def create_table_html(df_summary, is_genome):
                 utils_labels.ARI_BY_BP,
                 utils_labels.PERCENTAGE_ASSIGNED_BPS,
                 utils_labels.PERCENTAGE_ASSIGNED_SEQS,
-                utils_labels.PERCENTAGE_OVERBINNED_BPS,
-                utils_labels.PERCENTAGE_OVERBINNED_SEQS]
+                utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN,
+                utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN]
     if is_genome:
-        metrics2.remove(utils_labels.PERCENTAGE_OVERBINNED_BPS)
-        metrics2.remove(utils_labels.PERCENTAGE_OVERBINNED_SEQS)
+        metrics2.remove(utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN)
+        metrics2.remove(utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN)
     all_metrics = [metrics1, metrics2]
     metrics1_label = 'Quality of bins: all bins have the same weight'
     metrics2_label = 'Quality for sample: quality weighted by bin sizes'

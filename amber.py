@@ -75,7 +75,7 @@ def compute_metrics_per_bp(rank, gs_pd_bins_rank, pd_bins_rank, query):
     if isinstance(query, binning_classes.TaxonomicQuery):
         if rank in query.rank_to_overbinned_seqs:
             length_overbinned_seqs = sum([binning_classes.Bin.sequence_id_to_length[sequence_id] for sequence_id in query.rank_to_overbinned_seqs[rank]])
-            percentage_of_overbinned_bps = length_overbinned_seqs / (all_bins_length + length_overbinned_seqs)
+            percentage_of_overbinned_bps = length_overbinned_seqs / float(gs_length)
         else:
             percentage_of_overbinned_bps = .0
     else:
@@ -103,7 +103,7 @@ def compute_percentage_of_assigned_seqs(gold_standard, query):
             percentage_of_assigned_seqs[rank] = float(num_seqs[rank]) / float(gs_num_seqs[rank])
         for rank in query.rank_to_overbinned_seqs.keys():
             if rank in num_seqs:
-                percentage_of_overbinned_seqs[rank] = float(len(query.rank_to_overbinned_seqs[rank])) / float(num_seqs[rank] + len(query.rank_to_overbinned_seqs[rank]))
+                percentage_of_overbinned_seqs[rank] = float(len(query.rank_to_overbinned_seqs[rank])) / float(gs_num_seqs[rank])
     return percentage_of_assigned_seqs, percentage_of_overbinned_seqs
 
 
@@ -173,8 +173,8 @@ def evaluate_all(gold_standard,
                                            (utils_labels.ACCURACY, [accuracy]),
                                            (utils_labels.PERCENTAGE_ASSIGNED_BPS, [percentage_of_assigned_bps]),
                                            (utils_labels.PERCENTAGE_ASSIGNED_SEQS, [percentage_of_assigned_seqs[rank]]),
-                                           (utils_labels.PERCENTAGE_OVERBINNED_BPS, [percentage_of_overbinned_bps]),
-                                           (utils_labels.PERCENTAGE_OVERBINNED_SEQS, [percentage_of_overbinned_seqs[rank] if rank in percentage_of_overbinned_seqs else .0]),
+                                           (utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN, [percentage_of_overbinned_bps]),
+                                           (utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN, [percentage_of_overbinned_seqs[rank] if rank in percentage_of_overbinned_seqs else .0]),
                                            (utils_labels.RI_BY_BP, [ri_by_bp]),
                                            (utils_labels.RI_BY_SEQ, [ri_by_seq]),
                                            (utils_labels.ARI_BY_BP, [ari_by_bp]),
@@ -221,7 +221,7 @@ def plot_taxonomic_binning(df_summary, output_dir):
         plots.plot_adjusted_rand_index_vs_assigned_bps(pd_group, output_dir, rank)
 
 
-def main():
+def main(args=None, tax_id_to_parent=None, tax_id_to_rank=None, tax_id_to_name=None):
     parser = argparse.ArgumentParser(description="AMBER: Assessment of Metagenome BinnERs",
                                      parents=[argparse_parents.PARSER_MULTI2], prog='AMBER')
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
@@ -243,7 +243,7 @@ def main():
     group_t.add_argument('--ncbi_nodes_file', help="NCBI nodes file", required=False)
     group_t.add_argument('--ncbi_names_file', help="NCBI names file", required=False)
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     min_completeness = None
     max_contamination = None
@@ -254,6 +254,9 @@ def main():
 
     labels = get_labels(args.labels, args.bin_files)
 
+    if not tax_id_to_parent:
+        tax_id_to_parent, tax_id_to_rank, tax_id_to_name = load_data.load_ncbi_info(args.ncbi_nodes_file,
+                                                                                    args.ncbi_names_file,)
     gold_standard, queries_list = load_data.load_queries(args.gold_standard_file,
                                                          args.fasta_file,
                                                          args.bin_files,
@@ -261,8 +264,9 @@ def main():
                                                          args.filter,
                                                          args.remove_genomes,
                                                          args.keyword,
-                                                         args.ncbi_nodes_file,
-                                                         args.ncbi_names_file,
+                                                         tax_id_to_parent,
+                                                         tax_id_to_rank,
+                                                         tax_id_to_name,
                                                          args.min_length,
                                                          labels)
 
