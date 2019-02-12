@@ -188,7 +188,7 @@ def plot_summary(df_results, output_dir, rank, plot_type, file_name, xlabel, yla
 
     if plot_type == 'e':
         for i, (tool, pd_summary) in enumerate(df_groups):
-            axs.errorbar(float(pd_summary[utils_labels.AVG_PRECISION].iloc[0]), float(pd_summary[utils_labels.AVG_RECALL].iloc[0]), xerr=float(pd_summary[utils_labels.AVG_PRECISION_SEM].iloc[0]), yerr=float(pd_summary[utils_labels.AVG_RECALL_SEM].iloc[0]),
+            axs.errorbar(float(pd_summary[utils_labels.AVG_PRECISION_BP].iloc[0]), float(pd_summary[utils_labels.AVG_RECALL_BP].iloc[0]), xerr=float(pd_summary[utils_labels.AVG_PRECISION_BP_SEM].iloc[0]), yerr=float(pd_summary[utils_labels.AVG_RECALL_BP_SEM].iloc[0]),
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
@@ -277,10 +277,10 @@ def plot_taxonomic_results(df_summary, output_dir):
         rank_to_recall = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
         rank_to_recall_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
         for index, row in pd_results.iterrows():
-            rank_to_precision[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION]) else row[utils_labels.AVG_PRECISION]
-            rank_to_precision_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION_SEM]) else row[utils_labels.AVG_PRECISION_SEM]
-            rank_to_recall[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL]) else row[utils_labels.AVG_RECALL]
-            rank_to_recall_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL_SEM]) else row[utils_labels.AVG_RECALL_SEM]
+            rank_to_precision[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION_BP]) else row[utils_labels.AVG_PRECISION_BP]
+            rank_to_precision_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION_BP_SEM]) else row[utils_labels.AVG_PRECISION_BP_SEM]
+            rank_to_recall[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL_BP]) else row[utils_labels.AVG_RECALL_BP]
+            rank_to_recall_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL_BP_SEM]) else row[utils_labels.AVG_RECALL_BP_SEM]
 
         y_values1 = list(rank_to_precision.values())
         y_values2 = list(rank_to_recall.values())
@@ -305,7 +305,7 @@ def plot_taxonomic_results(df_summary, output_dir):
         vals = axs.get_yticks()
         axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
 
-        lgd = plt.legend([utils_labels.AVG_PRECISION[0:].capitalize(), utils_labels.AVG_RECALL[0:].capitalize()], loc=1, borderaxespad=0., handlelength=2, frameon=False)
+        lgd = plt.legend([utils_labels.AVG_PRECISION_BP[0:].capitalize(), utils_labels.AVG_RECALL_BP[0:].capitalize()], loc=1, borderaxespad=0., handlelength=2, frameon=False)
 
         plt.tight_layout()
         fig.savefig(os.path.join(output_dir, 'taxonomic', tool, 'avg_precision_recall.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')

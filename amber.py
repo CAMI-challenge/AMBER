@@ -47,29 +47,43 @@ def get_labels(labels, bin_files):
     return tool_id
 
 
-def compute_metrics_per_bp(rank, gs_pd_bins_rank, pd_bins_rank, query):
-    true_positives_all_bins = pd_bins_rank['true_positives'].sum()
-    all_bins_length = pd_bins_rank['predicted_size'].sum()
-    all_bins_false_positives = all_bins_length - true_positives_all_bins
-    precision_by_bp = float(true_positives_all_bins) / float(all_bins_length)
-    misclassification_rate = all_bins_false_positives / float(all_bins_length)
+def compute_metrics_over_bins(rank, gs_pd_bins_rank, pd_bins_rank, query):
+    true_positive_bps_all_bins = pd_bins_rank['true_positive_bps'].sum()
+    true_positive_seqs_all_bins = pd_bins_rank['true_positive_seqs'].sum()
 
-    true_positives_recall = 0
+    all_bins_length = pd_bins_rank['predicted_size'].sum()
+    all_bins_num_seqs = pd_bins_rank['predicted_num_seqs'].sum()
+    all_bins_false_positive_bps = all_bins_length - true_positive_bps_all_bins
+    all_bins_false_positive_seqs = all_bins_num_seqs - true_positive_seqs_all_bins
+
+    precision_bp = float(true_positive_bps_all_bins) / float(all_bins_length)
+    precision_seq = float(true_positive_seqs_all_bins) / float(all_bins_num_seqs)
+    misclassification_rate_bp = all_bins_false_positive_bps / float(all_bins_length)
+    misclassification_rate_seq = all_bins_false_positive_seqs / float(all_bins_num_seqs)
+
+    true_positives_recall_bp = 0
+    true_positives_recall_seq = 0
     for i in gs_pd_bins_rank.index:
         mapping_id = gs_pd_bins_rank.at[i, 'mapping_id']
         bin_assigns = []
+        bin_assigns_seqs = []
         for i2 in pd_bins_rank.index:
             bin_id = pd_bins_rank.at[i2, 'id']
             if bin_id:
                 bin = query.get_bin_by_id(bin_id)
                 if mapping_id in bin.mapping_id_to_length:
                     bin_assigns.append(bin.mapping_id_to_length[mapping_id])
+                    bin_assigns_seqs.append(bin.mapping_id_to_num_seqs[mapping_id])
         if len(bin_assigns) > 0:
-            true_positives_recall += max(bin_assigns)
+            true_positives_recall_bp += max(bin_assigns)
+            true_positives_recall_seq += max(bin_assigns_seqs)
 
-    gs_length = gs_pd_bins_rank['real_size'].sum()
-    recall_by_bp = float(true_positives_recall) / float(gs_length)
-    accuracy = float(true_positives_all_bins) / float(gs_length)
+    gs_length = gs_pd_bins_rank['true_size'].sum()
+    gs_num_seqs = gs_pd_bins_rank['true_size'].sum()
+    recall_bp = float(true_positives_recall_bp) / float(gs_length)
+    recall_seq = float(true_positives_recall_seq) / float(gs_num_seqs)
+    accuracy_bp = float(true_positive_bps_all_bins) / float(gs_length)
+    accuracy_seq = float(true_positive_seqs_all_bins) / float(gs_num_seqs)
     percentage_of_assigned_bps = float(all_bins_length) / float(gs_length)
 
     if isinstance(query, binning_classes.TaxonomicQuery):
@@ -81,7 +95,9 @@ def compute_metrics_per_bp(rank, gs_pd_bins_rank, pd_bins_rank, query):
     else:
         percentage_of_overbinned_bps = np.nan
 
-    return precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps, percentage_of_overbinned_bps, misclassification_rate
+    return precision_bp, recall_bp, accuracy_bp, misclassification_rate_bp,\
+           precision_seq, recall_seq, accuracy_seq, misclassification_rate_seq,\
+           percentage_of_assigned_bps, percentage_of_overbinned_bps
 
 
 def compute_percentage_of_assigned_seqs(gold_standard, query):
@@ -141,17 +157,24 @@ def evaluate_all(gold_standard,
         # Compute metrics over bins
         for rank, pd_bins_rank in pd_bins.groupby('rank'):
             gs_pd_bins_rank = gs_pd_bins[gs_pd_bins['rank'] == rank]
-            precision_rows = pd_bins_rank[pd_bins_rank['purity'].notnull()]['purity']
-            recall_rows = pd_bins_rank[pd_bins_rank['real_size'] > 0]['completeness']
+            precision_bp_rows = pd_bins_rank[pd_bins_rank['purity_bp'].notnull()]['purity_bp']
+            precision_seq_rows = pd_bins_rank[pd_bins_rank['purity_seq'].notnull()]['purity_seq']
+            recall_bp_rows = pd_bins_rank[pd_bins_rank['true_size'] > 0]['completeness_bp']
+            recall_seq_rows = pd_bins_rank[pd_bins_rank['true_size'] > 0]['completeness_seq']
 
-            avg_precision = precision_rows.mean()
-            sem_precision = precision_rows.sem()
-            std_precision = precision_rows.std()
-            avg_recall = recall_rows.mean()
-            sem_recall = recall_rows.sem()
-            std_recall = recall_rows.std()
+            avg_precision_bp = precision_bp_rows.mean()
+            sem_precision_bp = precision_bp_rows.sem()
+            avg_recall_bp = recall_bp_rows.mean()
+            sem_recall_bp = recall_bp_rows.sem()
 
-            precision_by_bp, recall_by_bp, accuracy, percentage_of_assigned_bps, percentage_of_overbinned_bps, misclassification_rate = compute_metrics_per_bp(
+            avg_precision_seq = precision_seq_rows.mean()
+            sem_precision_seq = precision_seq_rows.sem()
+            avg_recall_seq = recall_seq_rows.mean()
+            sem_recall_seq = recall_seq_rows.sem()
+
+            precision_bp, recall_bp, accuracy_bp, misclassification_rate_bp,\
+                precision_seq, recall_seq, accuracy_seq, misclassification_rate_seq,\
+                percentage_of_assigned_bps, percentage_of_overbinned_bps = compute_metrics_over_bins(
                 rank, gs_pd_bins_rank, pd_bins_rank, query)
 
             bin_ids = pd_bins_rank['id'][pd_bins_rank['id'].notnull()].tolist()
@@ -162,15 +185,25 @@ def evaluate_all(gold_standard,
             df = pd.DataFrame(OrderedDict([(utils_labels.TOOL, query.label),
                                            (utils_labels.BINNING_TYPE, query.binning_type),
                                            (utils_labels.RANK, rank),
-                                           (utils_labels.AVG_PRECISION, [avg_precision]),
-                                           (utils_labels.AVG_PRECISION_STD, [std_precision]),
-                                           (utils_labels.AVG_PRECISION_SEM, [sem_precision]),
-                                           (utils_labels.AVG_RECALL, [avg_recall]),
-                                           (utils_labels.AVG_RECALL_STD, [std_recall]),
-                                           (utils_labels.AVG_RECALL_SEM, [sem_recall]),
-                                           (utils_labels.AVG_PRECISION_PER_BP, [precision_by_bp]),
-                                           (utils_labels.AVG_RECALL_PER_BP, [recall_by_bp]),
-                                           (utils_labels.ACCURACY, [accuracy]),
+                                           (utils_labels.AVG_PRECISION_BP, [avg_precision_bp]),
+                                           (utils_labels.AVG_PRECISION_BP_SEM, [sem_precision_bp]),
+                                           (utils_labels.AVG_RECALL_BP, [avg_recall_bp]),
+                                           (utils_labels.AVG_RECALL_BP_SEM, [sem_recall_bp]),
+
+                                           (utils_labels.AVG_PRECISION_SEQ, [avg_precision_seq]),
+                                           (utils_labels.AVG_PRECISION_SEQ_SEM, [sem_precision_seq]),
+                                           (utils_labels.AVG_RECALL_SEQ, [avg_recall_seq]),
+                                           (utils_labels.AVG_RECALL_SEQ_SEM, [sem_recall_seq]),
+
+                                           (utils_labels.AVG_PRECISION_PER_BP, [precision_bp]),
+                                           (utils_labels.AVG_PRECISION_PER_SEQ, [precision_seq]),
+
+                                           (utils_labels.AVG_RECALL_PER_BP, [recall_bp]),
+                                           (utils_labels.AVG_RECALL_PER_SEQ, [recall_seq]),
+
+                                           (utils_labels.ACCURACY_PER_BP, [accuracy_bp]),
+                                           (utils_labels.ACCURACY_PER_SEQ, [accuracy_seq]),
+
                                            (utils_labels.PERCENTAGE_ASSIGNED_BPS, [percentage_of_assigned_bps]),
                                            (utils_labels.PERCENTAGE_ASSIGNED_SEQS, [percentage_of_assigned_seqs[rank]]),
                                            (utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN, [percentage_of_overbinned_bps]),
@@ -179,7 +212,10 @@ def evaluate_all(gold_standard,
                                            (utils_labels.RI_BY_SEQ, [ri_by_seq]),
                                            (utils_labels.ARI_BY_BP, [ari_by_bp]),
                                            (utils_labels.ARI_BY_SEQ, [ari_by_seq]),
-                                           (utils_labels.MISCLASSIFICATION, [misclassification_rate])]))
+
+                                           (utils_labels.MISCLASSIFICATION_PER_BP, [misclassification_rate_bp]),
+                                           (utils_labels.MISCLASSIFICATION_PER_SEQ, [misclassification_rate_seq])]))
+
             df_genome_recovery = pd.DataFrame.from_dict(genome_recovery_val, orient='index').T
             df = df.join(df_genome_recovery)
             df_summary = pd.concat([df_summary, df], ignore_index=True)
@@ -286,13 +322,13 @@ def main(args=None, tax_id_to_parent=None, tax_id_to_rank=None, tax_id_to_name=N
 
     pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
     for tool, pd_group in pd_bins_g.groupby(utils_labels.TOOL):
-        columns = ['id', 'mapping_id', 'purity', 'completeness', 'predicted_size', 'true_positives', 'real_size']
+        columns = ['id', 'mapping_id', 'purity', 'completeness', 'predicted_size', 'true_positives', 'true_size']
         table = pd_group[columns].rename(columns={'id': 'bin_id', 'mapping_id': 'mapped_genome'})
         table.to_csv(os.path.join(output_dir, 'genome', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
 
     pd_bins_t = pd_bins[pd_bins['rank'] != 'NA']
     for tool, pd_group in pd_bins_t.groupby(utils_labels.TOOL):
-        columns = ['id', 'rank', 'purity', 'completeness', 'predicted_size', 'true_positives', 'real_size']
+        columns = ['id', 'rank', 'purity_bp', 'completeness_bp', 'predicted_size', 'true_positive_bps', 'true_size']
         table = pd_group[columns].rename(columns={'id': 'tax_id'})
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
 

@@ -24,12 +24,12 @@ def calc_table(pd_bins_rank, min_completeness, max_contamination):
 
     genome_recovery = np.zeros((len(max_contamination), len(min_completeness)), dtype=int)
     for row in pd_bins_rank.itertuples():
-        if np.isnan(row.purity):
+        if np.isnan(row.purity_bp):
             continue
-        contamination = 1 - row.purity
+        contamination = 1 - row.purity_bp
         for i in range(len(max_contamination)):
             for j in range(len(min_completeness)):
-                if row.completeness > min_completeness[j] and contamination < max_contamination[i]:
+                if row.completeness_bp > min_completeness[j] and contamination < max_contamination[i]:
                     genome_recovery[i][j] += 1
     return genome_recovery
 

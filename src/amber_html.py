@@ -160,7 +160,7 @@ def get_colors_and_ranges(name):
     hue1 = 12
     hue2 = 240
 
-    if name == upper1(utils_labels.MISCLASSIFICATION) or name == upper1(utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN) or name == upper1(utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN):
+    if name == upper1(utils_labels.MISCLASSIFICATION_PER_BP) or name == upper1(utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN) or name == upper1(utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN):
         return color2, color1, hue2, hue1, 0, 1
     return color1, color2, hue1, hue2, 0, 1
 
@@ -169,8 +169,8 @@ def get_heatmap_colors(pd_series, **args):
     values = pd_series.tolist()
     notnan_values = [x for x in values if isinstance(x, (float, int)) and not np.isnan(x)]
 
-    if pd_series.name == upper1(utils_labels.AVG_PRECISION_SEM) or pd_series.name == upper1(utils_labels.AVG_PRECISION_STD) or\
-        pd_series.name == upper1(utils_labels.AVG_RECALL_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_STD):
+    if pd_series.name == upper1(utils_labels.AVG_PRECISION_BP_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_BP_SEM) or\
+        pd_series.name == upper1(utils_labels.AVG_PRECISION_SEQ_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM):
         return ['background-color: white' for x in values]
 
     color1, color2, hue1, hue2, min_value, max_value = get_colors_and_ranges(pd_series.name)
@@ -291,16 +291,22 @@ def create_heatmap_div():
 
 
 def create_table_html(df_summary, is_genome):
-    metrics1 = [utils_labels.AVG_PRECISION,
-                utils_labels.AVG_PRECISION_STD,
-                utils_labels.AVG_PRECISION_SEM,
-                utils_labels.AVG_RECALL,
-                utils_labels.AVG_RECALL_STD,
-                utils_labels.AVG_RECALL_SEM]
-    metrics2 = [utils_labels.ACCURACY,
-                utils_labels.MISCLASSIFICATION,
+    metrics1 = [utils_labels.AVG_PRECISION_BP,
+                utils_labels.AVG_PRECISION_SEQ,
+                utils_labels.AVG_RECALL_BP,
+                utils_labels.AVG_RECALL_SEQ,
+                utils_labels.AVG_PRECISION_BP_SEM,
+                utils_labels.AVG_PRECISION_SEQ_SEM,
+                utils_labels.AVG_RECALL_BP_SEM,
+                utils_labels.AVG_RECALL_SEQ_SEM]
+    metrics2 = [utils_labels.ACCURACY_PER_BP,
+                utils_labels.ACCURACY_PER_SEQ,
+                utils_labels.MISCLASSIFICATION_PER_BP,
+                utils_labels.MISCLASSIFICATION_PER_SEQ,
                 utils_labels.AVG_PRECISION_PER_BP,
+                utils_labels.AVG_PRECISION_PER_SEQ,
                 utils_labels.AVG_RECALL_PER_BP,
+                utils_labels.AVG_RECALL_PER_SEQ,
                 utils_labels.RI_BY_SEQ,
                 utils_labels.ARI_BY_SEQ,
                 utils_labels.RI_BY_BP,
@@ -324,6 +330,27 @@ def create_table_html(df_summary, is_genome):
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
     styles_hidden_thead = styles + [{'selector': 'thead', 'props': [('display', 'none')]}]
 
+    d = {utils_labels.ACCURACY_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ACCURACY_PER_BP, utils_labels.ACCURACY_PER_BP, utils_labels.ACCURACY_PER_BP),
+         utils_labels.MISCLASSIFICATION_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.MISCLASSIFICATION_PER_BP),
+         utils_labels.AVG_PRECISION_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_PRECISION_PER_BP),
+         utils_labels.AVG_RECALL_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_PER_BP, utils_labels.AVG_RECALL_PER_BP, utils_labels.AVG_RECALL_PER_BP),
+         utils_labels.RI_BY_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RI_BY_SEQ, utils_labels.RI_BY_SEQ, utils_labels.RI_BY_SEQ),
+         utils_labels.ARI_BY_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ARI_BY_SEQ, utils_labels.ARI_BY_SEQ, utils_labels.ARI_BY_SEQ),
+         utils_labels.RI_BY_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RI_BY_BP, utils_labels.RI_BY_BP, utils_labels.RI_BY_BP),
+         utils_labels.ARI_BY_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ARI_BY_BP, utils_labels.ARI_BY_BP, utils_labels.ARI_BY_BP),
+         utils_labels.PERCENTAGE_ASSIGNED_BPS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.PERCENTAGE_ASSIGNED_BPS),
+         utils_labels.PERCENTAGE_ASSIGNED_SEQS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.PERCENTAGE_ASSIGNED_SEQS),
+         utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN, utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN, utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN),
+         utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN, utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN, utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN),
+         utils_labels.AVG_PRECISION_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_BP, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_PRECISION_BP),
+         utils_labels.AVG_PRECISION_BP_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_PRECISION_BP_SEM),
+         utils_labels.AVG_RECALL_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_RECALL_BP),
+         utils_labels.AVG_RECALL_BP_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_RECALL_BP_SEM)}
+    pattern = re.compile('|'.join(map(re.escape, d)))
+
+    def translate(match):
+        return d[match.group(0)]
+
     df_summary.index.name = None
 
     html = ''
@@ -331,7 +358,6 @@ def create_table_html(df_summary, is_genome):
     for metrics, metrics_label in zip(all_metrics, all_metrics_labels):
         html += '<p style="margin-bottom: auto"><b>{}</b></p>'.format(metrics_label)
         df_metrics = df_summary.loc[metrics]
-        df_metrics.index = [x[:1].upper() + x[1:] for x in df_metrics.index.values]
         sorted_columns = df_metrics.columns.tolist()
         df_metrics = df_metrics.loc[:, sorted_columns].fillna(0)
 
@@ -341,6 +367,7 @@ def create_table_html(df_summary, is_genome):
         else:
             this_style = styles_hidden_thead
         html += df_metrics.style.apply(get_heatmap_colors, df_metrics=df_metrics, axis=1).set_precision(3).set_table_styles(this_style).render()
+    html = pattern.sub(translate, html)
 
     return '<div style="margin-bottom:10pt;">{}</div>'.format(html)
 
@@ -376,7 +403,7 @@ def create_precision_recall_all_genomes_scatter(pd_bins, tools):
     legend_it = []
     for color, tool in zip(bokeh_colors, tools):
         source = ColumnDataSource(data=pd_genome_bins[pd_genome_bins[utils_labels.TOOL] == tool])
-        pcircle = p.circle('purity', 'completeness', color=color, alpha=0.8, source=source)
+        pcircle = p.circle('purity_bp', 'completeness_bp', color=color, alpha=0.8, source=source)
         legend_it.append((tool, [pcircle]))
     p.add_layout(Legend(items=legend_it), 'right')
     p.xaxis.axis_label = 'Purity per bin'
@@ -424,14 +451,14 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
 
 def create_rankings_table(df_summary, show_rank=False):
     columns= [utils_labels.TOOL,
-              utils_labels.AVG_PRECISION,
-              utils_labels.AVG_RECALL,
+              utils_labels.AVG_PRECISION_BP,
+              utils_labels.AVG_RECALL_BP,
               utils_labels.AVG_PRECISION_PER_BP,
               utils_labels.AVG_RECALL_PER_BP,
               utils_labels.ARI_BY_SEQ,
               utils_labels.ARI_BY_BP,
               utils_labels.PERCENTAGE_ASSIGNED_BPS,
-              utils_labels.ACCURACY]
+              utils_labels.ACCURACY_PER_BP]
     if show_rank:
         columns.insert(1, utils_labels.RANK)
     pd_rankings = df_summary[columns].rename(columns={utils_labels.RANK: 'Taxonomic rank'}).round(decimals=5)
@@ -454,7 +481,7 @@ def create_genome_binning_html(gold_standard, df_summary, pd_bins):
     if df_summary_g.size == 0:
         return None
 
-    purity_completeness_plot = create_precision_recall_figure(df_summary_g, utils_labels.AVG_PRECISION, utils_labels.AVG_RECALL, None)
+    purity_completeness_plot = create_precision_recall_figure(df_summary_g, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, None)
     purity_completeness_bp_plot = create_precision_recall_figure(df_summary_g, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, None)
     all_genomes_plot = create_precision_recall_all_genomes_scatter(pd_bins, df_summary_g[utils_labels.TOOL].tolist())
 
@@ -463,7 +490,7 @@ def create_genome_binning_html(gold_standard, df_summary, pd_bins):
     metrics_row_g = column(column(create_heatmap_div(), genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(row(purity_completeness_plot, purity_completeness_bp_plot, all_genomes_plot), sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_row_g, title="Metrics")
 
-    bins_columns = OrderedDict([('id', 'Bin ID'), ('mapping_id', 'Mapped genome'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
+    bins_columns = OrderedDict([('id', 'Bin ID'), ('mapping_id', 'Mapped genome'), ('purity_bp', 'Purity'), ('completeness_bp', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positive_bps', 'True positives'), ('true_size', 'True size')])
     metrics_bins_panel = create_metrics_per_bin_panel(pd_bins[pd_bins['rank'] == 'NA'], bins_columns)
 
     cc_table = create_contamination_completeness_table(gold_standard, df_summary_g)
@@ -480,13 +507,13 @@ def create_genome_binning_html(gold_standard, df_summary, pd_bins):
 def create_plots_per_binner(df_summary_t):
     tools = df_summary_t.tool.unique().tolist()
 
-    metrics_list = [utils_labels.AVG_PRECISION, utils_labels.AVG_RECALL]
-    errors_list = [utils_labels.AVG_PRECISION_SEM, utils_labels.AVG_RECALL_SEM]
+    metrics_list = [utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP]
+    errors_list = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM]
     tools_figures = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
     tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures]
     tools_column_unweighted = column(tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
 
-    metrics_list = [utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, utils_labels.ACCURACY]
+    metrics_list = [utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, utils_labels.ACCURACY_PER_BP]
     errors_list = ["", "", ""]
     tools_figures_weighted = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
     tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures_weighted]
@@ -512,7 +539,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
         pd_group = pd_groups_rank.get_group(rank)
         pd_rank = pd_group.rename(columns={'tool': 'Tool'}).set_index('Tool').T
         rank_to_html[rank] = [create_table_html(pd_rank, False)]
-        purity_completeness_plot = create_precision_recall_figure(pd_group, utils_labels.AVG_PRECISION, utils_labels.AVG_RECALL, rank)
+        purity_completeness_plot = create_precision_recall_figure(pd_group, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, rank)
         purity_completeness_bp_plot = create_precision_recall_figure(pd_group, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, rank)
         plots_list.append(row(purity_completeness_plot, purity_completeness_bp_plot))
 
@@ -533,7 +560,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     metrics_column = column(column(select_rank, create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_column, title="Metrics")
 
-    bins_columns = OrderedDict([('id', 'Taxon ID'), ('name', 'Scientific name'), ('rank', 'Taxonomic rank'), ('purity', 'Purity'), ('completeness', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positives', 'True positives'), ('real_size', 'Real size')])
+    bins_columns = OrderedDict([('id', 'Taxon ID'), ('name', 'Scientific name'), ('rank', 'Taxonomic rank'), ('purity_bp', 'Purity'), ('completeness_bp', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positive_bps', 'True positives'), ('true_size', 'True size')])
     tax_bins = pd_bins[pd_bins['rank'] != 'NA']
     if tax_bins['name'].isnull().any():
         del bins_columns['name']
