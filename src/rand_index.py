@@ -2,6 +2,7 @@
 
 import os, sys, inspect
 from collections import defaultdict
+import numpy as np
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
@@ -89,6 +90,8 @@ def print_rand_indices(ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq, percentage_of
 
 
 def compute_metrics(bin_ids, query, gold_standard):
+    if not bin_ids:
+        return np.nan, np.nan, np.nan, np.nan
     bin_id_to_mapping_id_to_total_sequences, mapping_id_to_bin_id_to_total_sequences = preprocess_counts(bin_ids, gold_standard, query, False)
     bin_id_to_mapping_id_to_length, mapping_id_to_bin_id_to_length = preprocess_counts(bin_ids, gold_standard, query, True)
 

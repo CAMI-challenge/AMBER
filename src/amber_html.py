@@ -560,7 +560,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     metrics_column = column(column(select_rank, create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_column, title="Metrics")
 
-    bins_columns = OrderedDict([('id', 'Taxon ID'), ('name', 'Scientific name'), ('rank', 'Taxonomic rank'), ('purity_bp', 'Purity'), ('completeness_bp', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positive_bps', 'True positives'), ('true_size', 'True size')])
+    bins_columns = OrderedDict([('mapping_id', 'Taxon ID'), ('name', 'Scientific name'), ('rank', 'Taxonomic rank'), ('purity_bp', 'Purity'), ('completeness_bp', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positive_bps', 'True positives'), ('true_size', 'True size')])
     tax_bins = pd_bins[pd_bins['rank'] != 'NA']
     if tax_bins['name'].isnull().any():
         del bins_columns['name']

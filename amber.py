@@ -20,6 +20,7 @@ from src.utils import load_data
 from src.utils import argparse_parents
 from src.utils import labels as utils_labels
 from src import binning_classes
+from src.utils import load_ncbi_taxinfo
 
 
 def make_sure_path_exists(path):
@@ -56,10 +57,10 @@ def compute_metrics_over_bins(rank, gs_pd_bins_rank, pd_bins_rank, query):
     all_bins_false_positive_bps = all_bins_length - true_positive_bps_all_bins
     all_bins_false_positive_seqs = all_bins_num_seqs - true_positive_seqs_all_bins
 
-    precision_bp = float(true_positive_bps_all_bins) / float(all_bins_length)
-    precision_seq = float(true_positive_seqs_all_bins) / float(all_bins_num_seqs)
-    misclassification_rate_bp = all_bins_false_positive_bps / float(all_bins_length)
-    misclassification_rate_seq = all_bins_false_positive_seqs / float(all_bins_num_seqs)
+    precision_bp = (true_positive_bps_all_bins / all_bins_length) if all_bins_length > 0 else .0
+    precision_seq = (true_positive_seqs_all_bins / all_bins_num_seqs) if all_bins_num_seqs > 0 else .0
+    misclassification_rate_bp = (all_bins_false_positive_bps / all_bins_length) if all_bins_length > 0 else .0
+    misclassification_rate_seq = (all_bins_false_positive_seqs / all_bins_num_seqs) if all_bins_num_seqs > 0 else .0
 
     true_positives_recall_bp = 0
     true_positives_recall_seq = 0
@@ -120,6 +121,11 @@ def compute_percentage_of_assigned_seqs(gold_standard, query):
         for rank in query.rank_to_overbinned_seqs.keys():
             if rank in num_seqs:
                 percentage_of_overbinned_seqs[rank] = float(len(query.rank_to_overbinned_seqs[rank])) / float(gs_num_seqs[rank])
+        for rank in load_ncbi_taxinfo.RANKS:
+            if rank not in percentage_of_assigned_seqs:
+                percentage_of_assigned_seqs[rank] = np.nan
+            if rank not in percentage_of_overbinned_seqs:
+                percentage_of_overbinned_seqs[rank] = np.nan
     return percentage_of_assigned_seqs, percentage_of_overbinned_seqs
 
 
@@ -164,6 +170,12 @@ def evaluate_all(gold_standard,
 
             avg_precision_bp = precision_bp_rows.mean()
             sem_precision_bp = precision_bp_rows.sem()
+
+            # sum_recall_bp = recall_bp_rows.sum()
+            # gs_ids_set = set(gs_pd_bins_rank['id'])
+            # prediction_ids_set = set(pd_bins_rank['id'])
+            # ids_in_gs_but_not_in_prediction = gs_ids_set - prediction_ids_set
+            # avg_recall_bp = sum_recall_bp / (len(ids_in_gs_but_not_in_prediction) + len(prediction_ids_set))
             avg_recall_bp = recall_bp_rows.mean()
             sem_recall_bp = recall_bp_rows.sem()
 
@@ -243,8 +255,8 @@ def plot_genome_binning(gold_standard, queries_list, df_summary, pd_bins, plot_h
     plots.plot_adjusted_rand_index_vs_assigned_bps(df_summary_g, output_dir)
 
     pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
-    plots.plot_boxplot(pd_bins_g, 'purity', output_dir)
-    plots.plot_boxplot(pd_bins_g, 'completeness', output_dir)
+    plots.plot_boxplot(pd_bins_g, 'purity_bp', output_dir)
+    plots.plot_boxplot(pd_bins_g, 'completeness_bp', output_dir)
 
     plot_by_genome.plot_precision_recall_per_bin(pd_bins_g, output_dir)
 
@@ -322,7 +334,7 @@ def main(args=None, tax_id_to_parent=None, tax_id_to_rank=None, tax_id_to_name=N
 
     pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
     for tool, pd_group in pd_bins_g.groupby(utils_labels.TOOL):
-        columns = ['id', 'mapping_id', 'purity', 'completeness', 'predicted_size', 'true_positives', 'true_size']
+        columns = ['id', 'mapping_id', 'purity_bp', 'completeness_bp', 'predicted_size', 'true_positive_bps', 'true_size']
         table = pd_group[columns].rename(columns={'id': 'bin_id', 'mapping_id': 'mapped_genome'})
         table.to_csv(os.path.join(output_dir, 'genome', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
 

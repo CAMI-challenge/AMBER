@@ -14,16 +14,16 @@ from src.utils import labels
 
 
 def plot_by_genome(data, out_file=None, sort_by='completeness'):
-    not_sort_by = list(set(['purity','completeness']) - set([sort_by]))[0]  # get the metric not sorted by
+    not_sort_by = list(set(['purity_bp','completeness_bp']) - set([sort_by]))[0]  # get the metric not sorted by
     data = sorted(data, key=lambda x: x[sort_by])
     genomes = []
     precision = []
     recall = []
     for genome in data:
         genomes.append(genome['mapped_genome'])
-        precision.append(genome['purity'])
-        recall.append(genome['completeness'])
-    sort = {'purity': precision, 'completeness': recall}
+        precision.append(genome['purity_bp'])
+        recall.append(genome['completeness_bp'])
+    sort = {'purity_bp': precision, 'completeness_bp': recall}
 
     fig, ax1 = plt.subplots(figsize=(len(genomes) * 0.15, 5))
 
@@ -60,8 +60,8 @@ def plot_precision_recall_per_bin(pd_bins, output_dir):
 
     # for query_metrics in bin_metrics_per_query:
     for i, (tool, pd_summary) in enumerate(df_groups):
-        precision = pd_summary['purity'].tolist()
-        recall = pd_summary['completeness'].tolist()
+        precision = pd_summary['purity_bp'].tolist()
+        recall = pd_summary['completeness_bp'].tolist()
         axs.scatter(precision, recall, marker='o', color=colors_list[i], s=[8] * len(precision))
 
     # turn on grid

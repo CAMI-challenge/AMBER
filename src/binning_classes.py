@@ -115,6 +115,7 @@ class TaxonomicQuery(Query):
         super().__init__()
         self.__rank_to_sequence_id_to_bin_id = defaultdict(dict)
         self.__rank_to_overbinned_seqs = defaultdict(list)
+        self.__rank_to_bins = defaultdict(list)
 
     @property
     def rank_to_sequence_id_to_bin_id(self):
@@ -123,6 +124,10 @@ class TaxonomicQuery(Query):
     @property
     def rank_to_overbinned_seqs(self):
         return self.__rank_to_overbinned_seqs
+
+    @property
+    def rank_to_bins(self):
+        return self.__rank_to_bins
 
     @rank_to_sequence_id_to_bin_id.setter
     def rank_to_sequence_id_to_bin_id(self, rank_sequence_id_bin_id):
@@ -134,6 +139,10 @@ class TaxonomicQuery(Query):
         rank, overbinned_seqs = rank_overbinned_seqs
         self.__rank_to_overbinned_seqs[rank] = overbinned_seqs
 
+    def add_bin(self, bin):
+        self.rank_to_bins[bin.rank].append(bin)
+        super().add_bin(bin)
+
     def append_overbinned_seq_id(self, rank, seq_id):
         self.__rank_to_overbinned_seqs[rank].append(seq_id)
 
@@ -142,9 +151,33 @@ class TaxonomicQuery(Query):
             bin.compute_true_positives(gold_standard)
 
     def get_bins_metrics(self, gold_standard):
-        bins_metrics = []
-        for bin in self.bins:
-            bins_metrics.append(bin.get_metrics_dict(gold_standard))
+        gold_standard_query = gold_standard.taxonomic_query
+        bins_metrics = [bin.get_metrics_dict(gold_standard) for bin in self.bins]
+        for rank in load_ncbi_taxinfo.RANKS:
+            if rank in gold_standard_query.rank_to_bins:
+                gs_rank_ids = set([bin.id for bin in gold_standard_query.rank_to_bins[rank]])
+            else:
+                continue
+            if rank in self.rank_to_bins:
+                self_rank_ids = set([bin.id for bin in self.rank_to_bins[rank]])
+                ids_in_gs_but_not_in_self = gs_rank_ids - self_rank_ids
+            else:
+                ids_in_gs_but_not_in_self = gs_rank_ids
+            for bin_id in ids_in_gs_but_not_in_self:
+                bins_metrics.append({'id': None,
+                                     'name': gold_standard_query.tax_id_to_name[bin_id] if gold_standard_query.tax_id_to_name else np.nan,
+                                     'rank': rank,
+                                     'mapping_id': bin_id,
+                                     'purity_bp': np.nan,
+                                     'purity_seq': np.nan,
+                                     'completeness_bp': .0,
+                                     'completeness_seq': .0,
+                                     'predicted_size': 0,
+                                     'predicted_num_seqs': 0,
+                                     'true_positive_bps': 0,
+                                     'true_positive_seqs': 0,
+                                     'true_size': gold_standard_query.get_bin_by_id(bin_id).length,
+                                     'true_num_seqs': gold_standard_query.get_bin_by_id(bin_id).num_seqs()})
         rank_to_index = dict(zip(load_ncbi_taxinfo.RANKS[::-1], list(range(len(load_ncbi_taxinfo.RANKS)))))
         # sort bins by rank and completeness
         return sorted(bins_metrics, key=lambda t: (rank_to_index[t['rank']], t['completeness_bp']), reverse=True)
