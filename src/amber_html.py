@@ -168,6 +168,9 @@ def get_colors_and_ranges(name):
 def get_heatmap_colors(pd_series, **args):
     values = pd_series.tolist()
     notnan_values = [x for x in values if isinstance(x, (float, int)) and not np.isnan(x)]
+    if not notnan_values:
+        red = 'background-color: red'
+        return [red for x in values]
 
     if pd_series.name == upper1(utils_labels.AVG_PRECISION_BP_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_BP_SEM) or\
         pd_series.name == upper1(utils_labels.AVG_PRECISION_SEQ_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM):
@@ -359,7 +362,7 @@ def create_table_html(df_summary, is_genome):
         html += '<p style="margin-bottom: auto"><b>{}</b></p>'.format(metrics_label)
         df_metrics = df_summary.loc[metrics]
         sorted_columns = df_metrics.columns.tolist()
-        df_metrics = df_metrics.loc[:, sorted_columns].fillna(0)
+        df_metrics = df_metrics.loc[:, sorted_columns]
 
         if first_metrics:
             this_style = styles

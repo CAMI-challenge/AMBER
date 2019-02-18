@@ -57,10 +57,10 @@ def compute_metrics_over_bins(rank, gs_pd_bins_rank, pd_bins_rank, query):
     all_bins_false_positive_bps = all_bins_length - true_positive_bps_all_bins
     all_bins_false_positive_seqs = all_bins_num_seqs - true_positive_seqs_all_bins
 
-    precision_bp = (true_positive_bps_all_bins / all_bins_length) if all_bins_length > 0 else .0
-    precision_seq = (true_positive_seqs_all_bins / all_bins_num_seqs) if all_bins_num_seqs > 0 else .0
-    misclassification_rate_bp = (all_bins_false_positive_bps / all_bins_length) if all_bins_length > 0 else .0
-    misclassification_rate_seq = (all_bins_false_positive_seqs / all_bins_num_seqs) if all_bins_num_seqs > 0 else .0
+    precision_bp = (true_positive_bps_all_bins / all_bins_length) if all_bins_length > 0 else np.nan
+    precision_seq = (true_positive_seqs_all_bins / all_bins_num_seqs) if all_bins_num_seqs > 0 else np.nan
+    misclassification_rate_bp = (all_bins_false_positive_bps / all_bins_length) if all_bins_length > 0 else np.nan
+    misclassification_rate_seq = (all_bins_false_positive_seqs / all_bins_num_seqs) if all_bins_num_seqs > 0 else np.nan
 
     true_positives_recall_bp = 0
     true_positives_recall_seq = 0
@@ -81,16 +81,16 @@ def compute_metrics_over_bins(rank, gs_pd_bins_rank, pd_bins_rank, query):
 
     gs_length = gs_pd_bins_rank['true_size'].sum()
     gs_num_seqs = gs_pd_bins_rank['true_size'].sum()
-    recall_bp = float(true_positives_recall_bp) / float(gs_length)
-    recall_seq = float(true_positives_recall_seq) / float(gs_num_seqs)
-    accuracy_bp = float(true_positive_bps_all_bins) / float(gs_length)
-    accuracy_seq = float(true_positive_seqs_all_bins) / float(gs_num_seqs)
-    percentage_of_assigned_bps = float(all_bins_length) / float(gs_length)
+    recall_bp = true_positives_recall_bp / gs_length
+    recall_seq = true_positives_recall_seq / gs_num_seqs
+    accuracy_bp = true_positive_bps_all_bins / gs_length
+    accuracy_seq = true_positive_seqs_all_bins / gs_num_seqs
+    percentage_of_assigned_bps = all_bins_length / gs_length
 
     if isinstance(query, binning_classes.TaxonomicQuery):
         if rank in query.rank_to_overbinned_seqs:
             length_overbinned_seqs = sum([binning_classes.Bin.sequence_id_to_length[sequence_id] for sequence_id in query.rank_to_overbinned_seqs[rank]])
-            percentage_of_overbinned_bps = length_overbinned_seqs / float(gs_length)
+            percentage_of_overbinned_bps = length_overbinned_seqs / gs_length
         else:
             percentage_of_overbinned_bps = .0
     else:
@@ -117,10 +117,10 @@ def compute_percentage_of_assigned_seqs(gold_standard, query):
         for bin in query.bins:
             num_seqs[bin.rank] += len(bin.sequence_ids)
         for rank in num_seqs.keys():
-            percentage_of_assigned_seqs[rank] = float(num_seqs[rank]) / float(gs_num_seqs[rank])
+            percentage_of_assigned_seqs[rank] = num_seqs[rank] / gs_num_seqs[rank]
         for rank in query.rank_to_overbinned_seqs.keys():
             if rank in num_seqs:
-                percentage_of_overbinned_seqs[rank] = float(len(query.rank_to_overbinned_seqs[rank])) / float(gs_num_seqs[rank])
+                percentage_of_overbinned_seqs[rank] = len(query.rank_to_overbinned_seqs[rank]) / gs_num_seqs[rank]
         for rank in load_ncbi_taxinfo.RANKS:
             if rank not in percentage_of_assigned_seqs:
                 percentage_of_assigned_seqs[rank] = np.nan
@@ -171,11 +171,6 @@ def evaluate_all(gold_standard,
             avg_precision_bp = precision_bp_rows.mean()
             sem_precision_bp = precision_bp_rows.sem()
 
-            # sum_recall_bp = recall_bp_rows.sum()
-            # gs_ids_set = set(gs_pd_bins_rank['id'])
-            # prediction_ids_set = set(pd_bins_rank['id'])
-            # ids_in_gs_but_not_in_prediction = gs_ids_set - prediction_ids_set
-            # avg_recall_bp = sum_recall_bp / (len(ids_in_gs_but_not_in_prediction) + len(prediction_ids_set))
             avg_recall_bp = recall_bp_rows.mean()
             sem_recall_bp = recall_bp_rows.sem()
 
