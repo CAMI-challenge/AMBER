@@ -385,7 +385,7 @@ class TaxonomicBin(Bin):
         if len(self.mapping_id_to_length) == 0:
             self.compute_confusion_matrix(gold_standard)
         gold_standard_query = gold_standard.taxonomic_query
-        if not self.id in gold_standard_query.get_bin_ids():
+        if self.id not in gold_standard_query.get_bin_ids():
             return
         gs_bin = gold_standard_query.get_bin_by_id(self.id)
         commmon_seq_ids = self.sequence_ids & gs_bin.sequence_ids
@@ -402,7 +402,7 @@ class TaxonomicBin(Bin):
             true_size = true_num_seqs = np.nan
         return {'id': self.id,
                 'name': gold_standard_query.tax_id_to_name[self.id] if gold_standard_query.tax_id_to_name else np.nan,
-                'rank': gold_standard_query.tax_id_to_rank[self.id],
+                'rank': self.rank,
                 'mapping_id': self.id,
                 'purity_bp': self.precision_bp,
                 'purity_seq': self.precision_seq,

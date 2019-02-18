@@ -70,9 +70,9 @@ def compute_precision_recall(gold_standard, query):
         gold_standard_query = gold_standard.taxonomic_query
 
     for bin in query.bins:
-        bin.precision_bp = float(bin.true_positive_bps) / float(bin.length)
-        bin.precision_seq = float(bin.true_positive_seqs) / float(bin.num_seqs())
+        bin.precision_bp = bin.true_positive_bps / bin.length
+        bin.precision_seq = bin.true_positive_seqs / bin.num_seqs()
 
         if bin.mapping_id in gold_standard_query.get_bin_ids():
-            bin.recall_bp = float(bin.true_positive_bps) / float(gold_standard_query.get_bin_by_id(bin.mapping_id).length)
-            bin.recall_seq = float(bin.true_positive_seqs) / float(gold_standard_query.get_bin_by_id(bin.mapping_id).num_seqs())
+            bin.recall_bp = bin.true_positive_bps / gold_standard_query.get_bin_by_id(bin.mapping_id).length
+            bin.recall_seq = bin.true_positive_seqs / gold_standard_query.get_bin_by_id(bin.mapping_id).num_seqs()

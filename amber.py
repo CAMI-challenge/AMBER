@@ -80,7 +80,7 @@ def compute_metrics_over_bins(rank, gs_pd_bins_rank, pd_bins_rank, query):
             true_positives_recall_seq += max(bin_assigns_seqs)
 
     gs_length = gs_pd_bins_rank['true_size'].sum()
-    gs_num_seqs = gs_pd_bins_rank['true_size'].sum()
+    gs_num_seqs = gs_pd_bins_rank['true_num_seqs'].sum()
     recall_bp = true_positives_recall_bp / gs_length
     recall_seq = true_positives_recall_seq / gs_num_seqs
     accuracy_bp = true_positive_bps_all_bins / gs_length
@@ -123,9 +123,9 @@ def compute_percentage_of_assigned_seqs(gold_standard, query):
                 percentage_of_overbinned_seqs[rank] = len(query.rank_to_overbinned_seqs[rank]) / gs_num_seqs[rank]
         for rank in load_ncbi_taxinfo.RANKS:
             if rank not in percentage_of_assigned_seqs:
-                percentage_of_assigned_seqs[rank] = np.nan
+                percentage_of_assigned_seqs[rank] = .0
             if rank not in percentage_of_overbinned_seqs:
-                percentage_of_overbinned_seqs[rank] = np.nan
+                percentage_of_overbinned_seqs[rank] = .0
     return percentage_of_assigned_seqs, percentage_of_overbinned_seqs
 
 
@@ -170,7 +170,6 @@ def evaluate_all(gold_standard,
 
             avg_precision_bp = precision_bp_rows.mean()
             sem_precision_bp = precision_bp_rows.sem()
-
             avg_recall_bp = recall_bp_rows.mean()
             sem_recall_bp = recall_bp_rows.sem()
 
