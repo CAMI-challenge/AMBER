@@ -245,7 +245,7 @@ def get_contamination_completeness_thresholds(df):
     return completeness_thr, contamination_thr
 
 
-def create_contamination_completeness_table(gold_standard, df):
+def create_contamination_completeness_table(num_genomes, df):
     contamination_completeness_cols = [c for c in df.columns if c.startswith('>')]
     completeness_thr, contamination_thr = get_contamination_completeness_thresholds(df[contamination_completeness_cols])
 
@@ -254,8 +254,8 @@ def create_contamination_completeness_table(gold_standard, df):
     cols = OrderedDict()
     cols['Tool'] = 'Gold standard'
     # num_genomes = len(gold_standard.genome_query.get_bin_ids()) # Number of unfiltered genomes
-    gs_genome_bins_metrics = gold_standard.genome_query.get_bins_metrics(gold_standard)
-    num_genomes = len(gs_genome_bins_metrics)
+    # gs_genome_bins_metrics = gold_standard.genome_query.get_bins_metrics(gold_standard)
+    # num_genomes = len(gs_genome_bins_metrics)
     for completeness_item in completeness_thr:
         cols[completeness_item] = num_genomes
     contamination_completenes_row_arr.append(cols)
@@ -479,7 +479,7 @@ def create_rankings_table(df_summary, show_rank=False):
     return [widgetbox(dt)]
 
 
-def create_genome_binning_html(gold_standard, df_summary, pd_bins):
+def create_genome_binning_html(num_genomes, df_summary, pd_bins):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
     if df_summary_g.size == 0:
         return None
@@ -496,7 +496,7 @@ def create_genome_binning_html(gold_standard, df_summary, pd_bins):
     bins_columns = OrderedDict([('id', 'Bin ID'), ('mapping_id', 'Mapped genome'), ('purity_bp', 'Purity'), ('completeness_bp', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positive_bps', 'True positives'), ('true_size', 'True size')])
     metrics_bins_panel = create_metrics_per_bin_panel(pd_bins[pd_bins['rank'] == 'NA'], bins_columns)
 
-    cc_table = create_contamination_completeness_table(gold_standard, df_summary_g)
+    cc_table = create_contamination_completeness_table(num_genomes, df_summary_g)
     cc_panel = Panel(child=row(cc_table), title="#Recovered genomes")
 
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
@@ -589,11 +589,11 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     return tabs
 
 
-def create_html(gold_standard, df_summary, pd_bins, output_dir, desc_text):
+def create_html(num_genomes, df_summary, pd_bins, output_dir, desc_text):
     create_heatmap_bar(output_dir)
     tabs_list = []
 
-    metrics_row_g = create_genome_binning_html(gold_standard, df_summary, pd_bins)
+    metrics_row_g = create_genome_binning_html(num_genomes, df_summary, pd_bins)
     if metrics_row_g:
         tabs_list.append(Panel(child=metrics_row_g, title="Genome binning"))
 

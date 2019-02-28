@@ -4,7 +4,7 @@ import numpy as np
 
 
 def filter_tail(data, percentage):
-    value = float(percentage) / 100.0
+    value = percentage / 100.0
     # sort bins by increasing predicted size
     data = sorted(data, key=lambda x: x['predicted_size'])
     sum_of_predicted_sizes = sum([int(float(bin['predicted_size'])) for bin in data])

@@ -9,11 +9,6 @@ import pandas as pd
 from src import binning_classes
 
 
-def transform_confusion_matrix_all(gold_standard, queries_list):
-    for query in queries_list:
-        transform_confusion_matrix(gold_standard, query)
-
-
 def transform_confusion_matrix(gold_standard,
                                query):
     gold_standard_query = gold_standard.genome_query
@@ -61,18 +56,3 @@ def transform_confusion_matrix(gold_standard,
             table[genome_id] = 0
 
     return table
-
-
-def compute_precision_recall(gold_standard, query):
-    if isinstance(query, binning_classes.GenomeQuery):
-        gold_standard_query = gold_standard.genome_query
-    else:
-        gold_standard_query = gold_standard.taxonomic_query
-
-    for bin in query.bins:
-        bin.precision_bp = bin.true_positive_bps / bin.length
-        bin.precision_seq = bin.true_positive_seqs / bin.num_seqs()
-
-        if bin.mapping_id in gold_standard_query.get_bin_ids():
-            bin.recall_bp = bin.true_positive_bps / gold_standard_query.get_bin_by_id(bin.mapping_id).length
-            bin.recall_seq = bin.true_positive_seqs / gold_standard_query.get_bin_by_id(bin.mapping_id).num_seqs()

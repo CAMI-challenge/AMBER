@@ -13,6 +13,13 @@ class Query(ABC):
         self.__bins = []
         self.__bin_id_to_bin = {}
         self.__label = ""
+        self.__options = None
+        self.__bins_metrics = None
+        self.__gold_standard = None
+
+    @property
+    def options(self):
+        return self.__options
 
     @property
     def bins(self):
@@ -22,6 +29,18 @@ class Query(ABC):
     def label(self):
         return self.__label
 
+    @property
+    def bins_metrics(self):
+        return self.__bins_metrics
+
+    @property
+    def gold_standard(self):
+        return self.__gold_standard
+
+    @options.setter
+    def options(self, options: 'Options'):
+        self.__options = options
+
     @bins.setter
     def bins(self, bins):
         self.__bins = bins
@@ -29,6 +48,14 @@ class Query(ABC):
     @label.setter
     def label(self, label):
         self.__label = label
+
+    @bins_metrics.setter
+    def bins_metrics(self, bins_metrics):
+        self.__bins_metrics = bins_metrics
+
+    @gold_standard.setter
+    def gold_standard(self, gold_standard):
+        self.__gold_standard = gold_standard
 
     def add_bin(self, bin):
         self.__bins.append(bin)
@@ -49,6 +76,10 @@ class Query(ABC):
     def get_all_mapping_ids(self):
         return [bin.mapping_id for bin in self.bins]
 
+    def compute_precision_recall(self):
+        for bin in self.__bins:
+            bin.compute_precision_recall(self.__gold_standard)
+
 
 class GenomeQuery(Query):
     binning_type = 'genome'
@@ -56,57 +87,53 @@ class GenomeQuery(Query):
     def __init__(self):
         super().__init__()
         self.__sequence_id_to_bin_id = {}
-        self.__map_by_completeness = False
 
     @property
     def sequence_id_to_bin_id(self):
         return self.__sequence_id_to_bin_id
-
-    @property
-    def map_by_completeness(self):
-        return self.__map_by_completeness
 
     @sequence_id_to_bin_id.setter
     def sequence_id_to_bin_id(self, sequence_id_bin_id):
         (sequence_id, bin_id) = sequence_id_bin_id
         self.__sequence_id_to_bin_id[sequence_id] = bin_id
 
-    @map_by_completeness.setter
-    def map_by_completeness(self, map_by_completeness):
-        self.__map_by_completeness = map_by_completeness
-
-    def compute_true_positives(self, gold_standard):
+    def compute_true_positives(self):
         for bin in self.bins:
-            bin.compute_true_positives(gold_standard, self.__map_by_completeness)
+            bin.compute_true_positives(self.gold_standard, self.options.map_by_completeness)
 
-    def get_bins_metrics(self, gold_standard):
-        bins_metrics = [bin.get_metrics_dict(gold_standard) for bin in self.bins]
+    def get_bins_metrics(self):
+        if self.bins_metrics:
+            return self.bins_metrics
+        self.bins_metrics = [bin.get_metrics_dict(self.gold_standard) for bin in self.bins]
         mapped_ids = self.get_all_mapping_ids()
-        for gs_bin in gold_standard.genome_query.bins:
+        for gs_bin in self.gold_standard.bins:
             if gs_bin.id not in mapped_ids:
-                bins_metrics.append({'id': None,
-                                     'mapping_id': gs_bin.id,
-                                     'purity_bp': np.nan,
-                                     'purity_seq': np.nan,
-                                     'completeness_bp': .0,
-                                     'completeness_seq': .0,
-                                     'predicted_size': 0,
-                                     'predicted_num_seqs': 0,
-                                     'true_positive_bps': 0,
-                                     'true_positive_seqs': 0,
-                                     'true_size': gs_bin.length,
-                                     'true_num_seqs': gs_bin.num_seqs()})
+                self.bins_metrics.append({'id': None,
+                                          'rank': 'NA',
+                                          'mapping_id': gs_bin.id,
+                                          'purity_bp': np.nan,
+                                          'purity_seq': np.nan,
+                                          'completeness_bp': .0,
+                                          'completeness_seq': .0,
+                                          'predicted_size': 0,
+                                          'predicted_num_seqs': 0,
+                                          'true_positive_bps': 0,
+                                          'true_positive_seqs': 0,
+                                          'true_size': gs_bin.length,
+                                          'true_num_seqs': gs_bin.num_seqs()})
 
-        if gold_standard.filter_tail_percentage:
-            filter_tail.filter_tail(bins_metrics, gold_standard.filter_tail_percentage)
-        if gold_standard.filter_genomes_file:
-            bins_metrics = exclude_genomes.filter_data(bins_metrics, gold_standard.filter_genomes_file, gold_standard.filter_keyword)
+        if self.options.filter_tail_percentage:
+            filter_tail.filter_tail(self.bins_metrics, self.options.filter_tail_percentage)
+        if self.options.filter_genomes_file:
+            self.bins_metrics = exclude_genomes.filter_data(self.bins_metrics, self.options.filter_genomes_file, self.options.filter_keyword)
 
         # sort bins by completeness
-        return sorted(bins_metrics, key=lambda t: t['completeness_bp'], reverse=True)
+        self.bins_metrics = sorted(self.bins_metrics, key=lambda t: t['completeness_bp'], reverse=True)
+        return self.bins_metrics
 
 
 class TaxonomicQuery(Query):
+    tax_id_to_parent = None
     tax_id_to_rank = None
     tax_id_to_name = None
     binning_type = 'taxonomic'
@@ -146,16 +173,17 @@ class TaxonomicQuery(Query):
     def append_overbinned_seq_id(self, rank, seq_id):
         self.__rank_to_overbinned_seqs[rank].append(seq_id)
 
-    def compute_true_positives(self, gold_standard):
+    def compute_true_positives(self):
         for bin in self.bins:
-            bin.compute_true_positives(gold_standard)
+            bin.compute_true_positives(self.gold_standard)
 
-    def get_bins_metrics(self, gold_standard):
-        gold_standard_query = gold_standard.taxonomic_query
-        bins_metrics = [bin.get_metrics_dict(gold_standard) for bin in self.bins]
+    def get_bins_metrics(self):
+        if self.bins_metrics:
+            return self.bins_metrics
+        self.bins_metrics = [bin.get_metrics_dict(self.gold_standard) for bin in self.bins]
         for rank in load_ncbi_taxinfo.RANKS:
-            if rank in gold_standard_query.rank_to_bins:
-                gs_rank_ids = set([bin.id for bin in gold_standard_query.rank_to_bins[rank]])
+            if rank in self.gold_standard.rank_to_bins:
+                gs_rank_ids = set([bin.id for bin in self.gold_standard.rank_to_bins[rank]])
             else:
                 continue
             if rank in self.rank_to_bins:
@@ -164,23 +192,24 @@ class TaxonomicQuery(Query):
             else:
                 ids_in_gs_but_not_in_self = gs_rank_ids
             for bin_id in ids_in_gs_but_not_in_self:
-                bins_metrics.append({'id': None,
-                                     'name': gold_standard_query.tax_id_to_name[bin_id] if gold_standard_query.tax_id_to_name else np.nan,
-                                     'rank': rank,
-                                     'mapping_id': bin_id,
-                                     'purity_bp': np.nan,
-                                     'purity_seq': np.nan,
-                                     'completeness_bp': .0,
-                                     'completeness_seq': .0,
-                                     'predicted_size': 0,
-                                     'predicted_num_seqs': 0,
-                                     'true_positive_bps': 0,
-                                     'true_positive_seqs': 0,
-                                     'true_size': gold_standard_query.get_bin_by_id(bin_id).length,
-                                     'true_num_seqs': gold_standard_query.get_bin_by_id(bin_id).num_seqs()})
+                self.bins_metrics.append({'id': None,
+                                          'name': TaxonomicQuery.tax_id_to_name[bin_id] if TaxonomicQuery.tax_id_to_name else np.nan,
+                                          'rank': rank,
+                                          'mapping_id': bin_id,
+                                          'purity_bp': np.nan,
+                                          'purity_seq': np.nan,
+                                          'completeness_bp': .0,
+                                          'completeness_seq': .0,
+                                          'predicted_size': 0,
+                                          'predicted_num_seqs': 0,
+                                          'true_positive_bps': 0,
+                                          'true_positive_seqs': 0,
+                                          'true_size': self.gold_standard.get_bin_by_id(bin_id).length,
+                                          'true_num_seqs': self.gold_standard.get_bin_by_id(bin_id).num_seqs()})
         rank_to_index = dict(zip(load_ncbi_taxinfo.RANKS[::-1], list(range(len(load_ncbi_taxinfo.RANKS)))))
         # sort bins by rank and completeness
-        return sorted(bins_metrics, key=lambda t: (rank_to_index[t['rank']], t['completeness_bp']), reverse=True)
+        self.bins_metrics = sorted(self.bins_metrics, key=lambda t: (rank_to_index[t['rank']], t['completeness_bp']), reverse=True)
+        return self.bins_metrics
 
 
 class Bin(ABC):
@@ -297,8 +326,15 @@ class Bin(ABC):
             self.__length += self.sequence_id_to_length[sequence_id]
 
     @abstractmethod
-    def compute_confusion_matrix(self, gold_standard_query):
+    def compute_confusion_matrix(self, gold_standard):
         pass
+
+    def compute_precision_recall(self, gold_standard):
+        self.__precision_bp = self.__true_positive_bps / self.__length
+        self.__precision_seq = self.__true_positive_seqs / self.num_seqs()
+        if self.mapping_id in gold_standard.get_bin_ids():
+            self.__recall_bp = self.__true_positive_bps / gold_standard.get_bin_by_id(self.mapping_id).length
+            self.__recall_seq = self.__true_positive_seqs / gold_standard.get_bin_by_id(self.mapping_id).num_seqs()
 
     @abstractmethod
     def get_metrics_dict(self):
@@ -310,20 +346,18 @@ class GenomeBin(Bin):
         super().__init__(id)
 
     def compute_confusion_matrix(self, gold_standard):
-        gold_standard_query = gold_standard.genome_query
         for sequence_id in self.sequence_ids:
-            mapping_id = gold_standard_query.sequence_id_to_bin_id[sequence_id]
+            mapping_id = gold_standard.sequence_id_to_bin_id[sequence_id]
             self.mapping_id_to_length[mapping_id] += Bin.sequence_id_to_length[sequence_id]
             self.mapping_id_to_num_seqs[mapping_id] += 1
 
     def compute_true_positives(self, gold_standard, map_by_completeness):
         if len(self.mapping_id_to_length) == 0:
             self.compute_confusion_matrix(gold_standard)
-        gold_standard_query = gold_standard.genome_query
         if map_by_completeness:
             max_genome_percentage = .0
-            best_gs_bin = gold_standard_query.bins[0]
-            for gs_bin in gold_standard_query.bins:
+            best_gs_bin = gold_standard.bins[0]
+            for gs_bin in gold_standard.bins:
                 genome_percentage = self.mapping_id_to_length[gs_bin.id] / gs_bin.length
                 if max_genome_percentage < genome_percentage:
                     max_genome_percentage = genome_percentage
@@ -339,8 +373,8 @@ class GenomeBin(Bin):
             self.true_positive_seqs = self.mapping_id_to_num_seqs[self.mapping_id]
 
     def get_metrics_dict(self, gold_standard):
-        gold_standard_query = gold_standard.genome_query
         return {'id': self.id,
+                'rank': 'NA',
                 'mapping_id': self.mapping_id,
                 'purity_bp': self.precision_bp,
                 'purity_seq': self.precision_seq,
@@ -350,8 +384,8 @@ class GenomeBin(Bin):
                 'predicted_num_seqs': self.num_seqs(),
                 'true_positive_bps': self.true_positive_bps,
                 'true_positive_seqs': self.true_positive_seqs,
-                'true_size': gold_standard_query.get_bin_by_id(self.mapping_id).length,
-                'true_num_seqs': gold_standard_query.get_bin_by_id(self.mapping_id).num_seqs()}
+                'true_size': gold_standard.get_bin_by_id(self.mapping_id).length,
+                'true_num_seqs': gold_standard.get_bin_by_id(self.mapping_id).num_seqs()}
 
 
 class TaxonomicBin(Bin):
@@ -372,36 +406,33 @@ class TaxonomicBin(Bin):
         return self.id
 
     def compute_confusion_matrix(self, gold_standard):
-        gold_standard_query = gold_standard.taxonomic_query
-        if self.rank not in gold_standard_query.rank_to_sequence_id_to_bin_id:
+        if self.rank not in gold_standard.rank_to_sequence_id_to_bin_id:
             return
         for sequence_id in self.sequence_ids:
-            if sequence_id in gold_standard_query.rank_to_sequence_id_to_bin_id[self.rank]:
-                mapping_id = gold_standard_query.rank_to_sequence_id_to_bin_id[self.rank][sequence_id]
+            if sequence_id in gold_standard.rank_to_sequence_id_to_bin_id[self.rank]:
+                mapping_id = gold_standard.rank_to_sequence_id_to_bin_id[self.rank][sequence_id]
                 self.mapping_id_to_length[mapping_id] += Bin.sequence_id_to_length[sequence_id]
                 self.mapping_id_to_num_seqs[mapping_id] += 1
 
     def compute_true_positives(self, gold_standard):
         if len(self.mapping_id_to_length) == 0:
             self.compute_confusion_matrix(gold_standard)
-        gold_standard_query = gold_standard.taxonomic_query
-        if self.id not in gold_standard_query.get_bin_ids():
+        if self.id not in gold_standard.get_bin_ids():
             return
-        gs_bin = gold_standard_query.get_bin_by_id(self.id)
+        gs_bin = gold_standard.get_bin_by_id(self.id)
         commmon_seq_ids = self.sequence_ids & gs_bin.sequence_ids
         for sequence_id in commmon_seq_ids:
             self.true_positive_bps += Bin.sequence_id_to_length[sequence_id]
         self.true_positive_seqs = len(commmon_seq_ids)
 
     def get_metrics_dict(self, gold_standard):
-        gold_standard_query = gold_standard.taxonomic_query
-        if self.id in gold_standard_query.get_bin_ids():
-            true_size = gold_standard_query.get_bin_by_id(self.id).length
-            true_num_seqs = gold_standard_query.get_bin_by_id(self.id).num_seqs()
+        if self.id in gold_standard.get_bin_ids():
+            true_size = gold_standard.get_bin_by_id(self.id).length
+            true_num_seqs = gold_standard.get_bin_by_id(self.id).num_seqs()
         else:
             true_size = true_num_seqs = np.nan
         return {'id': self.id,
-                'name': gold_standard_query.tax_id_to_name[self.id] if gold_standard_query.tax_id_to_name else np.nan,
+                'name': gold_standard.tax_id_to_name[self.id] if gold_standard.tax_id_to_name else np.nan,
                 'rank': self.rank,
                 'mapping_id': self.id,
                 'purity_bp': self.precision_bp,
@@ -416,21 +447,13 @@ class TaxonomicBin(Bin):
                 'true_num_seqs': true_num_seqs}
 
 
-class GoldStandard:
-    def __init__(self, genome_query, taxonomic_query):
-        self.__genome_query = genome_query
-        self.__taxonomic_query = taxonomic_query
-        self.__filter_tail_percentage = .0
-        self.__filter_genomes_file = None
-        self.__filter_keyword = None
-
-    @property
-    def genome_query(self):
-        return self.__genome_query
-
-    @property
-    def taxonomic_query(self):
-        return self.__taxonomic_query
+class Options:
+    def __init__(self, filter_tail_percentage, filter_genomes_file, filter_keyword, map_by_completeness, min_length):
+        self.__filter_tail_percentage = float(filter_tail_percentage) if filter_tail_percentage else .0
+        self.__filter_genomes_file = filter_genomes_file
+        self.__filter_keyword = filter_keyword
+        self.__map_by_completeness = map_by_completeness
+        self.__min_length = int(min_length) if min_length else 0
 
     @property
     def filter_tail_percentage(self):
@@ -444,13 +467,13 @@ class GoldStandard:
     def filter_keyword(self):
         return self.__filter_keyword
 
-    @genome_query.setter
-    def genome_query(self, genome_query):
-        self.__genome_query = genome_query
+    @property
+    def map_by_completeness(self):
+        return self.__map_by_completeness
 
-    @taxonomic_query.setter
-    def taxonomic_query(self, taxonomic_query):
-        self.__taxonomic_query = taxonomic_query
+    @property
+    def min_length(self):
+        return self.__min_length
 
     @filter_tail_percentage.setter
     def filter_tail_percentage(self, filter_tail_percentage):
@@ -463,3 +486,11 @@ class GoldStandard:
     @filter_keyword.setter
     def filter_keyword(self, filter_keyword):
         self.__filter_keyword = filter_keyword
+
+    @map_by_completeness.setter
+    def map_by_completeness(self, map_by_completeness):
+        self.__map_by_completeness = map_by_completeness
+
+    @min_length.setter
+    def min_length(self, min_length):
+        self.__min_length = min_length

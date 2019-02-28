@@ -14,20 +14,18 @@ def choose2(n):
     return (n * (n - 1)) / 2.0
 
 
-def preprocess_counts(bin_ids, gold_standard, query, by_bp_counts):
+def preprocess_counts(bin_ids, query, by_bp_counts):
     if not bin_ids:
         return
     bin_id_to_mapping_id_to_length = defaultdict(lambda: defaultdict(int))
     mapping_id_to_bin_id_to_length = defaultdict(lambda: defaultdict(int))
 
     if isinstance(query, binning_classes.GenomeQuery):
-        gold_standard_query = gold_standard.genome_query
-        gs_sequence_id_to_mapping_id = gold_standard_query.sequence_id_to_bin_id
+        gs_sequence_id_to_mapping_id = query.gold_standard.sequence_id_to_bin_id
         sequence_id_to_bin_id = query.sequence_id_to_bin_id
     else:
-        gold_standard_query = gold_standard.taxonomic_query
         rank = query.get_bin_by_id(bin_ids[0]).rank
-        gs_sequence_id_to_mapping_id = gold_standard_query.rank_to_sequence_id_to_bin_id[rank]
+        gs_sequence_id_to_mapping_id = query.gold_standard.rank_to_sequence_id_to_bin_id[rank]
         sequence_id_to_bin_id = query.rank_to_sequence_id_to_bin_id[rank]
 
     for bin in query.get_bins_by_id(bin_ids):
@@ -89,11 +87,11 @@ def print_rand_indices(ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq, percentage_of
                             format(percentage_of_assigned_bps, '.3f')))))
 
 
-def compute_metrics(bin_ids, query, gold_standard):
+def compute_metrics(bin_ids, query):
     if not bin_ids:
         return np.nan, np.nan, np.nan, np.nan
-    bin_id_to_mapping_id_to_total_sequences, mapping_id_to_bin_id_to_total_sequences = preprocess_counts(bin_ids, gold_standard, query, False)
-    bin_id_to_mapping_id_to_length, mapping_id_to_bin_id_to_length = preprocess_counts(bin_ids, gold_standard, query, True)
+    bin_id_to_mapping_id_to_total_sequences, mapping_id_to_bin_id_to_total_sequences = preprocess_counts(bin_ids, query, False)
+    bin_id_to_mapping_id_to_length, mapping_id_to_bin_id_to_length = preprocess_counts(bin_ids, query, True)
 
     ri_by_seq = compute_rand_index(bin_id_to_mapping_id_to_total_sequences, mapping_id_to_bin_id_to_total_sequences)
     ri_by_bp = compute_rand_index(bin_id_to_mapping_id_to_length, mapping_id_to_bin_id_to_length)

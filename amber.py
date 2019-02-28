@@ -101,18 +101,18 @@ def compute_metrics_over_bins(rank, gs_pd_bins_rank, pd_bins_rank, query):
            percentage_of_assigned_bps, percentage_of_overbinned_bps
 
 
-def compute_percentage_of_assigned_seqs(gold_standard, query):
+def compute_percentage_of_assigned_seqs(query):
     percentage_of_assigned_seqs = {}
     percentage_of_overbinned_seqs = {}
     if isinstance(query, binning_classes.GenomeQuery):
         num_seqs = len(query.get_sequence_ids())
-        gs_num_seqs = len(gold_standard.genome_query.get_sequence_ids())
+        gs_num_seqs = len(query.gold_standard.get_sequence_ids())
         percentage_of_assigned_seqs['NA'] = num_seqs / gs_num_seqs
         percentage_of_overbinned_seqs['NA'] = np.nan
     else:
         num_seqs = defaultdict(int)
         gs_num_seqs = defaultdict(int)
-        for bin in gold_standard.taxonomic_query.bins:
+        for bin in query.gold_standard.bins:
             gs_num_seqs[bin.rank] += len(bin.sequence_ids)
         for bin in query.bins:
             num_seqs[bin.rank] += len(bin.sequence_ids)
@@ -129,35 +129,22 @@ def compute_percentage_of_assigned_seqs(gold_standard, query):
     return percentage_of_assigned_seqs, percentage_of_overbinned_seqs
 
 
-def evaluate_all(gold_standard,
-                 queries_list,
-                 min_completeness, max_contamination):
-    if gold_standard.genome_query:
-        gs_genome_bins_metrics = gold_standard.genome_query.get_bins_metrics(gold_standard)
-        gs_pd_genome_bins = pd.DataFrame.from_dict(gs_genome_bins_metrics)
-        gs_pd_genome_bins['rank'] = 'NA'
-    if gold_standard.taxonomic_query:
-        gs_tax_bins_metrics = gold_standard.taxonomic_query.get_bins_metrics(gold_standard)
-        gs_pd_tax_bins = pd.DataFrame.from_dict(gs_tax_bins_metrics)
-
+def evaluate_all(queries_list, min_completeness, max_contamination):
     pd_bins_all = pd.DataFrame()
     df_summary = pd.DataFrame()
     for query in queries_list:
-        percentage_of_assigned_seqs, percentage_of_overbinned_seqs = compute_percentage_of_assigned_seqs(gold_standard, query)
+        percentage_of_assigned_seqs, percentage_of_overbinned_seqs = compute_percentage_of_assigned_seqs(query)
 
         # Compute metrics per bin
-        query.compute_true_positives(gold_standard)
-        precision_recall_per_bin.compute_precision_recall(gold_standard, query)
-        bins_metrics = query.get_bins_metrics(gold_standard)
+        query.compute_true_positives()
+        query.compute_precision_recall()
+        bins_metrics = query.get_bins_metrics()
 
         pd_bins = pd.DataFrame.from_dict(bins_metrics)
         pd_bins[utils_labels.TOOL] = query.label
 
-        if isinstance(query, binning_classes.GenomeQuery):
-            pd_bins['rank'] = 'NA'
-            gs_pd_bins = gs_pd_genome_bins
-        else:
-            gs_pd_bins = gs_pd_tax_bins
+        gs_pd_bins = pd.DataFrame.from_dict(query.gold_standard.get_bins_metrics())
+
         pd_bins_all = pd.concat([pd_bins_all, pd_bins], ignore_index=True, sort=False)
 
         # Compute metrics over bins
@@ -184,7 +171,7 @@ def evaluate_all(gold_standard,
                 rank, gs_pd_bins_rank, pd_bins_rank, query)
 
             bin_ids = pd_bins_rank['id'][pd_bins_rank['id'].notnull()].tolist()
-            ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq = rand_index.compute_metrics(bin_ids, query, gold_standard)
+            ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq = rand_index.compute_metrics(bin_ids, query)
 
             genome_recovery_val = genome_recovery.calc_dict(pd_bins_rank, min_completeness, max_contamination)
 
@@ -228,20 +215,20 @@ def evaluate_all(gold_standard,
     return df_summary, pd_bins_all
 
 
-def plot_heat_maps(gold_standard, queries_list, output_dir):
+def plot_heat_maps(queries_list, output_dir):
     for query in queries_list:
         if isinstance(query, binning_classes.GenomeQuery):
-            df_confusion = precision_recall_per_bin.transform_confusion_matrix(gold_standard, query)
+            df_confusion = precision_recall_per_bin.transform_confusion_matrix(query)
             plots.plot_heatmap(df_confusion, os.path.join(output_dir, query.label))
 
 
-def plot_genome_binning(gold_standard, queries_list, df_summary, pd_bins, plot_heatmaps, output_dir):
+def plot_genome_binning(queries_list, df_summary, pd_bins, plot_heatmaps, output_dir):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
     if len(df_summary_g) == 0:
         return
 
     if plot_heatmaps:
-        plot_heat_maps(gold_standard, queries_list, output_dir)
+        plot_heat_maps(queries_list, output_dir)
 
     plots.create_legend(df_summary_g, output_dir)
     plots.plot_avg_precision_recall(df_summary_g, output_dir)
@@ -263,7 +250,7 @@ def plot_taxonomic_binning(df_summary, output_dir):
         plots.plot_adjusted_rand_index_vs_assigned_bps(pd_group, output_dir, rank)
 
 
-def main(args=None, tax_id_to_parent=None, tax_id_to_rank=None, tax_id_to_name=None):
+def main(args=None):
     parser = argparse.ArgumentParser(description="AMBER: Assessment of Metagenome BinnERs",
                                      parents=[argparse_parents.PARSER_MULTI2], prog='AMBER')
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
@@ -296,33 +283,30 @@ def main(args=None, tax_id_to_parent=None, tax_id_to_rank=None, tax_id_to_name=N
 
     labels = get_labels(args.labels, args.bin_files)
 
-    if not tax_id_to_parent:
-        tax_id_to_parent, tax_id_to_rank, tax_id_to_name = load_data.load_ncbi_info(args.ncbi_nodes_file,
-                                                                                    args.ncbi_names_file,)
-    gold_standard, queries_list = load_data.load_queries(args.gold_standard_file,
-                                                         args.fasta_file,
-                                                         args.bin_files,
-                                                         args.map_by_completeness,
-                                                         args.filter,
-                                                         args.remove_genomes,
-                                                         args.keyword,
-                                                         tax_id_to_parent,
-                                                         tax_id_to_rank,
-                                                         tax_id_to_name,
-                                                         args.min_length,
-                                                         labels)
+    options = binning_classes.Options(filter_tail_percentage=args.filter,
+                                      filter_genomes_file=args.remove_genomes,
+                                      filter_keyword=args.keyword,
+                                      map_by_completeness=args.map_by_completeness,
+                                      min_length=args.min_length)
+
+    load_data.load_ncbi_info(args.ncbi_nodes_file, args.ncbi_names_file)
+
+    queries_list = load_data.load_queries(args.gold_standard_file,
+                                          args.fasta_file,
+                                          args.bin_files,
+                                          options,
+                                          labels)
 
     output_dir = os.path.abspath(args.output_dir)
     create_output_directories(output_dir, queries_list)
 
-    df_summary, pd_bins = evaluate_all(gold_standard,
-                                       queries_list,
+    df_summary, pd_bins = evaluate_all(queries_list,
                                        min_completeness, max_contamination)
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
     if args.stdout:
         print(df_summary.to_string(index=False))
 
-    plot_genome_binning(gold_standard, queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
+    plot_genome_binning(queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
     plot_taxonomic_binning(df_summary, output_dir)
     plots.plot_taxonomic_results(df_summary, output_dir)
 
@@ -338,7 +322,9 @@ def main(args=None, tax_id_to_parent=None, tax_id_to_rank=None, tax_id_to_name=N
         table = pd_group[columns].rename(columns={'id': 'tax_id'})
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
 
-    amber_html.create_html(gold_standard, df_summary, pd_bins, args.output_dir, args.desc)
+    # TODO: use num_genomes of query gs
+    num_genomes = len(queries_list[0].gold_standard.get_bins_metrics())
+    amber_html.create_html(num_genomes, df_summary, pd_bins, args.output_dir, args.desc)
 
 
 if __name__ == "__main__":

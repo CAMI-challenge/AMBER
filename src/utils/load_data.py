@@ -177,7 +177,7 @@ def read_binning_file(input_stream, is_gs):
     return read_rows(input_stream, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs)
 
 
-def update_tax_id_path(t_query, sequence_id, tax_id_path, tax_id_to_parent, tax_id_to_rank, gold_standard):
+def update_tax_id_path(t_query, sequence_id, tax_id_path, tax_id_to_parent, tax_id_to_rank):
     # check if the lowest rank of sequence in gs is higher than in the query
     # if so, update tax_id_path to skip lower ranks
     if not tax_id_path:
@@ -186,7 +186,7 @@ def update_tax_id_path(t_query, sequence_id, tax_id_path, tax_id_to_parent, tax_
     lowest_rank = tax_id_to_rank[tax_id_path[-1]]
     index_rank = load_ncbi_taxinfo.RANKS_LOW2HIGH.index(lowest_rank)
     for gs_rank in load_ncbi_taxinfo.RANKS_LOW2HIGH:
-        if sequence_id in gold_standard.taxonomic_query.rank_to_sequence_id_to_bin_id[gs_rank]:
+        if sequence_id in t_query.gold_standard.rank_to_sequence_id_to_bin_id[gs_rank]:
             index_gs_rank = load_ncbi_taxinfo.RANKS_LOW2HIGH.index(gs_rank)
 
             # if rank in gs not higher, return unmodified
@@ -208,11 +208,17 @@ def update_tax_id_path(t_query, sequence_id, tax_id_path, tax_id_to_parent, tax_
     return None
 
 
-def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_rank, tax_id_to_name, gold_standard, min_length=0):
+def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_standard, options):
     g_query = binning_classes.GenomeQuery()
     t_query = binning_classes.TaxonomicQuery()
-    t_query.tax_id_to_rank = tax_id_to_rank
-    t_query.tax_id_to_name = tax_id_to_name
+    if is_gs:
+        g_query.gold_standard = g_query
+        t_query.gold_standard = t_query
+        min_length = options.min_length
+    else:
+        g_query.gold_standard = g_gold_standard
+        t_query.gold_standard = t_gold_standard
+        min_length = 0
 
     with open(file_path_query) as read_handler:
         if is_gs and not binning_classes.Bin.sequence_id_to_length:
@@ -223,11 +229,10 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
 
         g_sequence_ids = {}
         t_sequence_ids = {}
-        if gold_standard:
-            if gold_standard.genome_query:
-                g_sequence_ids = gold_standard.genome_query.get_sequence_ids()
-            if gold_standard.taxonomic_query:
-                t_sequence_ids = gold_standard.taxonomic_query.get_sequence_ids()
+        if g_gold_standard:
+            g_sequence_ids = g_gold_standard.get_sequence_ids()
+        if t_gold_standard:
+            t_sequence_ids = t_gold_standard.get_sequence_ids()
 
         try:
             for sequence_id, bin_id, tax_id, length in read_binning_file(read_handler, is_gs):
@@ -253,13 +258,13 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                                 bin.mapping_id = bin_id
 
                 if tax_id:
-                    if not tax_id_to_parent:
+                    if not binning_classes.TaxonomicQuery.tax_id_to_parent:
                         if is_gs:
                             continue
                         else:
                             exit("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.")
 
-                    if tax_id not in tax_id_to_rank:
+                    if tax_id not in binning_classes.TaxonomicQuery.tax_id_to_rank:
                         print("Ignoring sequence {} - not a valid NCBI taxonomic ID: {} (file {})".format(sequence_id, tax_id, file_path_query), file=sys.stderr)
                         continue
 
@@ -267,10 +272,10 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                         print("Ignoring sequence {} - not found in the taxonomic binning gold standard: (file {})".format(sequence_id, file_path_query), file=sys.stderr)
                         continue
 
-                    tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank)
+                    tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank)
 
                     if not is_gs:
-                        tax_id_path = update_tax_id_path(t_query, sequence_id, tax_id_path, tax_id_to_parent, tax_id_to_rank, gold_standard)
+                        tax_id_path = update_tax_id_path(t_query, sequence_id, tax_id_path, binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank)
 
                     if not tax_id_path:
                         continue
@@ -279,71 +284,56 @@ def open_query(file_path_query, is_gs, fastx_file, tax_id_to_parent, tax_id_to_r
                             continue
                         if tax_id not in t_query.get_bin_ids():
                             bin = binning_classes.TaxonomicBin(tax_id)
-                            bin.rank = tax_id_to_rank[tax_id]
+                            bin.rank = binning_classes.TaxonomicQuery.tax_id_to_rank[tax_id]
                             t_query.add_bin(bin)
                         else:
                             bin = t_query.get_bin_by_id(tax_id)
-                        t_query.rank_to_sequence_id_to_bin_id = (tax_id_to_rank[tax_id], sequence_id, tax_id)
+                        t_query.rank_to_sequence_id_to_bin_id = (binning_classes.TaxonomicQuery.tax_id_to_rank[tax_id], sequence_id, tax_id)
                         bin.add_sequence_id(sequence_id)
         except BaseException as e:
             traceback.print_exc()
             exit("Error. File {} is malformed. {}".format(file_path_query, e))
 
-    if not g_query.bins:
+    if g_query.bins:
+        g_query.options = options
+    else:
         g_query = None
-    if not t_query.bins:
+
+    if t_query.bins:
+        t_query.options = options
+    else:
         t_query = None
+
     return g_query, t_query
 
 
 def load_ncbi_info(ncbi_nodes_file, ncbi_names_file):
     if ncbi_nodes_file:
-        tax_id_to_parent, tax_id_to_rank = load_ncbi_taxinfo.load_tax_info(ncbi_nodes_file)
+        binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank = \
+            load_ncbi_taxinfo.load_tax_info(ncbi_nodes_file)
         if ncbi_names_file:
-            tax_id_to_name = load_ncbi_taxinfo.load_names(tax_id_to_rank, ncbi_names_file)
-        else:
-            tax_id_to_name = None
-    else:
-        tax_id_to_parent = tax_id_to_rank = tax_id_to_name = None
-    return tax_id_to_parent, tax_id_to_rank, tax_id_to_name
+            binning_classes.TaxonomicQuery.tax_id_to_name = load_ncbi_taxinfo.load_names(binning_classes.TaxonomicQuery.tax_id_to_rank, ncbi_names_file)
 
 
-def load_queries(gold_standard_file, fastx_file, query_files, map_by_completeness, filter_tail_percentage,
-                 filter_genomes_file, filter_keyword, tax_id_to_parent, tax_id_to_rank, tax_id_to_name, min_length, labels):
-    if not min_length:
-        min_length = 0
-
+def load_queries(gold_standard_file, fastx_file, query_files, options, labels):
     g_gold_standard, t_gold_standard = open_query(gold_standard_file,
                                                   True,
                                                   fastx_file,
-                                                  tax_id_to_parent, tax_id_to_rank, tax_id_to_name,
-                                                  None,
-                                                  min_length)
-
-    gold_standard = binning_classes.GoldStandard(g_gold_standard, t_gold_standard)
-    if filter_genomes_file:
-        gold_standard.filter_genomes_file = filter_genomes_file
-    if filter_keyword:
-        gold_standard.filter_keyword = filter_keyword
-    if filter_tail_percentage:
-        gold_standard.filter_tail_percentage = filter_tail_percentage
-
+                                                  None, None,
+                                                  options)
     queries_list = []
     for query_file, label in zip(query_files, labels):
         g_query, t_query = open_query(query_file,
                                       False,
                                       None,
-                                      tax_id_to_parent, tax_id_to_rank, tax_id_to_name,
-                                      gold_standard,
-                                      0)
-        if g_query:
-            g_query.label = label
-            g_query.map_by_completeness = map_by_completeness
-            queries_list.append(g_query)
-        if t_query:
-            t_query.label = label
-            queries_list.append(t_query)
+                                      g_gold_standard, t_gold_standard,
+                                      options)
+        for query in [g_query, t_query]:
+            if not query:
+                continue
+            query.label = label
+            queries_list.append(query)
 
     # TODO if there is a g_query (t_query), there must be a g_gold_standard (t_gold_standard)
 
-    return gold_standard, queries_list
+    return queries_list
