@@ -141,16 +141,11 @@ class TaxonomicQuery(Query):
     def __init__(self):
         super().__init__()
         self.__rank_to_sequence_id_to_bin_id = defaultdict(dict)
-        self.__rank_to_overbinned_seqs = defaultdict(list)
         self.__rank_to_bins = defaultdict(list)
 
     @property
     def rank_to_sequence_id_to_bin_id(self):
         return self.__rank_to_sequence_id_to_bin_id
-
-    @property
-    def rank_to_overbinned_seqs(self):
-        return self.__rank_to_overbinned_seqs
 
     @property
     def rank_to_bins(self):
@@ -161,17 +156,9 @@ class TaxonomicQuery(Query):
         (rank, sequence_id, bin_id) = rank_sequence_id_bin_id
         self.__rank_to_sequence_id_to_bin_id[rank][sequence_id] = bin_id
 
-    @rank_to_overbinned_seqs.setter
-    def rank_to_overbinned_seqs(self, rank_overbinned_seqs):
-        rank, overbinned_seqs = rank_overbinned_seqs
-        self.__rank_to_overbinned_seqs[rank] = overbinned_seqs
-
     def add_bin(self, bin):
         self.rank_to_bins[bin.rank].append(bin)
         super().add_bin(bin)
-
-    def append_overbinned_seq_id(self, rank, seq_id):
-        self.__rank_to_overbinned_seqs[rank].append(seq_id)
 
     def compute_true_positives(self):
         for bin in self.bins:

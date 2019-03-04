@@ -177,37 +177,6 @@ def read_binning_file(input_stream, is_gs):
     return read_rows(input_stream, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs)
 
 
-def update_tax_id_path(t_query, sequence_id, tax_id_path, tax_id_to_parent, tax_id_to_rank):
-    # check if the lowest rank of sequence in gs is higher than in the query
-    # if so, update tax_id_path to skip lower ranks
-    if not tax_id_path:
-        return None
-
-    lowest_rank = tax_id_to_rank[tax_id_path[-1]]
-    index_rank = load_ncbi_taxinfo.RANKS_LOW2HIGH.index(lowest_rank)
-    for gs_rank in load_ncbi_taxinfo.RANKS_LOW2HIGH:
-        if sequence_id in t_query.gold_standard.rank_to_sequence_id_to_bin_id[gs_rank]:
-            index_gs_rank = load_ncbi_taxinfo.RANKS_LOW2HIGH.index(gs_rank)
-
-            # if rank in gs not higher, return unmodified
-            if index_gs_rank <= index_rank:
-                return tax_id_path
-
-            reversed_tax_id_path = iter(reversed(tax_id_path))
-            while True:
-                try:
-                    tax_id = next(reversed_tax_id_path)
-                except StopIteration:
-                    return None
-                if tax_id:
-                    index_rank = load_ncbi_taxinfo.RANKS_LOW2HIGH.index(tax_id_to_rank[tax_id])
-                    if index_gs_rank > index_rank:
-                        t_query.append_overbinned_seq_id(tax_id_to_rank[tax_id], sequence_id)
-                    else:
-                        return load_ncbi_taxinfo.get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank)
-    return None
-
-
 def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_standard, options):
     g_query = binning_classes.GenomeQuery()
     t_query = binning_classes.TaxonomicQuery()
@@ -273,9 +242,6 @@ def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_stand
                         continue
 
                     tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank)
-
-                    if not is_gs:
-                        tax_id_path = update_tax_id_path(t_query, sequence_id, tax_id_path, binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank)
 
                     if not tax_id_path:
                         continue

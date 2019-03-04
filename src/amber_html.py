@@ -160,7 +160,7 @@ def get_colors_and_ranges(name):
     hue1 = 12
     hue2 = 240
 
-    if name == upper1(utils_labels.MISCLASSIFICATION_PER_BP) or name == upper1(utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN) or name == upper1(utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN):
+    if name == upper1(utils_labels.MISCLASSIFICATION_PER_BP):
         return color2, color1, hue2, hue1, 0, 1
     return color1, color2, hue1, hue2, 0, 1
 
@@ -313,14 +313,7 @@ def create_table_html(df_summary, is_genome):
                 utils_labels.RI_BY_SEQ,
                 utils_labels.ARI_BY_SEQ,
                 utils_labels.RI_BY_BP,
-                utils_labels.ARI_BY_BP,
-                utils_labels.PERCENTAGE_ASSIGNED_BPS,
-                utils_labels.PERCENTAGE_ASSIGNED_SEQS,
-                utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN,
-                utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN]
-    if is_genome:
-        metrics2.remove(utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN)
-        metrics2.remove(utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN)
+                utils_labels.ARI_BY_BP]
     all_metrics = [metrics1, metrics2]
     metrics1_label = 'Quality of bins: all bins have the same weight'
     metrics2_label = 'Quality for sample: quality weighted by bin sizes'
@@ -343,8 +336,6 @@ def create_table_html(df_summary, is_genome):
          utils_labels.ARI_BY_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ARI_BY_BP, utils_labels.ARI_BY_BP, utils_labels.ARI_BY_BP),
          utils_labels.PERCENTAGE_ASSIGNED_BPS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.PERCENTAGE_ASSIGNED_BPS),
          utils_labels.PERCENTAGE_ASSIGNED_SEQS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.PERCENTAGE_ASSIGNED_SEQS),
-         utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN, utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN, utils_labels.PERCENTAGE_ASSIGNED_BPS_UNKNOWN),
-         utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN, utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN, utils_labels.PERCENTAGE_ASSIGNED_SEQS_UNKNOWN),
          utils_labels.AVG_PRECISION_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_BP, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_PRECISION_BP),
          utils_labels.AVG_PRECISION_BP_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_PRECISION_BP_SEM),
          utils_labels.AVG_RECALL_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_RECALL_BP),
