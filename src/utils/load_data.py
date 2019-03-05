@@ -2,8 +2,8 @@
 
 import os
 import sys
-import numpy as np
 import traceback
+import logging
 from src import binning_classes
 
 try:
@@ -26,27 +26,47 @@ def load_unique_common(unique_common_file_path):
     return genome_to_unique_common
 
 
-def load_tsv_table(stream):
-    data = []
-    next(stream)
-    for line in stream:
+def read_binning_file(read_handler, file_path, is_gs):
+    header = {}
+    column_name_to_index = {}
+    got_column_indices = False
+    reading_data = False
+
+    for line in read_handler:
         line = line.strip()
-        if len(line) == 0 or line.startswith("@"):
+        if len(line) == 0 or line.startswith("#"):
             continue
-        row_data = line.split('\t')
 
-        mapped_genome = row_data[0]
-        real_size = int(float(row_data[5]))
-        predicted_size = int(float(row_data[3]))
-        correctly_predicted = int(float(row_data[4]))
+        # parse header with column indices
+        if line.startswith("@@"):
+            for index, column_name in enumerate(line[2:].split('\t')):
+                column_name_to_index[column_name] = index
+            index_seq_id, index_bin_id, index_tax_id, index_length = get_column_indices(column_name_to_index)
+            got_column_indices = True
+            reading_data = False
+            continue
 
-        if row_data[1] != "NA" and predicted_size > 0:
-            precision = float(row_data[1])
-        else:
-            precision = np.nan
-        data.append({'mapped_genome': mapped_genome, 'precision': precision, 'recall': float(row_data[2]),
-                     'predicted_size': predicted_size, 'correctly_predicted': correctly_predicted, 'true_size': real_size})
-    return data
+        # parse header with metadata
+        if line.startswith("@"):
+            if reading_data:
+                header = {}
+            key, value = line[1:].split(':', 1)
+            header[key.upper()] = value.strip()
+            got_column_indices = False
+            reading_data = False
+            continue
+
+        if not got_column_indices:
+            logging.getLogger('amber').critical("Header line starting with @@ in file {} is missing or at wrong position.\n".format(file_path))
+            raise RuntimeError
+
+        if 'SAMPLEID' not in header:
+            logging.getLogger('amber').critical("Header in file {} is incomplete. Check if the header of each sample contains at least SAMPLEID.\n".format(file_path))
+            raise RuntimeError
+
+        reading_data = True
+        sequence_id, bin_id, tax_id, length = read_row(line, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs)
+        yield header['SAMPLEID'], sequence_id, bin_id, tax_id, length
 
 
 def get_genome_mapping_without_lenghts(mapping_file, remove_genomes_file=None, keyword=None):
@@ -60,7 +80,7 @@ def get_genome_mapping_without_lenghts(mapping_file, remove_genomes_file=None, k
 
     with open(mapping_file, 'r') as read_handler:
         try:
-            for sequence_id, genome_id, length in read_binning_file(read_handler):
+            for sample_id, sequence_id, genome_id, length in read_binning_file(read_handler, mapping_file):
                 if genome_id in filtering_genomes_to_keyword and (not keyword or filtering_genomes_to_keyword[genome_id] == keyword):
                     continue
                 gold_standard.sequence_id_to_genome_id[sequence_id] = genome_id
@@ -98,46 +118,42 @@ def read_header(input_stream):
             header[key] = value.strip()
 
 
-def read_rows(input_stream, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs):
-    for line in input_stream:
-        if len(line.strip()) == 0 or line.startswith("#"):
-            continue
-        line = line.rstrip('\n')
-        row_data = line.split('\t')
+def read_row(line, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs):
+    line = line.rstrip('\n')
+    row_data = line.split('\t')
+    try:
+        seq_id = row_data[index_seq_id]
+    except:
+        print("Value in column SEQUENCEID could not be read.")
+        raise
 
+    if index_bin_id:
         try:
-            seq_id = row_data[index_seq_id]
+            bin_id = row_data[index_bin_id]
         except:
-            print("Value in column SEQUENCEID could not be read.")
+            print("Value in column BINID could not be read.")
             raise
+    else:
+        bin_id = None
 
-        if index_bin_id:
-            try:
-                bin_id = row_data[index_bin_id]
-            except:
-                print("Value in column BINID could not be read.")
-                raise
-        else:
-            bin_id = None
+    if index_tax_id:
+        try:
+            tax_id = row_data[index_tax_id]
+        except:
+            print("Value in column TAXID could not be read.")
+            raise
+    else:
+        tax_id = None
 
-        if index_tax_id:
-            try:
-                tax_id = row_data[index_tax_id]
-            except:
-                print("Value in column TAXID could not be read.")
-                raise
-        else:
-            tax_id = None
-
-        if is_gs and index_length is not None:
-            try:
-                length = int(row_data[index_length])
-            except:
-                print("Value in column _LENGTH could not be read. Please provide a value or remove column altogether (and provide a FASTA or FASTQ file instead - see README).")
-                raise
-            yield seq_id, bin_id, tax_id, length
-        else:
-            yield seq_id, bin_id, tax_id, int(0)
+    if is_gs and index_length is not None:
+        try:
+            length = int(row_data[index_length])
+        except:
+            print("Value in column _LENGTH could not be read. Please provide a value or remove column altogether (and provide a FASTA or FASTQ file instead - see README).")
+            raise
+        return seq_id, bin_id, tax_id, length
+    else:
+        return seq_id, bin_id, tax_id, int(0)
 
 
 def is_length_column_available(input_stream):
@@ -146,35 +162,24 @@ def is_length_column_available(input_stream):
     return "_LENGTH" in column_names
 
 
-def get_column_indices(input_stream):
-    """
-
-    :param input_stream: 
-    :return: 
-    """
-    header, column_names = read_header(input_stream)
-    if "SEQUENCEID" not in column_names:
+def get_column_indices(column_name_to_index):
+    if "SEQUENCEID" not in column_name_to_index:
         raise RuntimeError("Column not found: {}".format("SEQUENCEID"))
-    if "BINID" not in column_names and "TAXID" not in column_names:
+    if "BINID" not in column_name_to_index and "TAXID" not in column_name_to_index:
         raise RuntimeError("Column not found: {}".format("BINID/TAXID"))
-    index_seq_id = column_names["SEQUENCEID"]
+    index_seq_id = column_name_to_index["SEQUENCEID"]
 
     index_bin_id = None
     index_tax_id = None
-    if "BINID" in column_names:
-        index_bin_id = column_names["BINID"]
-    if "TAXID" in column_names:
-        index_tax_id = column_names["TAXID"]
+    if "BINID" in column_name_to_index:
+        index_bin_id = column_name_to_index["BINID"]
+    if "TAXID" in column_name_to_index:
+        index_tax_id = column_name_to_index["TAXID"]
 
     index_length = None
-    if "_LENGTH" in column_names:
-        index_length = column_names["_LENGTH"]
+    if "_LENGTH" in column_name_to_index:
+        index_length = column_name_to_index["_LENGTH"]
     return index_seq_id, index_bin_id, index_tax_id, index_length
-
-
-def read_binning_file(input_stream, is_gs):
-    index_seq_id, index_bin_id, index_tax_id, index_length = get_column_indices(input_stream)
-    return read_rows(input_stream, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs)
 
 
 def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_standard, options):
@@ -204,7 +209,7 @@ def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_stand
             t_sequence_ids = t_gold_standard.get_sequence_ids()
 
         try:
-            for sequence_id, bin_id, tax_id, length in read_binning_file(read_handler, is_gs):
+            for sample_id, sequence_id, bin_id, tax_id, length in read_binning_file(read_handler, file_path_query, is_gs):
                 if is_gs:
                     binning_classes.Bin.sequence_id_to_length[sequence_id] = length
                 elif sequence_id not in binning_classes.Bin.sequence_id_to_length:

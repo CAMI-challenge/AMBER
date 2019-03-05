@@ -48,7 +48,7 @@ def get_labels(labels, bin_files):
     return tool_id
 
 
-def compute_metrics_over_bins(gs_pd_bins_rank, pd_bins_rank, query):
+def compute_metrics_over_bins(rank, gs_pd_bins_rank, pd_bins_rank, query):
     true_positive_bps_all_bins = pd_bins_rank['true_positive_bps'].sum()
     true_positive_seqs_all_bins = pd_bins_rank['true_positive_seqs'].sum()
 
@@ -62,27 +62,32 @@ def compute_metrics_over_bins(gs_pd_bins_rank, pd_bins_rank, query):
     misclassification_rate_bp = (all_bins_false_positive_bps / all_bins_length) if all_bins_length > 0 else np.nan
     misclassification_rate_seq = (all_bins_false_positive_seqs / all_bins_num_seqs) if all_bins_num_seqs > 0 else np.nan
 
-    true_positives_recall_bp = 0
-    true_positives_recall_seq = 0
-    for i in gs_pd_bins_rank.index:
-        mapping_id = gs_pd_bins_rank.at[i, 'mapping_id']
-        bin_assigns = []
-        bin_assigns_seqs = []
-        for i2 in pd_bins_rank.index:
-            bin_id = pd_bins_rank.at[i2, 'id']
-            if bin_id:
-                bin = query.get_bin_by_id(bin_id)
-                if mapping_id in bin.mapping_id_to_length:
-                    bin_assigns.append(bin.mapping_id_to_length[mapping_id])
-                    bin_assigns_seqs.append(bin.mapping_id_to_num_seqs[mapping_id])
-        if len(bin_assigns) > 0:
-            true_positives_recall_bp += max(bin_assigns)
-            true_positives_recall_seq += max(bin_assigns_seqs)
-
     gs_length = gs_pd_bins_rank['true_size'].sum()
     gs_num_seqs = gs_pd_bins_rank['true_num_seqs'].sum()
-    recall_bp = true_positives_recall_bp / gs_length
-    recall_seq = true_positives_recall_seq / gs_num_seqs
+
+    if rank == 'NA':
+        true_positives_recall_bp = 0
+        true_positives_recall_seq = 0
+        for i in gs_pd_bins_rank.index:
+            mapping_id = gs_pd_bins_rank.at[i, 'mapping_id']
+            bin_assigns = []
+            bin_assigns_seqs = []
+            for i2 in pd_bins_rank.index:
+                bin_id = pd_bins_rank.at[i2, 'id']
+                if bin_id:
+                    bin = query.get_bin_by_id(bin_id)
+                    if mapping_id in bin.mapping_id_to_length:
+                        bin_assigns.append(bin.mapping_id_to_length[mapping_id])
+                        bin_assigns_seqs.append(bin.mapping_id_to_num_seqs[mapping_id])
+            if len(bin_assigns) > 0:
+                true_positives_recall_bp += max(bin_assigns)
+                true_positives_recall_seq += max(bin_assigns_seqs)
+        recall_bp = true_positives_recall_bp / gs_length
+        recall_seq = true_positives_recall_seq / gs_num_seqs
+    else:
+        recall_bp = true_positive_bps_all_bins / gs_length
+        recall_seq = true_positive_seqs_all_bins / gs_num_seqs
+
     accuracy_bp = true_positive_bps_all_bins / gs_length
     accuracy_seq = true_positive_seqs_all_bins / gs_num_seqs
     percentage_of_assigned_bps = all_bins_length / gs_length
@@ -151,7 +156,7 @@ def evaluate_all(queries_list, min_completeness, max_contamination):
 
             precision_bp, recall_bp, accuracy_bp, misclassification_rate_bp,\
                 precision_seq, recall_seq, accuracy_seq, misclassification_rate_seq,\
-                percentage_of_assigned_bps = compute_metrics_over_bins(gs_pd_bins_rank, pd_bins_rank, query)
+                percentage_of_assigned_bps = compute_metrics_over_bins(rank, gs_pd_bins_rank, pd_bins_rank, query)
 
             bin_ids = pd_bins_rank['id'][pd_bins_rank['id'].notnull()].tolist()
             ri_by_seq, ri_by_bp, ari_by_bp, ari_by_seq = rand_index.compute_metrics(bin_ids, query)

@@ -183,8 +183,8 @@ class TaxonomicQuery(Query):
                                           'name': TaxonomicQuery.tax_id_to_name[bin_id] if TaxonomicQuery.tax_id_to_name else np.nan,
                                           'rank': rank,
                                           'mapping_id': bin_id,
-                                          'purity_bp': np.nan,
-                                          'purity_seq': np.nan,
+                                          'purity_bp': .0,
+                                          'purity_seq': .0,
                                           'completeness_bp': .0,
                                           'completeness_seq': .0,
                                           'predicted_size': 0,
@@ -417,7 +417,7 @@ class TaxonomicBin(Bin):
             true_size = gold_standard.get_bin_by_id(self.id).length
             true_num_seqs = gold_standard.get_bin_by_id(self.id).num_seqs()
         else:
-            true_size = true_num_seqs = np.nan
+            true_size = true_num_seqs = 0
         return {'id': self.id,
                 'name': gold_standard.tax_id_to_name[self.id] if gold_standard.tax_id_to_name else np.nan,
                 'rank': self.rank,
