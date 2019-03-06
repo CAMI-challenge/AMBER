@@ -10,12 +10,17 @@ from src.utils import filter_tail
 
 class Query(ABC):
     def __init__(self):
+        self.__sequence_id_to_length = None
         self.__bins = []
         self.__bin_id_to_bin = {}
         self.__label = ""
         self.__options = None
         self.__bins_metrics = None
         self.__gold_standard = None
+
+    @property
+    def sequence_id_to_length(self):
+        return self.__sequence_id_to_length
 
     @property
     def options(self):
@@ -36,6 +41,10 @@ class Query(ABC):
     @property
     def gold_standard(self):
         return self.__gold_standard
+
+    @sequence_id_to_length.setter
+    def sequence_id_to_length(self, sequence_id_to_length):
+        self.__sequence_id_to_length = sequence_id_to_length
 
     @options.setter
     def options(self, options: 'Options'):
@@ -200,8 +209,6 @@ class TaxonomicQuery(Query):
 
 
 class Bin(ABC):
-    sequence_id_to_length = {}
-
     def __init__(self, id):
         self.__id = id
         self.__sequence_ids = set()
@@ -307,10 +314,10 @@ class Bin(ABC):
     def num_seqs(self):
         return len(self.__sequence_ids)
 
-    def add_sequence_id(self, sequence_id):
+    def add_sequence_id(self, sequence_id, length):
         if sequence_id not in self.__sequence_ids:
             self.__sequence_ids.add(sequence_id)
-            self.__length += self.sequence_id_to_length[sequence_id]
+            self.__length += length
 
     @abstractmethod
     def compute_confusion_matrix(self, gold_standard):
@@ -335,7 +342,7 @@ class GenomeBin(Bin):
     def compute_confusion_matrix(self, gold_standard):
         for sequence_id in self.sequence_ids:
             mapping_id = gold_standard.sequence_id_to_bin_id[sequence_id]
-            self.mapping_id_to_length[mapping_id] += Bin.sequence_id_to_length[sequence_id]
+            self.mapping_id_to_length[mapping_id] += gold_standard.sequence_id_to_length[sequence_id]
             self.mapping_id_to_num_seqs[mapping_id] += 1
 
     def compute_true_positives(self, gold_standard, map_by_completeness):
@@ -398,7 +405,7 @@ class TaxonomicBin(Bin):
         for sequence_id in self.sequence_ids:
             if sequence_id in gold_standard.rank_to_sequence_id_to_bin_id[self.rank]:
                 mapping_id = gold_standard.rank_to_sequence_id_to_bin_id[self.rank][sequence_id]
-                self.mapping_id_to_length[mapping_id] += Bin.sequence_id_to_length[sequence_id]
+                self.mapping_id_to_length[mapping_id] += gold_standard.sequence_id_to_length[sequence_id]
                 self.mapping_id_to_num_seqs[mapping_id] += 1
 
     def compute_true_positives(self, gold_standard):
@@ -409,7 +416,7 @@ class TaxonomicBin(Bin):
         gs_bin = gold_standard.get_bin_by_id(self.id)
         commmon_seq_ids = self.sequence_ids & gs_bin.sequence_ids
         for sequence_id in commmon_seq_ids:
-            self.true_positive_bps += Bin.sequence_id_to_length[sequence_id]
+            self.true_positive_bps += gold_standard.sequence_id_to_length[sequence_id]
         self.true_positive_seqs = len(commmon_seq_ids)
 
     def get_metrics_dict(self, gold_standard):

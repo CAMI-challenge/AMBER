@@ -183,41 +183,48 @@ def get_column_indices(column_name_to_index):
 
 
 def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_standard, options):
-    g_query = binning_classes.GenomeQuery()
-    t_query = binning_classes.TaxonomicQuery()
-    if is_gs:
-        g_query.gold_standard = g_query
-        t_query.gold_standard = t_query
-        min_length = options.min_length
-    else:
-        g_query.gold_standard = g_gold_standard
-        t_query.gold_standard = t_gold_standard
-        min_length = 0
-
     with open(file_path_query) as read_handler:
-        if is_gs and not binning_classes.Bin.sequence_id_to_length:
-            if not is_length_column_available(read_handler):
-                if not fastx_file:
-                    exit("Sequences length could not be determined. Please provide a FASTA or FASTQ file using option -f or add column _LENGTH to gold standard.")
-                binning_classes.Bin.sequence_id_to_length = add_length_column.read_lengths_from_fastx_file(fastx_file)
-
-        g_sequence_ids = {}
-        t_sequence_ids = {}
-        if g_gold_standard:
-            g_sequence_ids = g_gold_standard.get_sequence_ids()
-        if t_gold_standard:
-            t_sequence_ids = t_gold_standard.get_sequence_ids()
-
         try:
+            sample_id_prev = '~'
             for sample_id, sequence_id, bin_id, tax_id, length in read_binning_file(read_handler, file_path_query, is_gs):
+
+                if sample_id != sample_id_prev:
+                    g_query = binning_classes.GenomeQuery()
+                    t_query = binning_classes.TaxonomicQuery()
+                    if is_gs:
+                        g_query.sequence_id_to_length = t_query.sequence_id_to_length = sequence_id_to_length = {}
+                        g_query.gold_standard = g_query
+                        t_query.gold_standard = t_query
+                    else:
+                        if g_gold_standard:
+                            g_query.gold_standard = g_gold_standard
+                            sequence_id_to_length = g_gold_standard.sequence_id_to_length
+                        if t_gold_standard:
+                            t_query.gold_standard = t_gold_standard
+                            sequence_id_to_length = t_gold_standard.sequence_id_to_length
+
+                    # TODO: re-enable check
+                    # if is_gs and not binning_classes.Bin.sequence_id_to_length and is_length_column_available(read_handler):
+                    #     if not fastx_file:
+                    #         exit("Sequences length could not be determined. Please provide a FASTA or FASTQ file using option -f or add column _LENGTH to gold standard.")
+                    #     binning_classes.Bin.sequence_id_to_length = add_length_column.read_lengths_from_fastx_file(fastx_file)
+
+                    g_sequence_ids = {}
+                    t_sequence_ids = {}
+                    if g_gold_standard:
+                        g_sequence_ids = g_gold_standard.get_sequence_ids()
+                    if t_gold_standard:
+                        t_sequence_ids = t_gold_standard.get_sequence_ids()
+                sample_id_prev = sample_id
+
                 if is_gs:
-                    binning_classes.Bin.sequence_id_to_length[sequence_id] = length
-                elif sequence_id not in binning_classes.Bin.sequence_id_to_length:
+                    sequence_id_to_length[sequence_id] = length
+                elif sequence_id not in sequence_id_to_length:
                     print("Ignoring sequence {} - length unknown (file {})".format(sequence_id, file_path_query), file=sys.stderr)
                     continue
 
                 if bin_id:
-                    if binning_classes.Bin.sequence_id_to_length[sequence_id] >= min_length:
+                    if sequence_id_to_length[sequence_id] >= options.min_length:
                         if not is_gs and sequence_id not in g_sequence_ids:
                             print("Ignoring sequence {} - not found in the genome binning gold standard: (file {})".format(sequence_id, file_path_query), file=sys.stderr)
                         else:
@@ -227,9 +234,11 @@ def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_stand
                             else:
                                 bin = g_query.get_bin_by_id(bin_id)
                             g_query.sequence_id_to_bin_id = (sequence_id, bin_id)
-                            bin.add_sequence_id(sequence_id)
+                            bin.add_sequence_id(sequence_id, sequence_id_to_length[sequence_id])
                             if is_gs:
                                 bin.mapping_id = bin_id
+                    else:
+                        print("Ignoring sequence {} - shorter than {} bps: (file {})".format(sequence_id, options.min_length, file_path_query), file=sys.stderr)
 
                 if tax_id:
                     if not binning_classes.TaxonomicQuery.tax_id_to_parent:
@@ -260,7 +269,7 @@ def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_stand
                         else:
                             bin = t_query.get_bin_by_id(tax_id)
                         t_query.rank_to_sequence_id_to_bin_id = (binning_classes.TaxonomicQuery.tax_id_to_rank[tax_id], sequence_id, tax_id)
-                        bin.add_sequence_id(sequence_id)
+                        bin.add_sequence_id(sequence_id, sequence_id_to_length[sequence_id])
         except BaseException as e:
             traceback.print_exc()
             exit("Error. File {} is malformed. {}".format(file_path_query, e))

@@ -3,15 +3,30 @@
 # Introduction
 AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the comparative assessment of genome reconstructions from metagenome benchmark datasets. It provides performance metrics, results rankings, and comparative visualizations for assessing multiple programs or parameter effects. The provided metrics were used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic Interpretation](http://www.cami-challenge.org/).
 
-AMBER produces print-ready and interactive plots. See a produced example page at *https://cami-challenge.github.io/AMBER/*
+**Computed metrics**
 
-# Requirements
+* Average purity (averaged over recovered genome/taxonomic bins)
+* Average completeness (averaged over recovered genome/taxonomic bins)
+* Average purity per base pair
+* Average completeness per base pair
+* (Adjusted) Rand index by sequence and base pair counts
+* Percentage of assigned base pairs
+* Accuracy
+* Number of genomes recovered within levels of completeness and contamination
+
+**Example page produced by AMBER**
+
+*https://cami-challenge.github.io/AMBER/*
+
+# Installation
+
+## Requirements
 
 AMBER requires Python 3.5 or above.
 
 See [default.txt](requirements/default.txt) for all dependencies.
 
-## Installation
+## Steps
 
 You can run [AMBER using Docker (see below)](#running-amberpy-using-docker) or install it as follows.
 
@@ -61,17 +76,6 @@ See [here](./test/gsa_mapping.binning) another example. Note: column BINID (TAXI
 2. One or more files with bin assignments for the sequences also in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format), with each file containing all the bin assignments from a binning program. A tool for converting FASTA files, such that each file represents a bin, is available (see [_src/utils/convert_fasta_bins_to_biobox_format.py_](README_TOOLS.md#srcutilsconvert_fasta_bins_to_biobox_formatpy)).
 3. A FASTA or FASTQ file with the sequences for obtaining their lengths. Optionally, the lenghts may be added to the gold standard mapping file at column _LENGTH using tool [_src/utils/add_length_column.py_](README_TOOLS.md#srcutilsadd_length_columnpy). In this way, AMBER no longer requires a FASTA or FASTQ file.
 4. For assessing **taxonomic binning**, AMBER also requires the file **nodes.dmp** from NCBI. Download taxdump.tar.gz from [ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz), extract nodes.tmp, and specify it to AMBER with option `--ncbi_nodes_file`. 
-
-## Computed metrics
-
-* Average purity (averaged over recovered genome/taxonomic bins)
-* Average completeness (averaged over recovered genome/taxonomic bins)
-* Average purity per base pair
-* Average completeness per base pair
-* (Adjusted) Rand index by sequence and base pair counts
-* Percentage of assigned base pairs
-* Accuracy
-* Number of genomes recovered within levels of completeness and contamination
 
 ## Running _amber.py_
 

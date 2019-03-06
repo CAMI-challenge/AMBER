@@ -32,13 +32,13 @@ def preprocess_counts(bin_ids, query, by_bp_counts):
         for sequence_id in bin.sequence_ids:
             if sequence_id in gs_sequence_id_to_mapping_id:
                 mapping_id = gs_sequence_id_to_mapping_id[sequence_id]
-                bin_id_to_mapping_id_to_length[bin.id][mapping_id] += binning_classes.Bin.sequence_id_to_length[sequence_id] if by_bp_counts else 1
+                bin_id_to_mapping_id_to_length[bin.id][mapping_id] += query.gold_standard.sequence_id_to_length[sequence_id] if by_bp_counts else 1
 
     for sequence_id in sequence_id_to_bin_id:
         if sequence_id in gs_sequence_id_to_mapping_id:
             mapping_id = gs_sequence_id_to_mapping_id[sequence_id]
             bin_id = sequence_id_to_bin_id[sequence_id]
-            mapping_id_to_bin_id_to_length[mapping_id][bin_id] += binning_classes.Bin.sequence_id_to_length[sequence_id] if by_bp_counts else 1
+            mapping_id_to_bin_id_to_length[mapping_id][bin_id] += query.gold_standard.sequence_id_to_length[sequence_id] if by_bp_counts else 1
 
     return bin_id_to_mapping_id_to_length, mapping_id_to_bin_id_to_length
 

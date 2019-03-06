@@ -9,9 +9,8 @@ import pandas as pd
 from src import binning_classes
 
 
-def transform_confusion_matrix(gold_standard,
-                               query):
-    gold_standard_query = gold_standard.genome_query
+def transform_confusion_matrix(query):
+    gold_standard = query.gold_standard
 
     bin_id_to_genome_id_to_length = {}
     for bin in query.bins:
@@ -19,11 +18,11 @@ def transform_confusion_matrix(gold_standard,
     df_confusion = pd.DataFrame(bin_id_to_genome_id_to_length).T
 
     query_sequence_ids = set(query.sequence_id_to_bin_id.keys())
-    gs_sequence_ids = set(gold_standard_query.sequence_id_to_bin_id.keys())
+    gs_sequence_ids = set(gold_standard.sequence_id_to_bin_id.keys())
     genome_id_to_unassigned_bps = collections.Counter()
     for unassigned_seq_id in gs_sequence_ids - query_sequence_ids:
-        genome_id = gold_standard_query.sequence_id_to_bin_id[unassigned_seq_id]
-        genome_id_to_unassigned_bps[genome_id] += binning_classes.Bin.sequence_id_to_length[unassigned_seq_id]
+        genome_id = gold_standard.sequence_id_to_bin_id[unassigned_seq_id]
+        genome_id_to_unassigned_bps[genome_id] += gold_standard.sequence_id_to_length[unassigned_seq_id]
 
     df_unassigned = pd.DataFrame.from_dict(genome_id_to_unassigned_bps, orient='index').rename(columns={0: 'unassigned'}).T
     table = df_confusion.append(df_unassigned)
@@ -51,7 +50,7 @@ def transform_confusion_matrix(gold_standard,
 
     table = table.loc[list(bin_id_to_mapped_genome_by_length.keys()) + ['unassigned'], genome_order]
 
-    for genome_id in gold_standard_query.get_bin_ids():
+    for genome_id in gold_standard.get_bin_ids():
         if genome_id not in table.columns.values.tolist():
             table[genome_id] = 0
 
