@@ -4,6 +4,7 @@ import os
 import sys
 import traceback
 import logging
+from collections import defaultdict
 from src import binning_classes
 
 try:
@@ -182,26 +183,47 @@ def get_column_indices(column_name_to_index):
     return index_seq_id, index_bin_id, index_tax_id, index_length
 
 
-def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_standard, options):
+def initialize_query(sample_id_to_g_gold_standard, sample_id_to_t_gold_standard, is_gs, sample_id, options, label):
+    g_query = binning_classes.GenomeQuery()
+    t_query = binning_classes.TaxonomicQuery()
+    g_query.options = options
+    t_query.options = options
+    t_query.label = label
+    g_query.label = label
+    g_sequence_ids = {}
+    t_sequence_ids = {}
+    if is_gs:
+        g_query.sequence_id_to_length = t_query.sequence_id_to_length = sequence_id_to_length = {}
+        g_query.gold_standard = g_query
+        t_query.gold_standard = t_query
+    else:
+        if sample_id_to_g_gold_standard and sample_id in sample_id_to_g_gold_standard:
+            g_query.gold_standard = sample_id_to_g_gold_standard[sample_id]
+            sequence_id_to_length = sample_id_to_g_gold_standard[sample_id].sequence_id_to_length
+            g_sequence_ids = sample_id_to_g_gold_standard[sample_id].get_sequence_ids()
+        if sample_id_to_t_gold_standard and sample_id in sample_id_to_t_gold_standard:
+            t_query.gold_standard = sample_id_to_t_gold_standard[sample_id]
+            sequence_id_to_length = sample_id_to_t_gold_standard[sample_id].sequence_id_to_length
+            t_sequence_ids = sample_id_to_t_gold_standard[sample_id].get_sequence_ids()
+    return g_query, t_query, g_sequence_ids, t_sequence_ids, sequence_id_to_length
+
+
+def open_query(file_path_query, is_gs, fastx_file, sample_id_to_g_gold_standard, sample_id_to_t_gold_standard, options, label):
+    sample_id_to_g_query = {}
+    sample_id_to_t_query = {}
+    sample_ids_list = []
+
     with open(file_path_query) as read_handler:
         try:
-            sample_id_prev = '~'
+            sample_id_prev = 0
             for sample_id, sequence_id, bin_id, tax_id, length in read_binning_file(read_handler, file_path_query, is_gs):
 
                 if sample_id != sample_id_prev:
-                    g_query = binning_classes.GenomeQuery()
-                    t_query = binning_classes.TaxonomicQuery()
-                    if is_gs:
-                        g_query.sequence_id_to_length = t_query.sequence_id_to_length = sequence_id_to_length = {}
-                        g_query.gold_standard = g_query
-                        t_query.gold_standard = t_query
-                    else:
-                        if g_gold_standard:
-                            g_query.gold_standard = g_gold_standard
-                            sequence_id_to_length = g_gold_standard.sequence_id_to_length
-                        if t_gold_standard:
-                            t_query.gold_standard = t_gold_standard
-                            sequence_id_to_length = t_gold_standard.sequence_id_to_length
+                    sample_ids_list.append(sample_id)
+                    g_query, t_query, g_sequence_ids, t_sequence_ids, sequence_id_to_length = \
+                        initialize_query(sample_id_to_g_gold_standard, sample_id_to_t_gold_standard, is_gs, sample_id, options, label)
+                    sample_id_to_g_query[sample_id] = g_query
+                    sample_id_to_t_query[sample_id] = t_query
 
                     # TODO: re-enable check
                     # if is_gs and not binning_classes.Bin.sequence_id_to_length and is_length_column_available(read_handler):
@@ -209,12 +231,6 @@ def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_stand
                     #         exit("Sequences length could not be determined. Please provide a FASTA or FASTQ file using option -f or add column _LENGTH to gold standard.")
                     #     binning_classes.Bin.sequence_id_to_length = add_length_column.read_lengths_from_fastx_file(fastx_file)
 
-                    g_sequence_ids = {}
-                    t_sequence_ids = {}
-                    if g_gold_standard:
-                        g_sequence_ids = g_gold_standard.get_sequence_ids()
-                    if t_gold_standard:
-                        t_sequence_ids = t_gold_standard.get_sequence_ids()
                 sample_id_prev = sample_id
 
                 if is_gs:
@@ -226,7 +242,7 @@ def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_stand
                 if bin_id:
                     if sequence_id_to_length[sequence_id] >= options.min_length:
                         if not is_gs and sequence_id not in g_sequence_ids:
-                            print("Ignoring sequence {} - not found in the genome binning gold standard: (file {})".format(sequence_id, file_path_query), file=sys.stderr)
+                            print("Ignoring sequence {} - not found in the genome binning gold standard, sample {}: (file {})".format(sequence_id, sample_id, file_path_query), file=sys.stderr)
                         else:
                             if bin_id not in g_query.get_bin_ids():
                                 bin = binning_classes.GenomeBin(bin_id)
@@ -252,7 +268,7 @@ def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_stand
                         continue
 
                     if not is_gs and sequence_id not in t_sequence_ids:
-                        print("Ignoring sequence {} - not found in the taxonomic binning gold standard: (file {})".format(sequence_id, file_path_query), file=sys.stderr)
+                        print("Ignoring sequence {} - not found in the taxonomic binning gold standard, sample {}: (file {})".format(sequence_id, sample_id, file_path_query), file=sys.stderr)
                         continue
 
                     tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank)
@@ -274,17 +290,24 @@ def open_query(file_path_query, is_gs, fastx_file, g_gold_standard, t_gold_stand
             traceback.print_exc()
             exit("Error. File {} is malformed. {}".format(file_path_query, e))
 
-    if g_query.bins:
-        g_query.options = options
-    else:
-        g_query = None
+    empty = []
+    for sample_id, g_query in sample_id_to_g_query.items():
+        if not g_query.bins:
+            empty.append(sample_id)
+    [sample_id_to_g_query.pop(sample_id) for sample_id in empty]
 
-    if t_query.bins:
-        t_query.options = options
-    else:
-        t_query = None
+    empty = []
+    for sample_id, t_query in sample_id_to_t_query.items():
+        if not t_query.bins:
+            empty.append(sample_id)
+    [sample_id_to_t_query.pop(sample_id) for sample_id in empty]
 
-    return g_query, t_query
+    if not sample_id_to_g_query:
+        sample_id_to_g_query = None
+    if not sample_id_to_t_query:
+        sample_id_to_t_query = None
+
+    return sample_ids_list, sample_id_to_g_query, sample_id_to_t_query
 
 
 def load_ncbi_info(ncbi_nodes_file, ncbi_names_file):
@@ -296,24 +319,27 @@ def load_ncbi_info(ncbi_nodes_file, ncbi_names_file):
 
 
 def load_queries(gold_standard_file, fastx_file, query_files, options, labels):
-    g_gold_standard, t_gold_standard = open_query(gold_standard_file,
-                                                  True,
-                                                  fastx_file,
-                                                  None, None,
-                                                  options)
-    queries_list = []
+    gold_standard = open_query(gold_standard_file,
+                               True,
+                               fastx_file,
+                               None, None,
+                               options,
+                               None)
+
+    sample_id_to_queries_list = defaultdict(list)
     for query_file, label in zip(query_files, labels):
-        g_query, t_query = open_query(query_file,
-                                      False,
-                                      None,
-                                      g_gold_standard, t_gold_standard,
-                                      options)
-        for query in [g_query, t_query]:
-            if not query:
+        query = open_query(query_file,
+                           False,
+                           None,
+                           gold_standard[1], gold_standard[2],
+                           options,
+                           label)
+        for sample_id_to_query in [query[1], query[2]]:
+            if not sample_id_to_query:
                 continue
-            query.label = label
-            queries_list.append(query)
+            for sample_id in sample_id_to_query:
+                sample_id_to_queries_list[sample_id].append(sample_id_to_query[sample_id])
 
     # TODO if there is a g_query (t_query), there must be a g_gold_standard (t_gold_standard)
 
-    return queries_list
+    return [sample_id for sample_id in gold_standard[0]], sample_id_to_queries_list

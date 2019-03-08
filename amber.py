@@ -31,9 +31,10 @@ def make_sure_path_exists(path):
             raise
 
 
-def create_output_directories(output_dir, queries_list):
-    for query in queries_list:
-        make_sure_path_exists(os.path.join(output_dir, query.binning_type, query.label))
+def create_output_directories(output_dir, sample_id_to_queries_list):
+    for sample_id in sample_id_to_queries_list:
+        for query in sample_id_to_queries_list[sample_id]:
+            make_sure_path_exists(os.path.join(output_dir, query.binning_type, query.label))
 
 
 def get_labels(labels, bin_files):
@@ -118,7 +119,17 @@ def compute_percentage_of_assigned_seqs(query):
     return percentage_of_assigned_seqs
 
 
-def evaluate_all(queries_list, min_completeness, max_contamination):
+def evaluate_samples_queries(sample_id_to_queries_list, min_completeness, max_contamination):
+    pd_bins_all = pd.DataFrame()
+    df_summary_all = pd.DataFrame()
+    for sample_id in sample_id_to_queries_list:
+        df_summary, pd_bins = evaluate_all(sample_id_to_queries_list[sample_id], sample_id, min_completeness, max_contamination)
+        pd_bins_all = pd.concat([pd_bins_all, pd_bins], ignore_index=True)
+        df_summary_all = pd.concat([df_summary_all, df_summary], ignore_index=True)
+    return df_summary_all, pd_bins_all
+
+
+def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
     pd_bins_all = pd.DataFrame()
     df_summary = pd.DataFrame()
     for query in queries_list:
@@ -197,7 +208,9 @@ def evaluate_all(queries_list, min_completeness, max_contamination):
 
             df_genome_recovery = pd.DataFrame.from_dict(genome_recovery_val, orient='index').T
             df = df.join(df_genome_recovery)
-            df_summary = pd.concat([df_summary, df], ignore_index=True)
+            df_summary = pd.concat([df_summary, df], ignore_index=True, sort=True)
+            df_summary['sample_id'] = sample_id
+            pd_bins_all['sample_id'] = sample_id
     return df_summary, pd_bins_all
 
 
@@ -208,13 +221,13 @@ def plot_heat_maps(queries_list, output_dir):
             plots.plot_heatmap(df_confusion, os.path.join(output_dir, query.label))
 
 
-def plot_genome_binning(queries_list, df_summary, pd_bins, plot_heatmaps, output_dir):
+def plot_genome_binning(sample_id_to_queries_list, df_summary, pd_bins, plot_heatmaps, output_dir):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
     if len(df_summary_g) == 0:
         return
 
     if plot_heatmaps:
-        plot_heat_maps(queries_list, output_dir)
+        plot_heat_maps(sample_id_to_queries_list, output_dir)
 
     plots.create_legend(df_summary_g, output_dir)
     plots.plot_avg_precision_recall(df_summary_g, output_dir)
@@ -277,40 +290,41 @@ def main(args=None):
 
     load_data.load_ncbi_info(args.ncbi_nodes_file, args.ncbi_names_file)
 
-    queries_list = load_data.load_queries(args.gold_standard_file,
-                                          args.fasta_file,
-                                          args.bin_files,
-                                          options,
-                                          labels)
+    sample_ids_list, sample_id_to_queries_list = load_data.load_queries(args.gold_standard_file,
+                                                                        args.fasta_file,
+                                                                        args.bin_files,
+                                                                        options,
+                                                                        labels)
 
     output_dir = os.path.abspath(args.output_dir)
-    create_output_directories(output_dir, queries_list)
+    create_output_directories(output_dir, sample_id_to_queries_list)
 
-    df_summary, pd_bins = evaluate_all(queries_list,
-                                       min_completeness, max_contamination)
+    df_summary, pd_bins = evaluate_samples_queries(sample_id_to_queries_list,
+                                                   min_completeness, max_contamination)
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
     if args.stdout:
         print(df_summary.to_string(index=False))
 
-    plot_genome_binning(queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
-    plot_taxonomic_binning(df_summary, output_dir)
-    plots.plot_taxonomic_results(df_summary, output_dir)
+    # TODO: re-enable
+    # plot_genome_binning(sample_id_to_queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
+    # plot_taxonomic_binning(df_summary, output_dir)
+    # plots.plot_taxonomic_results(df_summary, output_dir)
 
     pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
     for tool, pd_group in pd_bins_g.groupby(utils_labels.TOOL):
-        columns = ['id', 'mapping_id', 'purity_bp', 'completeness_bp', 'predicted_size', 'true_positive_bps', 'true_size']
+        columns = ['sample_id', 'id', 'mapping_id', 'purity_bp', 'completeness_bp', 'predicted_size', 'true_positive_bps', 'true_size']
         table = pd_group[columns].rename(columns={'id': 'bin_id', 'mapping_id': 'mapped_genome'})
         table.to_csv(os.path.join(output_dir, 'genome', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
 
     pd_bins_t = pd_bins[pd_bins['rank'] != 'NA']
     for tool, pd_group in pd_bins_t.groupby(utils_labels.TOOL):
-        columns = ['id', 'rank', 'purity_bp', 'completeness_bp', 'predicted_size', 'true_positive_bps', 'true_size']
+        columns = ['sample_id', 'id', 'rank', 'purity_bp', 'completeness_bp', 'predicted_size', 'true_positive_bps', 'true_size']
         table = pd_group[columns].rename(columns={'id': 'tax_id'})
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
 
     # TODO: use num_genomes of query gs
-    num_genomes = len(queries_list[0].gold_standard.get_bins_metrics())
-    amber_html.create_html(num_genomes, df_summary, pd_bins, args.output_dir, args.desc)
+    # num_genomes = len(sample_id_to_queries_list['cami_low'].queries_list[0].gold_standard.get_bins_metrics())
+    amber_html.create_html(0, df_summary, pd_bins, sample_ids_list, args.output_dir, args.desc)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import os
 from collections import OrderedDict
+from collections import defaultdict
 import pandas as pd
 import datetime
 import numpy as np
@@ -52,17 +53,10 @@ TEMPLATE = Template('''<!DOCTYPE html>
             .bk-tabs-margin-lr{margin-left: 10px; margin-right: 10px}
             .bk-root {display: flex; justify-content: center;}
             .bk-padding-top {padding-top: 10px;}
-            .bk-shannon-plots > div:first-child {
-                padding-bottom: 0px;
-                padding-left: 20px;
-                padding-top: 14px;
+            .bk-combo-box > div:first-child {
+                width: auto !important;
+                padding-right: 40px;
             }
-            .bk-shannon-plots > div:last-child {
-                padding-top: 0px;
-            }
-            .bk-checkbox-shannon input[type="checkbox"] {
-                margin: 2px 0 0;
-            } 
             html {overflow: -moz-scrollbars-vertical; overflow-y: scroll;}
             .tooltip {
                 position: relative;
@@ -293,7 +287,7 @@ def create_heatmap_div():
     return  heatmap_legend_div
 
 
-def create_table_html(df_summary, is_genome):
+def create_table_html(df_summary):
     metrics1 = [utils_labels.AVG_PRECISION_BP,
                 utils_labels.AVG_PRECISION_SEQ,
                 utils_labels.AVG_RECALL_BP,
@@ -519,39 +513,58 @@ def create_plots_per_binner(df_summary_t):
     return tools_tabs
 
 
-def create_taxonomic_binning_html(df_summary, pd_bins):
+def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list):
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
-    rank_to_html = {}
+    rank_to_sample_to_html = defaultdict(list)
     plots_list = []
-    pd_groups_rank = df_summary_t.groupby('rank')
-    available_ranks = list(pd_groups_rank.groups.keys())
-    available_ranks_sorted = [rank for rank in load_ncbi_taxinfo.RANKS if rank in available_ranks]
 
-    for rank in load_ncbi_taxinfo.RANKS:
-        if rank not in available_ranks:
-            continue
-        pd_group = pd_groups_rank.get_group(rank)
-        pd_rank = pd_group.rename(columns={'tool': 'Tool'}).set_index('Tool').T
-        rank_to_html[rank] = [create_table_html(pd_rank, False)]
-        purity_completeness_plot = create_precision_recall_figure(pd_group, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, rank)
-        purity_completeness_bp_plot = create_precision_recall_figure(pd_group, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, rank)
+    pd_mean = df_summary_t.groupby(['rank', 'tool']).mean().reset_index()
+    pd_mean['sample_id'] = '[average over samples]'
+    for rank, pd_mean_rank in pd_mean.groupby('rank'):
+        purity_completeness_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, rank)
+        purity_completeness_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, rank)
         plots_list.append(row(purity_completeness_plot, purity_completeness_bp_plot))
 
-    if not rank_to_html:
+        pd_mean_rank = pd_mean_rank.rename(columns={'tool': 'Tool'}).set_index('Tool').T
+        rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank))
+
+    pd_groupby_rank = df_summary_t.groupby('rank')
+    for rank, pd_rank in pd_groupby_rank:
+        pd_rank_groupby_sample = pd_rank.groupby('sample_id')
+        available_samples = pd_rank_groupby_sample.groups.keys()
+        for sample_id in sample_ids_list:
+            if sample_id not in available_samples:
+                rank_to_sample_to_html[rank].append('')
+                continue
+            pd_rank_sample = pd_rank_groupby_sample.get_group(sample_id)
+            pd_rank_sample = pd_rank_sample.rename(columns={'tool': 'Tool'}).set_index('Tool').T
+            rank_to_sample_to_html[rank].append(create_table_html(pd_rank_sample))
+
+    if not rank_to_sample_to_html:
         return None
 
-    taxonomic_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(rank_to_html[load_ncbi_taxinfo.RANKS[0]][0]), css_classes=['bk-width-auto'])
-    source = ColumnDataSource(data=rank_to_html)
+    sample_ids_list_combo = ['[average over samples]'] + sample_ids_list
+
+    taxonomic_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(rank_to_sample_to_html[load_ncbi_taxinfo.RANKS[0]][0]), css_classes=['bk-width-auto'])
+    source = ColumnDataSource(data=rank_to_sample_to_html)
+
+    available_ranks = list(pd_groupby_rank.groups.keys())
+    available_ranks_sorted = [rank for rank in load_ncbi_taxinfo.RANKS if rank in available_ranks]
 
     select_rank = Select(title="Taxonomic rank:", value=load_ncbi_taxinfo.RANKS[0], options=available_ranks_sorted, css_classes=['bk-fit-content'])
-    select_rank_callback = CustomJS(args=dict(source=source), code="""
-        mytable.text = source.data[select_rank.value][0];
+    select_sample = Select(title="Sample:", value='0', options=list(zip(map(str, range(len(sample_ids_list_combo))), sample_ids_list_combo)), css_classes=['bk-fit-content'])
+    select_rank_sample_callback = CustomJS(args=dict(source=source), code="""
+        mytable.text = source.data[select_rank.value][select_sample.value];
     """)
-    select_rank.js_on_change('value', select_rank_callback)
-    select_rank_callback.args["mytable"] = taxonomic_div
-    select_rank_callback.args["select_rank"] = select_rank
+    select_rank.js_on_change('value', select_rank_sample_callback)
+    select_sample.js_on_change('value', select_rank_sample_callback)
+    select_rank_sample_callback.args["mytable"] = taxonomic_div
+    select_rank_sample_callback.args["select_rank"] = select_rank
+    select_rank_sample_callback.args["select_sample"] = select_sample
 
-    metrics_column = column(column(select_rank, create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
+    # TODO: add text: average over samples
+
+    metrics_column = column(column(row(select_sample, select_rank, css_classes=['bk-width-auto', 'bk-combo-box']), create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_column, title="Metrics")
 
     bins_columns = OrderedDict([('mapping_id', 'Taxon ID'),
@@ -568,19 +581,21 @@ def create_taxonomic_binning_html(df_summary, pd_bins):
     tax_bins = pd_bins[pd_bins['rank'] != 'NA']
     if tax_bins['name'].isnull().any():
         del bins_columns['name']
+
+    # TODO: add combo box for samples
     metrics_bins_panel = create_metrics_per_bin_panel(tax_bins, bins_columns)
 
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
-                                        row(create_rankings_table(df_summary_t, True))]), title="Rankings")
+                                        row(create_rankings_table(pd_mean, True))]), title="Rankings")
 
-    tools_panel = Panel(child=create_plots_per_binner(df_summary_t), title="Plots per binner")
+    tools_panel = Panel(child=create_plots_per_binner(pd_mean), title="Plots per binner")
 
     tabs = Tabs(tabs=[metrics_panel, metrics_bins_panel, rankings_panel, tools_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
 
     return tabs
 
 
-def create_html(num_genomes, df_summary, pd_bins, output_dir, desc_text):
+def create_html(num_genomes, df_summary, pd_bins, sample_ids_list, output_dir, desc_text):
     create_heatmap_bar(output_dir)
     tabs_list = []
 
@@ -588,7 +603,7 @@ def create_html(num_genomes, df_summary, pd_bins, output_dir, desc_text):
     if metrics_row_g:
         tabs_list.append(Panel(child=metrics_row_g, title="Genome binning"))
 
-    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins)
+    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list)
     if metrics_row_t:
         tabs_list.append(Panel(child=metrics_row_t, title="Taxonomic binning"))
 
