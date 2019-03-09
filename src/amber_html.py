@@ -195,31 +195,56 @@ def create_title_div(id, name, info):
     return div
 
 
-def create_metrics_per_bin_panel(pd_bins, bins_columns):
+def create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_dir, binning_type):
     styles = [{'selector': 'td', 'props': [('width', '99pt')]},
               {'selector': 'th', 'props': [('width', '99pt'), ('text-align', 'left')]},
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
 
     tools = pd_bins.tool.unique().tolist()
-    tool_to_html = OrderedDict([(x, '') for x in tools])
+    tool_to_sample_to_html = defaultdict(list)
 
-    for tool, pd_group in pd_bins.groupby(utils_labels.TOOL):
-        table = pd_group[list(bins_columns.keys())].rename(columns=dict(bins_columns))
-        tool_to_html[tool] = [table.style.set_table_styles(styles).hide_index().render()]
+    for tool, pd_tool_groupby in pd_bins.groupby(utils_labels.TOOL):
+        pd_tool_sample_groupby = pd_tool_groupby.groupby('sample_id')
+        available_samples = pd_tool_sample_groupby.groups.keys()
+        for sample_id in sample_ids_list:
+            if sample_id not in available_samples:
+                tool_to_sample_to_html[tool].append('')
+                continue
+            pd_tool_sample = pd_tool_sample_groupby.get_group(sample_id)
+            pd_tool_sample = pd_tool_sample[list(bins_columns.keys())].rename(columns=dict(bins_columns))
+            tool_sample_html = pd_tool_sample.head(500).style.set_table_styles(styles).hide_index().render()
+            tool_sample_html += '<div style="padding-top: 20px; padding-bottom: 20px;">{}</div>'.format('Complete table available in: ' + os.path.join(output_dir, binning_type, tool, 'metrics_per_bin.tsv'))
+            tool_to_sample_to_html[tool].append(tool_sample_html)
+    tool_to_sample_to_html['all_samples'] = sample_ids_list
 
-    table_div = Div(text="""<div>{}</div>""".format(tool_to_html[tools[0]][0]), css_classes=['bk-width-auto'])
+    table_div = Div(text="""<div>{}</div>""".format(tool_to_sample_to_html[tools[0]][0]), css_classes=['bk-width-auto'])
 
-    source = ColumnDataSource(data=tool_to_html)
+    source = ColumnDataSource(data=tool_to_sample_to_html)
 
     select_tool = Select(title="Binner:", value=tools[0], options=tools, css_classes=['bk-fit-content'])
-    select_tool_callback = CustomJS(args=dict(source=source), code="""
-        mytable.text = source.data[select_tool.value][0];
+    select_sample = Select(title="Sample:", value='0', options=list(zip(map(str, range(len(sample_ids_list))), sample_ids_list)), css_classes=['bk-fit-content'])
+    select_tool_sample_callback = CustomJS(args=dict(source=source), code="""
+        select_sample.options = []
+        options_array = []
+        for (index in source.data[select_tool.value]) {
+            if (source.data[select_tool.value][index] != "") {
+                options_array.push([index, source.data["all_samples"][index]])
+            }
+        }
+        select_sample.options = options_array
+        if (source.data[select_tool.value][select_sample.value] != "") {
+            mytable.text = source.data[select_tool.value][select_sample.value];
+        } else {
+            mytable.text = source.data[select_tool.value][options_array[0][0]];
+        }
     """)
-    select_tool.js_on_change('value', select_tool_callback)
-    select_tool_callback.args["mytable"] = table_div
-    select_tool_callback.args["select_tool"] = select_tool
+    select_tool.js_on_change('value', select_tool_sample_callback)
+    select_sample.js_on_change('value', select_tool_sample_callback)
+    select_tool_sample_callback.args["mytable"] = table_div
+    select_tool_sample_callback.args["select_tool"] = select_tool
+    select_tool_sample_callback.args["select_sample"] = select_sample
 
-    table_column = row(column(select_tool, table_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width') # column(table_div, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-width-auto-main'])
+    table_column = row(column(row(select_tool, select_sample, css_classes=['bk-width-auto', 'bk-combo-box']), table_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width') # column(table_div, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-width-auto-main'])
     metrics_bins_panel = Panel(child=table_column, title="Metrics per bin")
     return metrics_bins_panel
 
@@ -464,7 +489,7 @@ def create_rankings_table(df_summary, show_rank=False):
     return [widgetbox(dt)]
 
 
-def create_genome_binning_html(num_genomes, df_summary, pd_bins):
+def create_genome_binning_html(num_genomes, df_summary, pd_bins, output_dir):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
     if df_summary_g.size == 0:
         return None
@@ -479,7 +504,7 @@ def create_genome_binning_html(num_genomes, df_summary, pd_bins):
     metrics_panel = Panel(child=metrics_row_g, title="Metrics")
 
     bins_columns = OrderedDict([('id', 'Bin ID'), ('mapping_id', 'Mapped genome'), ('purity_bp', 'Purity'), ('completeness_bp', 'Completeness'), ('predicted_size', 'Predicted size'), ('true_positive_bps', 'True positives'), ('true_size', 'True size')])
-    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins[pd_bins['rank'] == 'NA'], bins_columns)
+    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins[pd_bins['rank'] == 'NA'], bins_columns, output_dir, 'genome')
 
     cc_table = create_contamination_completeness_table(num_genomes, df_summary_g)
     cc_panel = Panel(child=row(cc_table), title="#Recovered genomes")
@@ -513,7 +538,7 @@ def create_plots_per_binner(df_summary_t):
     return tools_tabs
 
 
-def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list):
+def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_dir):
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
     rank_to_sample_to_html = defaultdict(list)
     plots_list = []
@@ -582,8 +607,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list):
     if tax_bins['name'].isnull().any():
         del bins_columns['name']
 
-    # TODO: add combo box for samples
-    metrics_bins_panel = create_metrics_per_bin_panel(tax_bins, bins_columns)
+    metrics_bins_panel = create_metrics_per_bin_panel(tax_bins, bins_columns, sample_ids_list, output_dir, 'taxonomic')
 
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
                                         row(create_rankings_table(pd_mean, True))]), title="Rankings")
@@ -599,11 +623,11 @@ def create_html(num_genomes, df_summary, pd_bins, sample_ids_list, output_dir, d
     create_heatmap_bar(output_dir)
     tabs_list = []
 
-    metrics_row_g = create_genome_binning_html(num_genomes, df_summary, pd_bins)
+    metrics_row_g = create_genome_binning_html(num_genomes, df_summary, pd_bins, output_dir)
     if metrics_row_g:
         tabs_list.append(Panel(child=metrics_row_g, title="Genome binning"))
 
-    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list)
+    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_dir)
     if metrics_row_t:
         tabs_list.append(Panel(child=metrics_row_t, title="Taxonomic binning"))
 

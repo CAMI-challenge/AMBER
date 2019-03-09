@@ -314,13 +314,13 @@ def main(args=None):
     for tool, pd_group in pd_bins_g.groupby(utils_labels.TOOL):
         columns = ['sample_id', 'id', 'mapping_id', 'purity_bp', 'completeness_bp', 'predicted_size', 'true_positive_bps', 'true_size']
         table = pd_group[columns].rename(columns={'id': 'bin_id', 'mapping_id': 'mapped_genome'})
-        table.to_csv(os.path.join(output_dir, 'genome', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
+        table.to_csv(os.path.join(output_dir, 'genome', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
 
     pd_bins_t = pd_bins[pd_bins['rank'] != 'NA']
     for tool, pd_group in pd_bins_t.groupby(utils_labels.TOOL):
         columns = ['sample_id', 'id', 'rank', 'purity_bp', 'completeness_bp', 'predicted_size', 'true_positive_bps', 'true_size']
         table = pd_group[columns].rename(columns={'id': 'tax_id'})
-        table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'precision_recall_per_bin.tsv'), sep='\t', index=False)
+        table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
 
     # TODO: use num_genomes of query gs
     # num_genomes = len(sample_id_to_queries_list['cami_low'].queries_list[0].gold_standard.get_bins_metrics())
