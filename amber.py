@@ -318,8 +318,10 @@ def main(args=None):
 
     pd_bins_t = pd_bins[pd_bins['rank'] != 'NA']
     for tool, pd_group in pd_bins_t.groupby(utils_labels.TOOL):
-        columns = ['sample_id', 'id', 'rank', 'purity_bp', 'completeness_bp', 'predicted_size', 'true_positive_bps', 'true_size']
-        table = pd_group[columns].rename(columns={'id': 'tax_id'})
+        bins_columns = amber_html.get_tax_bins_columns()
+        if pd_group['name'].isnull().any():
+            del bins_columns['name']
+        table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
 
     # TODO: use num_genomes of query gs

@@ -463,7 +463,7 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
         if error:
             p.add_layout(Band(base='x', lower=metric + "lower", upper=metric + "upper", source=source, level='underlay',
                               fill_alpha=.3, line_width=1, line_color='black', fill_color=color))
-    legend = Legend(items=list(zip(metrics_list, plines)))
+    legend = Legend(items=list(zip(metrics_list, plines)), location=(10, 10))
     p.add_layout(legend, 'above')
 
     p.xgrid[0].grid_line_color=None
@@ -530,18 +530,21 @@ def create_genome_binning_html(num_genomes, df_summary, pd_bins, output_dir):
 
 def create_plots_per_binner(df_summary_t):
     tools = df_summary_t.tool.unique().tolist()
+    sample_div = Div(text="Sample: [average over samples]", css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
+    # using the same div breaks the layout
+    sample_div2 = Div(text="Sample: [average over samples]", css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
 
     metrics_list = [utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP]
     errors_list = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM]
     tools_figures = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
     tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures]
-    tools_column_unweighted = column(tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
+    tools_column_unweighted = column([sample_div] + tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
 
-    metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.ACCURACY_PER_BP]
+    metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP]
     errors_list = ["", "", ""]
     tools_figures_weighted = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
     tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures_weighted]
-    tools_column_weighted = column(tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
+    tools_column_weighted = column([sample_div2] + tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
 
     tools_unweighted_panel = Panel(child=tools_column_unweighted, title=utils_labels.QUALITY_OF_SAMPLE)
     tools_weighted_panel = Panel(child=tools_column_weighted, title=utils_labels.QUALITY_OF_BINS)
@@ -549,20 +552,40 @@ def create_plots_per_binner(df_summary_t):
     return tools_tabs
 
 
+def get_tax_bins_columns():
+    return OrderedDict([('mapping_id', 'Taxon ID'),
+                        ('name', 'Scientific name'),
+                        ('rank', 'Taxonomic rank'),
+                        ('purity_bp', utils_labels.PRECISION_PER_BP),
+                        ('completeness_bp', utils_labels.RECALL_PER_BP),
+                        ('predicted_size', 'Predicted size (bp)'),
+                        ('true_positive_bps', 'True positives (bp)'),
+                        ('true_size', 'True size (bp)'),
+                        ('purity_seq', utils_labels.PRECISION_PER_SEQ),
+                        ('completeness_seq', utils_labels.RECALL_PER_SEQ),
+                        ('predicted_num_seqs', 'Predicted size (seq)'),
+                        ('true_positive_seqs', 'True positives (seq)'),
+                        ('true_num_seqs', 'True size (seq)')])
+
+
 def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_dir):
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
     rank_to_sample_to_html = defaultdict(list)
     plots_list = []
+    plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
 
     pd_mean = df_summary_t.groupby(['rank', 'tool']).mean().reset_index()
     pd_mean[utils_labels.SAMPLE] = '[average over samples]'
     for rank, pd_mean_rank in pd_mean.groupby('rank'):
         purity_completeness_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, rank)
         purity_completeness_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, rank)
-        plots_list.append(row(purity_completeness_plot, purity_completeness_bp_plot))
+        plots_dict[rank] = row(purity_completeness_plot, purity_completeness_bp_plot)
 
         pd_mean_rank = pd_mean_rank.rename(columns={'tool': 'Tool'}).set_index('Tool').T
         rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank))
+    for k, v in plots_dict.items():
+        if v:
+            plots_list.append(v)
 
     pd_groupby_rank = df_summary_t.groupby('rank')
     for rank, pd_rank in pd_groupby_rank:
@@ -598,22 +621,10 @@ def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_d
     select_rank_sample_callback.args["select_rank"] = select_rank
     select_rank_sample_callback.args["select_sample"] = select_sample
 
-    # TODO: add text: average over samples
-
-    metrics_column = column(column(row(select_sample, select_rank, css_classes=['bk-width-auto', 'bk-combo-box']), create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), column(plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
+    metrics_column = column(column(row(select_sample, select_rank, css_classes=['bk-width-auto', 'bk-combo-box']), create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_column, title="Metrics")
 
-    bins_columns = OrderedDict([('mapping_id', 'Taxon ID'),
-                                ('name', 'Scientific name'),
-                                ('rank', 'Taxonomic rank'),
-                                ('purity_bp', 'Purity'),
-                                ('completeness_bp', 'Completeness'),
-                                ('predicted_size', 'Predicted size (bp)'),
-                                ('true_positive_bps', 'True positives (bp)'),
-                                ('true_size', 'True size (bp)'),
-                                ('predicted_num_seqs', 'Predicted size (frag)'),
-                                ('true_positive_seqs', 'True positives (frag)'),
-                                ('true_num_seqs', 'True size (frag)')])
+    bins_columns = get_tax_bins_columns()
     tax_bins = pd_bins[pd_bins['rank'] != 'NA']
     if tax_bins['name'].isnull().any():
         del bins_columns['name']
@@ -623,9 +634,12 @@ def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_d
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
                                         row(create_rankings_table(pd_mean, True))]), title="Rankings")
 
+    sample_div = Div(text="Sample: [average over samples]", css_classes=['bk-width-auto'], style={"margin-top": "20px"})
+    tax_ranks_panel = Panel(child=column(sample_div, column(plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto'])), title="Plots per taxonomic rank")
+
     tools_panel = Panel(child=create_plots_per_binner(pd_mean), title="Plots per binner")
 
-    tabs = Tabs(tabs=[metrics_panel, metrics_bins_panel, rankings_panel, tools_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
+    tabs = Tabs(tabs=[metrics_panel, metrics_bins_panel, rankings_panel, tax_ranks_panel, tools_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
 
     return tabs
 
