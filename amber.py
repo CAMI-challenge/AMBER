@@ -176,6 +176,7 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
 
             df = pd.DataFrame(OrderedDict([(utils_labels.TOOL, query.label),
                                            (utils_labels.BINNING_TYPE, query.binning_type),
+                                           (utils_labels.SAMPLE, sample_id),
                                            (utils_labels.RANK, rank),
                                            (utils_labels.AVG_PRECISION_BP, [avg_precision_bp]),
                                            (utils_labels.AVG_PRECISION_BP_SEM, [sem_precision_bp]),
@@ -187,11 +188,11 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
                                            (utils_labels.AVG_RECALL_SEQ, [avg_recall_seq]),
                                            (utils_labels.AVG_RECALL_SEQ_SEM, [sem_recall_seq]),
 
-                                           (utils_labels.AVG_PRECISION_PER_BP, [precision_bp]),
-                                           (utils_labels.AVG_PRECISION_PER_SEQ, [precision_seq]),
+                                           (utils_labels.PRECISION_PER_BP, [precision_bp]),
+                                           (utils_labels.PRECISION_PER_SEQ, [precision_seq]),
 
-                                           (utils_labels.AVG_RECALL_PER_BP, [recall_bp]),
-                                           (utils_labels.AVG_RECALL_PER_SEQ, [recall_seq]),
+                                           (utils_labels.RECALL_PER_BP, [recall_bp]),
+                                           (utils_labels.RECALL_PER_SEQ, [recall_seq]),
 
                                            (utils_labels.ACCURACY_PER_BP, [accuracy_bp]),
                                            (utils_labels.ACCURACY_PER_SEQ, [accuracy_seq]),
@@ -209,7 +210,6 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
             df_genome_recovery = pd.DataFrame.from_dict(genome_recovery_val, orient='index').T
             df = df.join(df_genome_recovery)
             df_summary = pd.concat([df_summary, df], ignore_index=True, sort=True)
-            df_summary['sample_id'] = sample_id
             pd_bins_all['sample_id'] = sample_id
     return df_summary, pd_bins_all
 

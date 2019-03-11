@@ -69,7 +69,7 @@ TEMPLATE = Template('''<!DOCTYPE html>
             }
             .tooltip .tooltiptext {
                 visibility: hidden;
-                width: 120px;
+                width: 280px;
                 background-color: #555;
                 color: #fff;
                 text-align: center;
@@ -325,40 +325,50 @@ def create_table_html(df_summary):
                 utils_labels.ACCURACY_PER_SEQ,
                 utils_labels.MISCLASSIFICATION_PER_BP,
                 utils_labels.MISCLASSIFICATION_PER_SEQ,
-                utils_labels.AVG_PRECISION_PER_BP,
-                utils_labels.AVG_PRECISION_PER_SEQ,
-                utils_labels.AVG_RECALL_PER_BP,
-                utils_labels.AVG_RECALL_PER_SEQ,
-                utils_labels.RI_BY_SEQ,
-                utils_labels.ARI_BY_SEQ,
+                utils_labels.PRECISION_PER_BP,
+                utils_labels.PRECISION_PER_SEQ,
+                utils_labels.RECALL_PER_BP,
+                utils_labels.RECALL_PER_SEQ,
                 utils_labels.RI_BY_BP,
-                utils_labels.ARI_BY_BP]
+                utils_labels.RI_BY_SEQ,
+                utils_labels.ARI_BY_BP,
+                utils_labels.ARI_BY_SEQ,
+                utils_labels.PERCENTAGE_ASSIGNED_BPS,
+                utils_labels.PERCENTAGE_ASSIGNED_SEQS]
     all_metrics = [metrics1, metrics2]
-    metrics1_label = 'Quality of bins: all bins have the same weight'
-    metrics2_label = 'Quality for sample: quality weighted by bin sizes'
+    metrics1_label = utils_labels.QUALITY_OF_BINS
+    metrics2_label = utils_labels.QUALITY_OF_SAMPLE
     all_metrics_labels = [metrics1_label, metrics2_label]
 
     styles = [{'selector': 'td', 'props': [('width', '95pt')]},
               {'selector': 'th', 'props': [('width', '95pt'), ('text-align', 'left')]},
-              {'selector': 'th:nth-child(1)', 'props': [('width', '205pt'), ('font-weight', 'normal')]},
+              {'selector': 'th:nth-child(1)', 'props': [('width', '190pt'), ('font-weight', 'normal')]},
               {'selector': '', 'props': [('width', 'max-content'), ('width', '-moz-max-content'), ('border-top', '1px solid lightgray'), ('border-spacing', '0px')]},
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
     styles_hidden_thead = styles + [{'selector': 'thead', 'props': [('display', 'none')]}]
 
-    d = {utils_labels.ACCURACY_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ACCURACY_PER_BP, utils_labels.ACCURACY_PER_BP, utils_labels.ACCURACY_PER_BP),
-         utils_labels.MISCLASSIFICATION_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.MISCLASSIFICATION_PER_BP),
-         utils_labels.AVG_PRECISION_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_PRECISION_PER_BP),
-         utils_labels.AVG_RECALL_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_PER_BP, utils_labels.AVG_RECALL_PER_BP, utils_labels.AVG_RECALL_PER_BP),
-         utils_labels.RI_BY_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RI_BY_SEQ, utils_labels.RI_BY_SEQ, utils_labels.RI_BY_SEQ),
-         utils_labels.ARI_BY_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ARI_BY_SEQ, utils_labels.ARI_BY_SEQ, utils_labels.ARI_BY_SEQ),
-         utils_labels.RI_BY_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RI_BY_BP, utils_labels.RI_BY_BP, utils_labels.RI_BY_BP),
-         utils_labels.ARI_BY_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ARI_BY_BP, utils_labels.ARI_BY_BP, utils_labels.ARI_BY_BP),
-         utils_labels.PERCENTAGE_ASSIGNED_BPS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.PERCENTAGE_ASSIGNED_BPS),
-         utils_labels.PERCENTAGE_ASSIGNED_SEQS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.PERCENTAGE_ASSIGNED_SEQS),
-         utils_labels.AVG_PRECISION_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_BP, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_PRECISION_BP),
-         utils_labels.AVG_PRECISION_BP_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_PRECISION_BP_SEM),
-         utils_labels.AVG_RECALL_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_RECALL_BP),
-         utils_labels.AVG_RECALL_BP_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_RECALL_BP_SEM)}
+    d = {utils_labels.ACCURACY_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ACCURACY_PER_BP, utils_labels.ACCURACY_PER_BP, utils_labels.TOOLTIP_ACCURACY_PER_BP),
+         utils_labels.ACCURACY_PER_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ACCURACY_PER_SEQ, utils_labels.ACCURACY_PER_SEQ, utils_labels.TOOLTIP_ACCURACY_PER_SEQ),
+         utils_labels.MISCLASSIFICATION_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_BP),
+         utils_labels.MISCLASSIFICATION_PER_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.MISCLASSIFICATION_PER_SEQ, utils_labels.MISCLASSIFICATION_PER_SEQ, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_SEQ),
+         utils_labels.PRECISION_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PRECISION_PER_BP, utils_labels.PRECISION_PER_BP, utils_labels.TOOLTIP_PRECISION_PER_BP),
+         utils_labels.PRECISION_PER_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PRECISION_PER_SEQ, utils_labels.PRECISION_PER_SEQ, utils_labels.TOOLTIP_PRECISION_PER_SEQ),
+         utils_labels.RECALL_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RECALL_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.TOOLTIP_RECALL_PER_BP),
+         utils_labels.RECALL_PER_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RECALL_PER_SEQ, utils_labels.RECALL_PER_SEQ, utils_labels.TOOLTIP_RECALL_PER_SEQ),
+         utils_labels.RI_BY_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RI_BY_BP, utils_labels.RI_BY_BP, utils_labels.TOOLTIP_RI_BY_BP),
+         utils_labels.RI_BY_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RI_BY_SEQ, utils_labels.RI_BY_SEQ, utils_labels.TOOLTIP_RI_BY_SEQ),
+         utils_labels.ARI_BY_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ARI_BY_BP, utils_labels.ARI_BY_BP, utils_labels.TOOLTIP_ARI_BY_BP),
+         utils_labels.ARI_BY_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ARI_BY_SEQ, utils_labels.ARI_BY_SEQ, utils_labels.TOOLTIP_ARI_BY_SEQ),
+         utils_labels.AVG_PRECISION_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_BP, utils_labels.AVG_PRECISION_BP, utils_labels.TOOLTIP_AVG_PRECISION_BP),
+         utils_labels.AVG_PRECISION_BP_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_PRECISION_BP_SEM, utils_labels.TOOLTIP_AVG_PRECISION_BP_SEM),
+         utils_labels.AVG_PRECISION_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_PRECISION_SEQ, utils_labels.TOOLTIP_AVG_PRECISION_SEQ),
+         utils_labels.AVG_PRECISION_SEQ_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.TOOLTIP_AVG_PRECISION_SEQ_SEM),
+         utils_labels.AVG_RECALL_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_BP, utils_labels.AVG_RECALL_BP, utils_labels.TOOLTIP_AVG_RECALL_BP),
+         utils_labels.AVG_RECALL_BP_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_RECALL_BP_SEM, utils_labels.TOOLTIP_AVG_RECALL_BP_SEM),
+         utils_labels.AVG_RECALL_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_SEQ, utils_labels.AVG_RECALL_SEQ, utils_labels.TOOLTIP_AVG_RECALL_SEQ),
+         utils_labels.AVG_RECALL_SEQ_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.TOOLTIP_AVG_RECALL_SEQ_SEM),
+         utils_labels.PERCENTAGE_ASSIGNED_BPS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_BPS),
+         utils_labels.PERCENTAGE_ASSIGNED_SEQS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_SEQS)}
     pattern = re.compile('|'.join(map(re.escape, d)))
 
     def translate(match):
@@ -464,16 +474,17 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
 
 def create_rankings_table(df_summary, show_rank=False):
     columns= [utils_labels.TOOL,
+              utils_labels.SAMPLE,
               utils_labels.AVG_PRECISION_BP,
               utils_labels.AVG_RECALL_BP,
-              utils_labels.AVG_PRECISION_PER_BP,
-              utils_labels.AVG_RECALL_PER_BP,
+              utils_labels.PRECISION_PER_BP,
+              utils_labels.RECALL_PER_BP,
               utils_labels.ARI_BY_SEQ,
               utils_labels.ARI_BY_BP,
               utils_labels.PERCENTAGE_ASSIGNED_BPS,
               utils_labels.ACCURACY_PER_BP]
     if show_rank:
-        columns.insert(1, utils_labels.RANK)
+        columns.insert(2, utils_labels.RANK)
     pd_rankings = df_summary[columns].rename(columns={utils_labels.RANK: 'Taxonomic rank'}).round(decimals=5)
     pd_rankings.columns = list(map(upper1, pd_rankings.columns))
 
@@ -495,7 +506,7 @@ def create_genome_binning_html(num_genomes, df_summary, pd_bins, output_dir):
         return None
 
     purity_completeness_plot = create_precision_recall_figure(df_summary_g, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, None)
-    purity_completeness_bp_plot = create_precision_recall_figure(df_summary_g, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, None)
+    purity_completeness_bp_plot = create_precision_recall_figure(df_summary_g, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, None)
     all_genomes_plot = create_precision_recall_all_genomes_scatter(pd_bins, df_summary_g[utils_labels.TOOL].tolist())
 
     genome_html = create_table_html(df_summary_g.rename(columns={'tool': 'Tool'}).set_index('Tool').T, True)
@@ -526,14 +537,14 @@ def create_plots_per_binner(df_summary_t):
     tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures]
     tools_column_unweighted = column(tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
 
-    metrics_list = [utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, utils_labels.ACCURACY_PER_BP]
+    metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.ACCURACY_PER_BP]
     errors_list = ["", "", ""]
     tools_figures_weighted = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
     tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures_weighted]
     tools_column_weighted = column(tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
 
-    tools_unweighted_panel = Panel(child=tools_column_unweighted, title="Unweighted by bin sizes")
-    tools_weighted_panel = Panel(child=tools_column_weighted, title="Weighted by bin sizes")
+    tools_unweighted_panel = Panel(child=tools_column_unweighted, title=utils_labels.QUALITY_OF_SAMPLE)
+    tools_weighted_panel = Panel(child=tools_column_weighted, title=utils_labels.QUALITY_OF_BINS)
     tools_tabs = Tabs(tabs=[tools_unweighted_panel, tools_weighted_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
     return tools_tabs
 
@@ -544,10 +555,10 @@ def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_d
     plots_list = []
 
     pd_mean = df_summary_t.groupby(['rank', 'tool']).mean().reset_index()
-    pd_mean['sample_id'] = '[average over samples]'
+    pd_mean[utils_labels.SAMPLE] = '[average over samples]'
     for rank, pd_mean_rank in pd_mean.groupby('rank'):
         purity_completeness_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, rank)
-        purity_completeness_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_PER_BP, utils_labels.AVG_RECALL_PER_BP, rank)
+        purity_completeness_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, rank)
         plots_list.append(row(purity_completeness_plot, purity_completeness_bp_plot))
 
         pd_mean_rank = pd_mean_rank.rename(columns={'tool': 'Tool'}).set_index('Tool').T
@@ -555,7 +566,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_d
 
     pd_groupby_rank = df_summary_t.groupby('rank')
     for rank, pd_rank in pd_groupby_rank:
-        pd_rank_groupby_sample = pd_rank.groupby('sample_id')
+        pd_rank_groupby_sample = pd_rank.groupby(utils_labels.SAMPLE)
         available_samples = pd_rank_groupby_sample.groups.keys()
         for sample_id in sample_ids_list:
             if sample_id not in available_samples:
