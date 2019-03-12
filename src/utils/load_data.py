@@ -325,6 +325,11 @@ def load_queries(gold_standard_file, fastx_file, query_files, options, labels):
                                None, None,
                                options,
                                None)
+    sample_id_to_num_genomes = None
+    if gold_standard[1]:
+        sample_id_to_num_genomes = {}
+        for sample_id, g_query in gold_standard[1].items():
+            sample_id_to_num_genomes[sample_id] = len(g_query.bins)
 
     sample_id_to_queries_list = defaultdict(list)
     for query_file, label in zip(query_files, labels):
@@ -342,4 +347,4 @@ def load_queries(gold_standard_file, fastx_file, query_files, options, labels):
 
     # TODO if there is a g_query (t_query), there must be a g_gold_standard (t_gold_standard)
 
-    return [sample_id for sample_id in gold_standard[0]], sample_id_to_queries_list
+    return [sample_id for sample_id in gold_standard[0]], sample_id_to_num_genomes, sample_id_to_queries_list

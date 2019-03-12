@@ -290,11 +290,12 @@ def main(args=None):
 
     load_data.load_ncbi_info(args.ncbi_nodes_file, args.ncbi_names_file)
 
-    sample_ids_list, sample_id_to_queries_list = load_data.load_queries(args.gold_standard_file,
-                                                                        args.fasta_file,
-                                                                        args.bin_files,
-                                                                        options,
-                                                                        labels)
+    sample_ids_list, sample_id_to_num_genomes, sample_id_to_queries_list = \
+        load_data.load_queries(args.gold_standard_file,
+                               args.fasta_file,
+                               args.bin_files,
+                               options,
+                               labels)
 
     output_dir = os.path.abspath(args.output_dir)
     create_output_directories(output_dir, sample_id_to_queries_list)
@@ -312,8 +313,8 @@ def main(args=None):
 
     pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
     for tool, pd_group in pd_bins_g.groupby(utils_labels.TOOL):
-        columns = ['sample_id', 'id', 'mapping_id', 'purity_bp', 'completeness_bp', 'predicted_size', 'true_positive_bps', 'true_size']
-        table = pd_group[columns].rename(columns={'id': 'bin_id', 'mapping_id': 'mapped_genome'})
+        bins_columns = amber_html.get_genome_bins_columns()
+        table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
         table.to_csv(os.path.join(output_dir, 'genome', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
 
     pd_bins_t = pd_bins[pd_bins['rank'] != 'NA']
@@ -324,9 +325,7 @@ def main(args=None):
         table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
 
-    # TODO: use num_genomes of query gs
-    # num_genomes = len(sample_id_to_queries_list['cami_low'].queries_list[0].gold_standard.get_bins_metrics())
-    amber_html.create_html(0, df_summary, pd_bins, sample_ids_list, args.output_dir, args.desc)
+    amber_html.create_html(sample_id_to_num_genomes, df_summary, pd_bins, sample_ids_list, args.output_dir, args.desc)
 
 
 if __name__ == "__main__":
