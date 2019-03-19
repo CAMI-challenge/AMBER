@@ -201,7 +201,7 @@ def create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_
               {'selector': 'th', 'props': [('width', '99pt'), ('text-align', 'left')]},
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
 
-    tools = pd_bins.tool.unique().tolist()
+    tools = pd_bins[utils_labels.TOOL].unique().tolist()
     tool_to_sample_to_html = defaultdict(list)
 
     for tool, pd_tool_groupby in pd_bins.groupby(utils_labels.TOOL):
@@ -270,22 +270,23 @@ def create_contamination_completeness_table(sample_id_to_num_genomes, df):
     completeness_thr, contamination_thr = get_contamination_completeness_thresholds(df[contamination_completeness_cols])
 
     contamination_completenes_row_arr = []
-    for index, row in df.iterrows():
+    for sample_id, pd_sample in df.groupby(utils_labels.SAMPLE):
         cols = OrderedDict()
-        cols[utils_labels.SAMPLE] = row[utils_labels.SAMPLE]
+        cols[utils_labels.SAMPLE] = sample_id
         cols['Tool'] = 'Gold standard'
         for completeness_item in completeness_thr:
-            cols[completeness_item] = sample_id_to_num_genomes[row[utils_labels.SAMPLE]]
+            cols[completeness_item] = sample_id_to_num_genomes[sample_id]
         contamination_completenes_row_arr.append(cols)
 
-        for contamination_item in contamination_thr:
-            cols = OrderedDict()
-            cols[utils_labels.SAMPLE] = row[utils_labels.SAMPLE]
-            contamination_val = format(float(re.match("\d+\.\d+", contamination_item[1:]).group()) * 100, '.0f')
-            cols['Tool'] = '{} <{}% contamination'.format(row[utils_labels.TOOL], contamination_val)
-            for completeness_item in completeness_thr:
-                cols[completeness_item] = row['{}{}'.format(completeness_item, contamination_item)]
-            contamination_completenes_row_arr.append(cols)
+        for index, row in pd_sample.iterrows():
+            for contamination_item in contamination_thr:
+                cols = OrderedDict()
+                cols[utils_labels.SAMPLE] = sample_id
+                contamination_val = format(float(re.match("\d+\.\d+", contamination_item[1:]).group()) * 100, '.0f')
+                cols['Tool'] = '{} <{}% contamination'.format(row[utils_labels.TOOL], contamination_val)
+                for completeness_item in completeness_thr:
+                    cols[completeness_item] = row['{}{}'.format(completeness_item, contamination_item)]
+                contamination_completenes_row_arr.append(cols)
 
     df = pd.DataFrame(contamination_completenes_row_arr)
 
@@ -407,7 +408,7 @@ def create_precision_recall_figure(df_summary, xname, yname, title):
     p.xaxis.axis_label_text_font_style = 'normal'
     p.yaxis.axis_label_text_font_style = 'normal'
     for color, (index, row) in zip(bokeh_colors, df_summary.iterrows()):
-        tool = row[utils_labels.TOOL]
+        tool = index
         source = ColumnDataSource(data=row.to_frame().T)
         pcircle = p.circle(xname, yname, source=source, color=color, fill_alpha=0.2, size=10)
         legend_it.append((tool, [pcircle]))
@@ -478,9 +479,7 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
 
 
 def create_rankings_table(df_summary, show_rank=False):
-    columns= [utils_labels.TOOL,
-              utils_labels.SAMPLE,
-              utils_labels.AVG_PRECISION_BP,
+    columns= [utils_labels.AVG_PRECISION_BP,
               utils_labels.AVG_RECALL_BP,
               utils_labels.PRECISION_PER_BP,
               utils_labels.RECALL_PER_BP,
@@ -490,7 +489,7 @@ def create_rankings_table(df_summary, show_rank=False):
               utils_labels.ACCURACY_PER_BP]
     if show_rank:
         columns.insert(2, utils_labels.RANK)
-    pd_rankings = df_summary[columns].rename(columns={utils_labels.RANK: 'Taxonomic rank'}).round(decimals=5)
+    pd_rankings = df_summary[columns].rename(columns={utils_labels.RANK: 'Taxonomic rank'}).round(decimals=5).reset_index()
     pd_rankings.columns = list(map(upper1, pd_rankings.columns))
 
     def create_table_column(field):
@@ -520,7 +519,7 @@ def get_genome_bins_columns():
                         ('true_num_seqs', 'True size (seq)')])
 
 
-def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, sample_ids_list, output_dir):
+def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
     if df_summary_g.size == 0:
         return None
@@ -528,13 +527,15 @@ def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, sa
     sample_to_html = {}
     available_samples = list(df_summary_g[utils_labels.SAMPLE].unique())
     available_samples = [sample_id for sample_id in sample_ids_list if sample_id in available_samples]
+    available_tools = list(df_summary_g[utils_labels.TOOL].unique())
+    available_tools = [tool for tool in labels if tool in available_tools]
 
-    pd_mean = df_summary_g.groupby(['tool']).mean().reset_index()
+    pd_mean = df_summary_g.groupby(utils_labels.TOOL).mean().reindex(available_tools)
     pd_mean[utils_labels.SAMPLE] = '[average over samples]'
-    sample_to_html['[average over samples]'] = [create_table_html(pd_mean.rename(columns={'tool': 'Tool'}).set_index('Tool').T)]
+    sample_to_html['[average over samples]'] = [create_table_html(pd_mean.T)]
 
     for sample_id, pd_sample in df_summary_g.groupby(utils_labels.SAMPLE):
-        sample_to_html[sample_id] = [create_table_html(pd_sample.rename(columns={'tool': 'Tool'}).set_index('Tool').T)]
+        sample_to_html[sample_id] = [create_table_html(pd_sample.set_index(utils_labels.TOOL).T)]
 
     sample_ids_list_combo = ['[average over samples]'] + available_samples
 
@@ -554,7 +555,7 @@ def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, sa
 
     purity_completeness_plot = create_precision_recall_figure(pd_mean, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, None)
     purity_completeness_bp_plot = create_precision_recall_figure(pd_mean, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, None)
-    all_genomes_plot = create_precision_recall_all_genomes_scatter(pd_bins, pd_mean[utils_labels.TOOL].tolist())
+    all_genomes_plot = create_precision_recall_all_genomes_scatter(pd_bins, pd_mean.index.tolist())
 
     plots_panel = Panel(child=column(row(purity_completeness_plot, purity_completeness_bp_plot, all_genomes_plot), sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-padding-top2']), title='Plots')
 
@@ -565,7 +566,7 @@ def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, sa
     cc_panel = Panel(child=row(cc_table), title="#Recovered genomes")
 
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
-                                        row(create_rankings_table(pd_mean))]), title="Rankings")
+                                        row(create_rankings_table(pd_mean.reset_index().set_index([utils_labels.SAMPLE, utils_labels.TOOL])))]), title="Rankings")
 
     tabs = Tabs(tabs=[metrics_panel, plots_panel, metrics_bins_panel, rankings_panel, cc_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
 
@@ -573,7 +574,7 @@ def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, sa
 
 
 def create_plots_per_binner(df_summary_t):
-    tools = df_summary_t.tool.unique().tolist()
+    tools = df_summary_t[utils_labels.TOOL].unique().tolist()
     sample_div = Div(text="[average over samples]", css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
     # using the same div breaks the layout
     sample_div2 = Div(text="[average over samples]", css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
@@ -612,26 +613,27 @@ def get_tax_bins_columns():
                         ('true_num_seqs', 'True size (seq)')])
 
 
-def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_dir):
+def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, output_dir):
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
     rank_to_sample_to_html = defaultdict(list)
     plots_list = []
     plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
 
-    pd_mean = df_summary_t.groupby(['rank', 'tool']).mean().reset_index()
+    pd_mean = df_summary_t.groupby([utils_labels.RANK, utils_labels.TOOL]).mean().reset_index()
     pd_mean[utils_labels.SAMPLE] = '[average over samples]'
-    for rank, pd_mean_rank in pd_mean.groupby('rank'):
+    for rank, pd_mean_rank in pd_mean.groupby(utils_labels.RANK):
+        available_tools = list(pd_mean_rank[utils_labels.TOOL].unique())
+        available_tools = [tool for tool in labels if tool in available_tools]
+        pd_mean_rank = pd_mean_rank.set_index(utils_labels.TOOL).reindex(available_tools)
         purity_completeness_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, rank)
         purity_completeness_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, rank)
         plots_dict[rank] = row(purity_completeness_plot, purity_completeness_bp_plot)
-
-        pd_mean_rank = pd_mean_rank.rename(columns={'tool': 'Tool'}).set_index('Tool').T
-        rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank))
+        rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank.T))
     for k, v in plots_dict.items():
         if v:
             plots_list.append(v)
 
-    pd_groupby_rank = df_summary_t.groupby('rank')
+    pd_groupby_rank = df_summary_t.groupby(utils_labels.RANK)
     for rank, pd_rank in pd_groupby_rank:
         pd_rank_groupby_sample = pd_rank.groupby(utils_labels.SAMPLE)
         available_samples = pd_rank_groupby_sample.groups.keys()
@@ -640,7 +642,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_d
                 rank_to_sample_to_html[rank].append('')
                 continue
             pd_rank_sample = pd_rank_groupby_sample.get_group(sample_id)
-            pd_rank_sample = pd_rank_sample.rename(columns={'tool': 'Tool'}).set_index('Tool').T
+            pd_rank_sample = pd_rank_sample.set_index(utils_labels.TOOL).T
             rank_to_sample_to_html[rank].append(create_table_html(pd_rank_sample))
 
     if not rank_to_sample_to_html:
@@ -676,7 +678,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_d
     metrics_bins_panel = create_metrics_per_bin_panel(tax_bins, bins_columns, sample_ids_list, output_dir, 'taxonomic')
 
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
-                                        row(create_rankings_table(pd_mean, True))]), title="Rankings")
+                                        row(create_rankings_table(pd_mean.reset_index().set_index([utils_labels.SAMPLE, utils_labels.TOOL]), True))]), title="Rankings")
 
     sample_div = Div(text="[average over samples]", css_classes=['bk-width-auto'], style={"margin-top": "20px"})
     tax_ranks_panel = Panel(child=column(sample_div, column(plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto'])), title="Plots per taxonomic rank")
@@ -688,15 +690,15 @@ def create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_d
     return tabs
 
 
-def create_html(sample_id_to_num_genomes, df_summary, pd_bins, sample_ids_list, output_dir, desc_text):
+def create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir, desc_text):
     create_heatmap_bar(output_dir)
     tabs_list = []
 
-    metrics_row_g = create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, sample_ids_list, output_dir)
+    metrics_row_g = create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir)
     if metrics_row_g:
         tabs_list.append(Panel(child=metrics_row_g, title="Genome binning"))
 
-    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins, sample_ids_list, output_dir)
+    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, output_dir)
     if metrics_row_t:
         tabs_list.append(Panel(child=metrics_row_t, title="Taxonomic binning"))
 

@@ -325,7 +325,7 @@ def main(args=None):
         table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
 
-    amber_html.create_html(sample_id_to_num_genomes, df_summary, pd_bins, sample_ids_list, args.output_dir, args.desc)
+    amber_html.create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, args.output_dir, args.desc)
 
 
 if __name__ == "__main__":

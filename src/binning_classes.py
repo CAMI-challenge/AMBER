@@ -179,21 +179,21 @@ class TaxonomicQuery(Query):
         self.bins_metrics = [bin.get_metrics_dict(self.gold_standard) for bin in self.bins]
         for rank in load_ncbi_taxinfo.RANKS:
             if rank in self.gold_standard.rank_to_bins:
-                gs_rank_ids = set([bin.id for bin in self.gold_standard.rank_to_bins[rank]])
+                gs_rank_to_bin_ids = set([bin.id for bin in self.gold_standard.rank_to_bins[rank]])
             else:
                 continue
             if rank in self.rank_to_bins:
-                self_rank_ids = set([bin.id for bin in self.rank_to_bins[rank]])
-                ids_in_gs_but_not_in_self = gs_rank_ids - self_rank_ids
+                self_rank_to_bin_ids = set([bin.id for bin in self.rank_to_bins[rank]])
+                ids_in_gs_but_not_in_self = gs_rank_to_bin_ids - self_rank_to_bin_ids
             else:
-                ids_in_gs_but_not_in_self = gs_rank_ids
+                ids_in_gs_but_not_in_self = gs_rank_to_bin_ids
             for bin_id in ids_in_gs_but_not_in_self:
                 self.bins_metrics.append({'id': None,
                                           'name': TaxonomicQuery.tax_id_to_name[bin_id] if TaxonomicQuery.tax_id_to_name else np.nan,
                                           'rank': rank,
                                           'mapping_id': bin_id,
-                                          'purity_bp': .0,
-                                          'purity_seq': .0,
+                                          'purity_bp': np.nan,
+                                          'purity_seq': np.nan,
                                           'completeness_bp': .0,
                                           'completeness_seq': .0,
                                           'predicted_size': 0,
@@ -202,6 +202,12 @@ class TaxonomicQuery(Query):
                                           'true_positive_seqs': 0,
                                           'true_size': self.gold_standard.get_bin_by_id(bin_id).length,
                                           'true_num_seqs': self.gold_standard.get_bin_by_id(bin_id).num_seqs()})
+
+        if self.options.filter_tail_percentage:
+            filter_tail.filter_tail(self.bins_metrics, self.options.filter_tail_percentage)
+        if self.options.filter_genomes_file:
+            self.bins_metrics = exclude_genomes.filter_data(self.bins_metrics, self.options.filter_genomes_file, self.options.filter_keyword)
+
         rank_to_index = dict(zip(load_ncbi_taxinfo.RANKS[::-1], list(range(len(load_ncbi_taxinfo.RANKS)))))
         # sort bins by rank and completeness
         self.bins_metrics = sorted(self.bins_metrics, key=lambda t: (rank_to_index[t['rank']], t['completeness_bp']), reverse=True)
@@ -329,6 +335,9 @@ class Bin(ABC):
         if self.mapping_id in gold_standard.get_bin_ids():
             self.__recall_bp = self.__true_positive_bps / gold_standard.get_bin_by_id(self.mapping_id).length
             self.__recall_seq = self.__true_positive_seqs / gold_standard.get_bin_by_id(self.mapping_id).num_seqs()
+        else:
+            self.__recall_bp = np.nan
+            self.__recall_seq = np.nan
 
     @abstractmethod
     def get_metrics_dict(self):
@@ -424,7 +433,7 @@ class TaxonomicBin(Bin):
             true_size = gold_standard.get_bin_by_id(self.id).length
             true_num_seqs = gold_standard.get_bin_by_id(self.id).num_seqs()
         else:
-            true_size = true_num_seqs = 0
+            true_size = true_num_seqs = np.nan
         return {'id': self.id,
                 'name': gold_standard.tax_id_to_name[self.id] if gold_standard.tax_id_to_name else np.nan,
                 'rank': self.rank,

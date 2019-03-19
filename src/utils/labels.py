@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-TOOL = "tool"
+TOOL = "Tool"
 RANK = "rank"
 BINNING_TYPE = "binning type"
 SAMPLE = "Sample"

@@ -192,6 +192,7 @@ def initialize_query(sample_id_to_g_gold_standard, sample_id_to_t_gold_standard,
     g_query.label = label
     g_sequence_ids = {}
     t_sequence_ids = {}
+    sequence_id_to_length = None
     if is_gs:
         g_query.sequence_id_to_length = t_query.sequence_id_to_length = sequence_id_to_length = {}
         g_query.gold_standard = g_query
@@ -205,6 +206,9 @@ def initialize_query(sample_id_to_g_gold_standard, sample_id_to_t_gold_standard,
             t_query.gold_standard = sample_id_to_t_gold_standard[sample_id]
             sequence_id_to_length = sample_id_to_t_gold_standard[sample_id].sequence_id_to_length
             t_sequence_ids = sample_id_to_t_gold_standard[sample_id].get_sequence_ids()
+    if sequence_id_to_length is None:
+        exit("Error. Sample ID {} not found in the gold standard.".format(sample_id))
+
     return g_query, t_query, g_sequence_ids, t_sequence_ids, sequence_id_to_length
 
 
