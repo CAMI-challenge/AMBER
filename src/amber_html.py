@@ -23,10 +23,10 @@ from version import __version__
 
 from bokeh.plotting import figure
 from bokeh.layouts import column, row, widgetbox
-from bokeh.models.widgets import TableColumn, Div, Select, Panel, Tabs, CheckboxGroup
+from bokeh.models.widgets import TableColumn, Div, Select, Panel, Tabs
 from bokeh.models import (DataTable,
                           CustomJS,
-                          Legend,
+                          Legend, LegendItem,
                           Band,
                           FuncTickFormatter,
                           HoverTool)
@@ -397,21 +397,27 @@ def create_table_html(df_summary):
     return '<div style="margin-bottom:10pt;">{}</div>'.format(html)
 
 
-def create_precision_recall_figure(df_summary, xname, yname, title):
+def create_precision_recall_figure(df_summary, xname1, yname1, xname2, yname2, title):
     colors_list = plots.create_colors_list()
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
     legend_it = []
     p = figure(title=title, plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
-    p.xaxis.axis_label = upper1(xname)
-    p.yaxis.axis_label = upper1(yname)
+    p.xaxis.axis_label = upper1(xname1.split('(')[0])
+    p.yaxis.axis_label = upper1(yname1.split('(')[0])
     p.xaxis.axis_label_text_font_style = 'normal'
     p.yaxis.axis_label_text_font_style = 'normal'
     for color, (index, row) in zip(bokeh_colors, df_summary.iterrows()):
         tool = index
         source = ColumnDataSource(data=row.to_frame().T)
-        pcircle = p.circle(xname, yname, source=source, color=color, fill_alpha=0.2, size=10)
-        legend_it.append((tool, [pcircle]))
+        pcircle = p.circle(xname1, yname1, source=source, color=color, fill_alpha=0.2, size=10)
+        px = p.x(xname2, yname2, source=source, color=color, size=10)
+        legend_it.append(LegendItem(label=tool, renderers=[pcircle, px]))
+    pcircle = p.circle([0], [0], color='black', fill_alpha=0, size=0)
+    legend_it.append(LegendItem(label='by bp', renderers=[pcircle]))
+    px = p.x([0], [0], color='black', fill_alpha=0, size=0)
+    legend_it.append(LegendItem(label='by seq', renderers=[px]))
+
     p.add_layout(Legend(items=legend_it), 'right')
     p.legend.click_policy = 'hide'
     return p
@@ -453,10 +459,24 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
     source = ColumnDataSource(df.reset_index())
 
     p = figure(plot_width=500, plot_height=550, x_range=(0, 7), y_range=(0, 1))
-    plines = []
-    line_colors = ["#006cba", "#008000", "#ba9e00"]
-    for metric, color in zip(metrics_list, line_colors):
-        plines.append([p.line(x='x', y=metric, line_color=color, source=source, line_width=2)])
+    line_colors = ["#006cba", "#008000", "#ba9e00", "red"]
+    legend_it = []
+    for i, (metric, error, color) in enumerate(zip(metrics_list, errors_list, line_colors)):
+        pline = p.line(x='x', y=metric, line_color=color, source=source, line_width=2)
+        legend_it.append(LegendItem(label=metric, renderers=[pline]))
+        if error:
+            band = Band(base='x', lower=metric + "lower", upper=metric + "upper", source=source, level='underlay',
+                              fill_alpha=.3, line_width=1, line_color='black', fill_color=color)
+            p.add_layout(band)
+            callback = CustomJS(args = dict(band=band), code="""
+                if (band.visible == false)
+                    band.visible = true;
+                else
+                    band.visible = false; """)
+            pline.js_on_change('visible', callback)
+            if i > 1:
+                pline.visible = False
+                band.visible = False
 
     p.xaxis.ticker = FixedTicker(ticks=rank_indices)
     p.xaxis.formatter = FuncTickFormatter(code="""
@@ -464,17 +484,11 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
         return mapping[tick];
     """)
     p.xaxis.major_label_orientation = 1.2
-
-    for metric, error, color in zip(metrics_list, errors_list, line_colors):
-        if error:
-            p.add_layout(Band(base='x', lower=metric + "lower", upper=metric + "upper", source=source, level='underlay',
-                              fill_alpha=.3, line_width=1, line_color='black', fill_color=color))
-    legend = Legend(items=list(zip(metrics_list, plines)), location=(10, 10))
-    p.add_layout(legend, 'above')
-
+    p.add_layout(Legend(items=legend_it, location=(10, 10)), 'above')
     p.xgrid[0].grid_line_color=None
     p.ygrid[0].grid_line_alpha=0.5
     p.title.text = tool
+    p.legend.click_policy = 'hide'
     return p
 
 
@@ -488,7 +502,7 @@ def create_rankings_table(df_summary, show_rank=False):
               utils_labels.PERCENTAGE_ASSIGNED_BPS,
               utils_labels.ACCURACY_PER_BP]
     if show_rank:
-        columns.insert(2, utils_labels.RANK)
+        columns.insert(0, utils_labels.RANK)
     pd_rankings = df_summary[columns].rename(columns={utils_labels.RANK: 'Taxonomic rank'}).round(decimals=5).reset_index()
     pd_rankings.columns = list(map(upper1, pd_rankings.columns))
 
@@ -553,8 +567,8 @@ def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, la
     metrics_column = column(column(select_sample, create_heatmap_div(), genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_column, title="Metrics")
 
-    purity_completeness_plot = create_precision_recall_figure(pd_mean, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, None)
-    purity_completeness_bp_plot = create_precision_recall_figure(pd_mean, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, None)
+    purity_completeness_plot = create_precision_recall_figure(pd_mean, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, None)
+    purity_completeness_bp_plot = create_precision_recall_figure(pd_mean, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, None)
     all_genomes_plot = create_precision_recall_all_genomes_scatter(pd_bins, pd_mean.index.tolist())
 
     plots_panel = Panel(child=column(row(purity_completeness_plot, purity_completeness_bp_plot, all_genomes_plot), sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-padding-top2']), title='Plots')
@@ -579,20 +593,20 @@ def create_plots_per_binner(df_summary_t):
     # using the same div breaks the layout
     sample_div2 = Div(text="[average over samples]", css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
 
-    metrics_list = [utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP]
-    errors_list = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM]
+    metrics_list = [utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ]
+    errors_list = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM]
     tools_figures = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
     tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures]
     tools_column_unweighted = column([sample_div] + tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
 
-    metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP]
-    errors_list = ["", "", ""]
+    metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ]
+    errors_list = ['', '', '', '']
     tools_figures_weighted = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
     tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures_weighted]
     tools_column_weighted = column([sample_div2] + tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
 
-    tools_unweighted_panel = Panel(child=tools_column_unweighted, title=utils_labels.QUALITY_OF_SAMPLE)
-    tools_weighted_panel = Panel(child=tools_column_weighted, title=utils_labels.QUALITY_OF_BINS)
+    tools_unweighted_panel = Panel(child=tools_column_unweighted, title=utils_labels.QUALITY_OF_BINS)
+    tools_weighted_panel = Panel(child=tools_column_weighted, title=utils_labels.QUALITY_OF_SAMPLE)
     tools_tabs = Tabs(tabs=[tools_unweighted_panel, tools_weighted_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
     return tools_tabs
 
@@ -625,8 +639,8 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
         available_tools = list(pd_mean_rank[utils_labels.TOOL].unique())
         available_tools = [tool for tool in labels if tool in available_tools]
         pd_mean_rank = pd_mean_rank.set_index(utils_labels.TOOL).reindex(available_tools)
-        purity_completeness_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, rank)
-        purity_completeness_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, rank)
+        purity_completeness_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, rank)
+        purity_completeness_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, rank)
         plots_dict[rank] = row(purity_completeness_plot, purity_completeness_bp_plot)
         rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank.T))
     for k, v in plots_dict.items():
