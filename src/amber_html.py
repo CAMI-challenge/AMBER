@@ -402,6 +402,12 @@ def create_precision_recall_figure(df_summary, xname1, yname1, xname2, yname2, t
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
     legend_it = []
+    tooltips1 = [(utils_labels.TOOL, '@index'),
+                 (xname1, '@{' + xname1 + '}'),
+                 (yname1, '@{' + yname1 + '}')]
+    tooltips2 = [(utils_labels.TOOL, '@index'),
+                 (xname2, '@{' + xname2 + '}'),
+                 (yname2, '@{' + yname2 + '}')]
     p = figure(title=title, plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
     p.xaxis.axis_label = upper1(xname1.split('(')[0])
     p.yaxis.axis_label = upper1(yname1.split('(')[0])
@@ -412,6 +418,8 @@ def create_precision_recall_figure(df_summary, xname1, yname1, xname2, yname2, t
         source = ColumnDataSource(data=row.to_frame().T)
         pcircle = p.circle(xname1, yname1, source=source, color=color, fill_alpha=0.2, size=10)
         px = p.x(xname2, yname2, source=source, color=color, size=10)
+        p.add_tools(HoverTool(tooltips=tooltips1, renderers=[pcircle], toggleable=False))
+        p.add_tools(HoverTool(tooltips=tooltips2, renderers=[px], toggleable=False))
         legend_it.append(LegendItem(label=tool, renderers=[pcircle, px]))
     pcircle = p.circle([0], [0], color='black', fill_alpha=0, size=0)
     legend_it.append(LegendItem(label='by bp', renderers=[pcircle]))
@@ -428,9 +436,9 @@ def create_precision_recall_all_genomes_scatter(pd_bins, tools):
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
     p = figure(plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
-    p.add_tools(HoverTool(tooltips=[
-        ("genome", "@mapping_id")
-    ]))
+    p.add_tools(HoverTool(tooltips=[('Genome', '@mapping_id'),
+                                    ('Purity of bin (bp)', '@purity_bp'),
+                                    ('Completeness of bin (bp)', '@completeness_bp')], toggleable=False))
 
     pd_genome_bins = pd_bins[pd_bins['rank'] == 'NA']
     legend_it = []
