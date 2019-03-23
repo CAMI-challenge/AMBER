@@ -36,6 +36,10 @@ from bokeh.resources import INLINE
 from bokeh.plotting import ColumnDataSource
 
 
+AVG_OVER_SAMPLES = '[average over samples]'
+CLICK_ON_LEGENDS_DIV = '<div>' + AVG_OVER_SAMPLES + '</div><div style="padding-top: 10px;">Click on the legends to enable/disable the results for a tool.</div>'
+
+
 TEMPLATE = Template('''<!DOCTYPE html>
     <html lang="en">
         <head>
@@ -431,16 +435,16 @@ def create_precision_recall_figure(df_summary, xname1, yname1, xname2, yname2, t
     return p
 
 
-def create_precision_recall_all_genomes_scatter(pd_bins, tools):
+def create_precision_recall_all_genomes_scatter(pd_genome_bins, tools):
     colors_list = plots.create_colors_list()
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
-    p = figure(plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
-    p.add_tools(HoverTool(tooltips=[('Genome', '@mapping_id'),
+    p = figure(title='Quality per bin', plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
+    p.add_tools(HoverTool(tooltips=[('Sample', '@sample_id'),
+                                    ('Genome', '@mapping_id'),
                                     ('Purity of bin (bp)', '@purity_bp'),
                                     ('Completeness of bin (bp)', '@completeness_bp')], toggleable=False))
 
-    pd_genome_bins = pd_bins[pd_bins['rank'] == 'NA']
     legend_it = []
     for color, tool in zip(bokeh_colors, tools):
         source = ColumnDataSource(data=pd_genome_bins[pd_genome_bins[utils_labels.TOOL] == tool])
@@ -449,6 +453,41 @@ def create_precision_recall_all_genomes_scatter(pd_bins, tools):
     p.add_layout(Legend(items=legend_it), 'right')
     p.xaxis.axis_label = 'Purity per bin (bp)'
     p.yaxis.axis_label = 'Completeness per bin (bp)'
+    p.xaxis.axis_label_text_font_style = 'normal'
+    p.yaxis.axis_label_text_font_style = 'normal'
+    p.legend.click_policy = 'hide'
+    return p
+
+
+def create_contamination_column(pd_tool_bins):
+    pd_tool_bins['newcolumn'] = 1 - pd_tool_bins['purity_bp']
+
+
+def create_completeness_minus_contamination_column(pd_tool_bins):
+    pd_tool_bins['newcolumn'] = pd_tool_bins['completeness_bp'] + pd_tool_bins['purity_bp'] - 1
+
+
+def create_contamination_plot(pd_bins, tools, title, xlabel, ylabel, create_column_function):
+    colors_list = plots.create_colors_list()
+    bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
+
+    p = figure(title=title, plot_width=580, plot_height=400, toolbar_location="below")
+    legend_it = []
+    for color, tool in zip(bokeh_colors, tools):
+        pd_tool_bins = pd_bins[pd_bins[utils_labels.TOOL] == tool]
+        pd_tool_bins = pd_tool_bins.dropna(subset=['purity_bp'])
+
+        create_column_function(pd_tool_bins)
+        pd_tool_bins = pd_tool_bins.sort_values(by='newcolumn', ascending=False).reset_index()
+        pd_tool_bins = pd_tool_bins.drop(['index'], axis=1)
+
+        source = ColumnDataSource(data=pd_tool_bins)
+
+        pline = p.line('index', 'newcolumn', color=color, line_width=2, source=source)
+        legend_it.append((tool, [pline]))
+    p.add_layout(Legend(items=legend_it), 'right')
+    p.xaxis.axis_label = xlabel
+    p.yaxis.axis_label = ylabel
     p.xaxis.axis_label_text_font_style = 'normal'
     p.yaxis.axis_label_text_font_style = 'normal'
     p.legend.click_policy = 'hide'
@@ -541,6 +580,19 @@ def get_genome_bins_columns():
                         ('true_num_seqs', 'True size (seq)')])
 
 
+def create_genome_binning_plots_panel(pd_bins, pd_mean):
+    click_div = Div(text=CLICK_ON_LEGENDS_DIV, css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
+    purity_completeness_plot = column(create_precision_recall_figure(pd_mean, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, utils_labels.QUALITY_OF_BINS), css_classes=['bk-width-auto', 'bk-float-left'])
+    purity_completeness_bp_plot = column(create_precision_recall_figure(pd_mean, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, utils_labels.QUALITY_OF_SAMPLE), css_classes=['bk-width-auto', 'bk-float-left'])
+
+    all_samples_div = Div(text='<div style="padding-top: 20px;">All samples</div>', css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
+    all_bins_plot = column(create_precision_recall_all_genomes_scatter(pd_bins, pd_mean.index.tolist()), css_classes=['bk-width-auto', 'bk-float-left'])
+    completeness_contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', create_completeness_minus_contamination_column), css_classes=['bk-width-auto', 'bk-float-left'])
+    contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', create_contamination_column), css_classes=['bk-width-auto', 'bk-float-left'])
+
+    return Panel(child=column([click_div, purity_completeness_plot, purity_completeness_bp_plot, all_samples_div, all_bins_plot, completeness_contamination_plot, contamination_plot], sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block']), title='Plots')
+
+
 def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
     if df_summary_g.size == 0:
@@ -553,13 +605,13 @@ def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, la
     available_tools = [tool for tool in labels if tool in available_tools]
 
     pd_mean = df_summary_g.groupby(utils_labels.TOOL).mean().reindex(available_tools)
-    pd_mean[utils_labels.SAMPLE] = '[average over samples]'
-    sample_to_html['[average over samples]'] = [create_table_html(pd_mean.T)]
+    pd_mean[utils_labels.SAMPLE] = AVG_OVER_SAMPLES
+    sample_to_html[AVG_OVER_SAMPLES] = [create_table_html(pd_mean.T)]
 
     for sample_id, pd_sample in df_summary_g.groupby(utils_labels.SAMPLE):
         sample_to_html[sample_id] = [create_table_html(pd_sample.set_index(utils_labels.TOOL).T)]
 
-    sample_ids_list_combo = ['[average over samples]'] + available_samples
+    sample_ids_list_combo = [AVG_OVER_SAMPLES] + available_samples
 
     genome_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(sample_to_html[sample_ids_list_combo[0]][0]), css_classes=['bk-width-auto'])
     source = ColumnDataSource(data=sample_to_html)
@@ -575,14 +627,10 @@ def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, la
     metrics_column = column(column(select_sample, create_heatmap_div(), genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
     metrics_panel = Panel(child=metrics_column, title="Metrics")
 
-    purity_completeness_plot = create_precision_recall_figure(pd_mean, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, None)
-    purity_completeness_bp_plot = create_precision_recall_figure(pd_mean, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, None)
-    all_genomes_plot = create_precision_recall_all_genomes_scatter(pd_bins, pd_mean.index.tolist())
-
-    plots_panel = Panel(child=column(row(purity_completeness_plot, purity_completeness_bp_plot, all_genomes_plot), sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-padding-top2']), title='Plots')
+    plots_panel = create_genome_binning_plots_panel(pd_bins, pd_mean)
 
     bins_columns = get_genome_bins_columns()
-    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins[pd_bins['rank'] == 'NA'], bins_columns, sample_ids_list, output_dir, 'genome')
+    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_dir, 'genome')
 
     cc_table = create_contamination_completeness_table(sample_id_to_num_genomes, df_summary_g)
     cc_panel = Panel(child=row(cc_table), title="#Recovered genomes")
@@ -597,9 +645,9 @@ def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, la
 
 def create_plots_per_binner(df_summary_t):
     tools = df_summary_t[utils_labels.TOOL].unique().tolist()
-    sample_div = Div(text="[average over samples]", css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
+    sample_div = Div(text=AVG_OVER_SAMPLES, css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
     # using the same div breaks the layout
-    sample_div2 = Div(text="[average over samples]", css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
+    sample_div2 = Div(text=AVG_OVER_SAMPLES, css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
 
     metrics_list = [utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ]
     errors_list = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM]
@@ -635,25 +683,49 @@ def get_tax_bins_columns():
                         ('true_num_seqs', 'True size (seq)')])
 
 
+def create_tax_ranks_panel(qbins_plots_list, qsamples_plots_list, cc_plots_dict_list, contamination_plots_list):
+    sample_div = Div(text=CLICK_ON_LEGENDS_DIV, css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "20px"})
+    all_samples_div = Div(text='<div style="padding-top: 20px;">All samples</div>', css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
+    all_samples_div2 = Div(text='<div style="padding-top: 20px;">All samples</div>', css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
+    unweighted_panel = Panel(child=column([sample_div] + qbins_plots_list + [all_samples_div] + cc_plots_dict_list + [all_samples_div2] + contamination_plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block']), title=utils_labels.QUALITY_OF_BINS)
+
+    sample_div2 = Div(text=CLICK_ON_LEGENDS_DIV, css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "20px"})
+    weighted_panel = Panel(child=column([sample_div2] + qsamples_plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block']), title=utils_labels.QUALITY_OF_SAMPLE)
+    tax_ranks_tabs = Tabs(tabs=[unweighted_panel, weighted_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
+    return Panel(child=tax_ranks_tabs, title="Plots per taxonomic rank")
+
+
 def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, output_dir):
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
     rank_to_sample_to_html = defaultdict(list)
-    plots_list = []
-    plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
+    qbins_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
+    qsamples_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
+    cc_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
+    contamination_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
 
     pd_mean = df_summary_t.groupby([utils_labels.RANK, utils_labels.TOOL]).mean().reset_index()
-    pd_mean[utils_labels.SAMPLE] = '[average over samples]'
+    pd_mean[utils_labels.SAMPLE] = AVG_OVER_SAMPLES
     for rank, pd_mean_rank in pd_mean.groupby(utils_labels.RANK):
         available_tools = list(pd_mean_rank[utils_labels.TOOL].unique())
         available_tools = [tool for tool in labels if tool in available_tools]
         pd_mean_rank = pd_mean_rank.set_index(utils_labels.TOOL).reindex(available_tools)
+
         purity_completeness_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, rank)
         purity_completeness_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, rank)
-        plots_dict[rank] = row(purity_completeness_plot, purity_completeness_bp_plot)
+        qbins_plots_dict[rank] = column(purity_completeness_plot, css_classes=['bk-width-auto', 'bk-float-left'])
+        qsamples_plots_dict[rank] = column(purity_completeness_bp_plot, css_classes=['bk-width-auto', 'bk-float-left'])
+
+        completeness_minus_contamination_plot = create_contamination_plot(pd_bins[pd_bins['rank'] == rank], available_tools, rank + ' | Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', create_completeness_minus_contamination_column)
+        contamination_plot = create_contamination_plot(pd_bins[pd_bins['rank'] == rank], available_tools, rank + ' | Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', create_contamination_column)
+        cc_plots_dict[rank] = column(completeness_minus_contamination_plot, css_classes=['bk-width-auto', 'bk-float-left'])
+        contamination_plots_dict[rank] = column(contamination_plot, css_classes=['bk-width-auto', 'bk-float-left'])
+
         rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank.T))
-    for k, v in plots_dict.items():
-        if v:
-            plots_list.append(v)
+
+    qbins_plots_list = [v for k, v in qbins_plots_dict.items() if v]
+    qsamples_plots_list = [v for k, v in qsamples_plots_dict.items() if v]
+    cc_plots_dict_list = [v for k, v in cc_plots_dict.items() if v]
+    contamination_plots_list = [v for k, v in contamination_plots_dict.items() if v]
 
     pd_groupby_rank = df_summary_t.groupby(utils_labels.RANK)
     for rank, pd_rank in pd_groupby_rank:
@@ -670,7 +742,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
     if not rank_to_sample_to_html:
         return None
 
-    sample_ids_list_combo = ['[average over samples]'] + sample_ids_list
+    sample_ids_list_combo = [AVG_OVER_SAMPLES] + sample_ids_list
 
     taxonomic_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(rank_to_sample_to_html[load_ncbi_taxinfo.RANKS[0]][0]), css_classes=['bk-width-auto'])
     source = ColumnDataSource(data=rank_to_sample_to_html)
@@ -693,17 +765,15 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
     metrics_panel = Panel(child=metrics_column, title="Metrics")
 
     bins_columns = get_tax_bins_columns()
-    tax_bins = pd_bins[pd_bins['rank'] != 'NA']
-    if tax_bins['name'].isnull().any():
+    if pd_bins['name'].isnull().any():
         del bins_columns['name']
 
-    metrics_bins_panel = create_metrics_per_bin_panel(tax_bins, bins_columns, sample_ids_list, output_dir, 'taxonomic')
+    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_dir, 'taxonomic')
 
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
                                         row(create_rankings_table(pd_mean.reset_index().set_index([utils_labels.SAMPLE, utils_labels.TOOL]), True))]), title="Rankings")
 
-    sample_div = Div(text="[average over samples]", css_classes=['bk-width-auto'], style={"margin-top": "20px"})
-    tax_ranks_panel = Panel(child=column(sample_div, column(plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto'])), title="Plots per taxonomic rank")
+    tax_ranks_panel = create_tax_ranks_panel(qbins_plots_list, qsamples_plots_list, cc_plots_dict_list, contamination_plots_list)
 
     tools_panel = Panel(child=create_plots_per_binner(pd_mean), title="Plots per binner")
 
@@ -716,11 +786,11 @@ def create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_id
     create_heatmap_bar(output_dir)
     tabs_list = []
 
-    metrics_row_g = create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir)
+    metrics_row_g = create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins[pd_bins['rank'] == 'NA'], labels, sample_ids_list, output_dir)
     if metrics_row_g:
         tabs_list.append(Panel(child=metrics_row_g, title="Genome binning"))
 
-    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, output_dir)
+    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins[pd_bins['rank'] != 'NA'], labels, sample_ids_list, output_dir)
     if metrics_row_t:
         tabs_list.append(Panel(child=metrics_row_t, title="Taxonomic binning"))
 

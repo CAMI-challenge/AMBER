@@ -252,6 +252,7 @@ def plot_taxonomic_binning(df_summary, output_dir):
 def main(args=None):
     parser = argparse.ArgumentParser(description="AMBER: Assessment of Metagenome BinnERs",
                                      parents=[argparse_parents.PARSER_MULTI2], prog='AMBER')
+    parser.add_argument('-p', '--filter', help=argparse_parents.HELP_FILTER)
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
     parser.add_argument('--stdout', help="Print summary to stdout", action='store_true')
     parser.add_argument('-d', '--desc', help="Description for HTML page", required=False)
@@ -263,7 +264,6 @@ def main(args=None):
     group_g.add_argument('-x', '--min_completeness', help=argparse_parents.HELP_THRESHOLDS_COMPLETENESS, required=False)
     group_g.add_argument('-y', '--max_contamination', help=argparse_parents.HELP_THRESHOLDS_CONTAMINATION, required=False)
     group_g.add_argument('-c', '--plot_heatmaps', help="Plot heatmaps of confusion matrices (can take some minutes)", action='store_true')
-    group_g.add_argument('-p', '--filter', help=argparse_parents.HELP_FILTER)
     group_g.add_argument('-r', '--remove_genomes', help=argparse_parents.HELP_GENOMES_FILE, required=False)
     group_g.add_argument('-k', '--keyword', help=argparse_parents.HELP_KEYWORD, required=False)
 

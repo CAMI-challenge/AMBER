@@ -80,11 +80,12 @@ See [here](./test/gsa_mapping.binning) another example. Note: column BINID (TAXI
 ## Running _amber.py_
 
 ~~~BASH
-usage: AMBER [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS] -o
-             OUTPUT_DIR [--stdout] [-d DESC] [-v] [-n MIN_LENGTH] [-m]
-             [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION] [-c] [-p FILTER]
-             [-r REMOVE_GENOMES] [-k KEYWORD]
+usage: AMBER [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
+             [-p FILTER] -o OUTPUT_DIR [--stdout] [-d DESC] [-v]
+             [-n MIN_LENGTH] [-m] [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION]
+             [-c] [-r REMOVE_GENOMES] [-k KEYWORD]
              [--ncbi_nodes_file NCBI_NODES_FILE]
+             [--ncbi_names_file NCBI_NAMES_FILE]
              bin_files [bin_files ...]
 
 AMBER: Assessment of Metagenome BinnERs
@@ -101,6 +102,8 @@ optional arguments:
                         (required if gold standard file misses column _LENGTH)
   -l LABELS, --labels LABELS
                         Comma-separated binning names
+  -p FILTER, --filter FILTER
+                        Filter out [FILTER]% smallest genome bins (default: 0)
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         Directory to write the results to
   --stdout              Print summary to stdout
@@ -120,8 +123,6 @@ genome binning-specific arguments:
                         (default %: 10,5)
   -c, --plot_heatmaps   Plot heatmaps of confusion matrices (can take some
                         minutes)
-  -p FILTER, --filter FILTER
-                        Filter out [FILTER]% smallest genome bins (default: 0)
   -r REMOVE_GENOMES, --remove_genomes REMOVE_GENOMES
                         File with list of genomes to be removed
   -k KEYWORD, --keyword KEYWORD
@@ -132,6 +133,8 @@ genome binning-specific arguments:
 taxonomic binning-specific arguments:
   --ncbi_nodes_file NCBI_NODES_FILE
                         NCBI nodes file
+  --ncbi_names_file NCBI_NAMES_FILE
+                        NCBI names file
 ~~~
 **Example:**
 ~~~BASH
