@@ -322,17 +322,47 @@ def load_ncbi_info(ncbi_nodes_file, ncbi_names_file):
             binning_classes.TaxonomicQuery.tax_id_to_name = load_ncbi_taxinfo.load_names(binning_classes.TaxonomicQuery.tax_id_to_rank, ncbi_names_file)
 
 
+def create_genome_queries_from_taxonomic_queries(rank, sample_id_to_g_query, sample_id_to_queries_list):
+    sample_id_to_genome_queries = defaultdict(list)
+    for sample_id in sample_id_to_queries_list:
+        for query in sample_id_to_queries_list[sample_id]:
+            if isinstance(query, binning_classes.GenomeQuery):
+                continue
+            if sample_id not in sample_id_to_g_query:
+                print("No genome binning gold standard available for sample " + sample_id)
+                continue
+            g_query = binning_classes.GenomeQuery()
+            sample_id_to_genome_queries[sample_id].append(g_query)
+            g_query.options = query.options
+            g_query.label = query.label
+            g_query.gold_standard = sample_id_to_g_query[sample_id]
+
+            for sequence_id in query.rank_to_sequence_id_to_bin_id[rank]:
+                bin_id = query.rank_to_sequence_id_to_bin_id[rank][sequence_id]
+                if bin_id not in g_query.get_bin_ids():
+                    bin = binning_classes.GenomeBin(bin_id)
+                    g_query.add_bin(bin)
+                else:
+                    bin = g_query.get_bin_by_id(bin_id)
+                g_query.sequence_id_to_bin_id = (sequence_id, bin_id)
+                bin.add_sequence_id(sequence_id, query.gold_standard.sequence_id_to_length[sequence_id])
+
+    for sample_id in sample_id_to_genome_queries:
+        sample_id_to_queries_list[sample_id].extend(sample_id_to_genome_queries[sample_id])
+
+
 def load_queries(gold_standard_file, fastx_file, query_files, options, labels):
-    gold_standard = open_query(gold_standard_file,
-                               True,
-                               fastx_file,
-                               None, None,
-                               options,
-                               None)
+    sample_ids_list, sample_id_to_g_query, sample_id_to_t_query = \
+        open_query(gold_standard_file,
+                   True,
+                   fastx_file,
+                   None, None,
+                   options,
+                   None)
     sample_id_to_num_genomes = None
-    if gold_standard[1]:
+    if sample_id_to_g_query:
         sample_id_to_num_genomes = {}
-        for sample_id, g_query in gold_standard[1].items():
+        for sample_id, g_query in sample_id_to_g_query.items():
             sample_id_to_num_genomes[sample_id] = len(g_query.bins)
 
     sample_id_to_queries_list = defaultdict(list)
@@ -340,7 +370,7 @@ def load_queries(gold_standard_file, fastx_file, query_files, options, labels):
         query = open_query(query_file,
                            False,
                            None,
-                           gold_standard[1], gold_standard[2],
+                           sample_id_to_g_query, sample_id_to_t_query,
                            options,
                            label)
         for sample_id_to_query in [query[1], query[2]]:
@@ -351,4 +381,7 @@ def load_queries(gold_standard_file, fastx_file, query_files, options, labels):
 
     # TODO if there is a g_query (t_query), there must be a g_gold_standard (t_gold_standard)
 
-    return [sample_id for sample_id in gold_standard[0]], sample_id_to_num_genomes, sample_id_to_queries_list
+    if options.rank_as_genome_binning:
+        create_genome_queries_from_taxonomic_queries(options.rank_as_genome_binning, sample_id_to_g_query, sample_id_to_queries_list)
+
+    return sample_ids_list, sample_id_to_num_genomes, sample_id_to_queries_list

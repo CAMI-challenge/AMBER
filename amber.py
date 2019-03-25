@@ -270,6 +270,7 @@ def main(args=None):
     group_t = parser.add_argument_group('taxonomic binning-specific arguments')
     group_t.add_argument('--ncbi_nodes_file', help="NCBI nodes file", required=False)
     group_t.add_argument('--ncbi_names_file', help="NCBI names file", required=False)
+    group_t.add_argument('--rank_as_genome_binning', help="Assess taxonomic binning at a rank also as genome binning. Valid ranks: superkingdom, phylum, class, order, family, genus, species, strain", required=False)
 
     args = parser.parse_args(args)
 
@@ -286,7 +287,8 @@ def main(args=None):
                                       filter_genomes_file=args.remove_genomes,
                                       filter_keyword=args.keyword,
                                       map_by_completeness=args.map_by_completeness,
-                                      min_length=args.min_length)
+                                      min_length=args.min_length,
+                                      rank_as_genome_binning=args.rank_as_genome_binning)
 
     load_data.load_ncbi_info(args.ncbi_nodes_file, args.ncbi_names_file)
 

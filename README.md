@@ -86,6 +86,7 @@ usage: AMBER [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
              [-c] [-r REMOVE_GENOMES] [-k KEYWORD]
              [--ncbi_nodes_file NCBI_NODES_FILE]
              [--ncbi_names_file NCBI_NAMES_FILE]
+             [--rank_as_genome_binning RANK_AS_GENOME_BINNING]
              bin_files [bin_files ...]
 
 AMBER: Assessment of Metagenome BinnERs
@@ -135,6 +136,10 @@ taxonomic binning-specific arguments:
                         NCBI nodes file
   --ncbi_names_file NCBI_NAMES_FILE
                         NCBI names file
+  --rank_as_genome_binning RANK_AS_GENOME_BINNING
+                        Assess taxonomic binning at a rank also as genome
+                        binning. Valid ranks: superkingdom, phylum, class,
+                        order, family, genus, species, strain
 ~~~
 **Example:**
 ~~~BASH

@@ -451,12 +451,15 @@ class TaxonomicBin(Bin):
 
 
 class Options:
-    def __init__(self, filter_tail_percentage, filter_genomes_file, filter_keyword, map_by_completeness, min_length):
+    def __init__(self, filter_tail_percentage, filter_genomes_file, filter_keyword, map_by_completeness, min_length, rank_as_genome_binning):
         self.__filter_tail_percentage = float(filter_tail_percentage) if filter_tail_percentage else .0
         self.__filter_genomes_file = filter_genomes_file
         self.__filter_keyword = filter_keyword
         self.__map_by_completeness = map_by_completeness
         self.__min_length = int(min_length) if min_length else 0
+        if rank_as_genome_binning and rank_as_genome_binning not in load_ncbi_taxinfo.RANKS:
+            exit("Not a valid rank to assess taxonomic binning as genome binning (option --rank_as_genome_binning): " + rank_as_genome_binning)
+        self.__rank_as_genome_binning = rank_as_genome_binning
 
     @property
     def filter_tail_percentage(self):
@@ -478,6 +481,10 @@ class Options:
     def min_length(self):
         return self.__min_length
 
+    @property
+    def rank_as_genome_binning(self):
+        return self.__rank_as_genome_binning
+
     @filter_tail_percentage.setter
     def filter_tail_percentage(self, filter_tail_percentage):
         self.__filter_tail_percentage = filter_tail_percentage
@@ -497,3 +504,7 @@ class Options:
     @min_length.setter
     def min_length(self, min_length):
         self.__min_length = min_length
+
+    @rank_as_genome_binning.setter
+    def rank_as_genome_binning(self, rank_as_genome_binning):
+        self.__rank_as_genome_binning = rank_as_genome_binning
