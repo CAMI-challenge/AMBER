@@ -294,7 +294,6 @@ def main(args=None):
 
     sample_ids_list, sample_id_to_num_genomes, sample_id_to_queries_list = \
         load_data.load_queries(args.gold_standard_file,
-                               args.fasta_file,
                                args.bin_files,
                                options,
                                labels)

@@ -71,19 +71,29 @@ RH|P|C26099  1053046    765201 689201
 RH|P|C35075  1053046    765201 173282
 RH|P|C20873  1053046    765201 339258
 ~~~
-See [here](./test/gsa_mapping.binning) another example. Note: column BINID (TAXID) is required to assess genome (taxonomic) binning. column _LENGTH is optional, but eliminates the need for a FASTA or FASTQ file (input 3 below).
+See [here](./test/gsa_mapping.binning) another example. Observations:
+* The value of the SampleID header tag must uniquely identify a sample and be the same in the gold standard and the predictions (input 2 below).
+* Column BINID (TAXID) is required to assess genome (taxonomic) binning.
+* Column _LENGTH can be added to a mapping file using tool [_src/utils/add_length_column.py_](README_TOOLS.md#srcutilsadd_length_columnpy).
 
-2. One or more files with bin assignments for the sequences also in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format), with each file containing all the bin assignments from a binning program. A tool for converting FASTA files, such that each file represents a bin, is available (see [_src/utils/convert_fasta_bins_to_biobox_format.py_](README_TOOLS.md#srcutilsconvert_fasta_bins_to_biobox_formatpy)).
-3. A FASTA or FASTQ file with the sequences for obtaining their lengths. Optionally, the lenghts may be added to the gold standard mapping file at column _LENGTH using tool [_src/utils/add_length_column.py_](README_TOOLS.md#srcutilsadd_length_columnpy). In this way, AMBER no longer requires a FASTA or FASTQ file.
-4. For assessing **taxonomic binning**, AMBER also requires the file **nodes.dmp** from NCBI. Download taxdump.tar.gz from [ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz), extract nodes.tmp, and specify it to AMBER with option `--ncbi_nodes_file`. 
+2. One or more files, each containing the bin assignments from a binning program, also in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format). Column _LENGTH is not required  (_LENGTH is only required in the gold standard).
+
+Note: a tool for converting FASTA files, such that each file represents a bin, is available (see [_src/utils/convert_fasta_bins_to_biobox_format.py_](README_TOOLS.md#srcutilsconvert_fasta_bins_to_biobox_formatpy)).
+
+3. For assessing **taxonomic binning**, AMBER also requires the file **nodes.dmp** from NCBI. Download taxdump.tar.gz from [ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz), extract nodes.tmp, and provide it to AMBER with option `--ncbi_nodes_file`.
+
+## Input format for multiple samples
+
+Binnings of datasets with multiple samples are supported by AMBER. For each binning program, simply concatenate the binnings of the different samples into a single file to obtain one binning file per program. The gold standard must also consist in one file for all samples. Remember: binnings for the same sample must have the same SampleID.
+
 
 ## Running _amber.py_
 
 ~~~BASH
-usage: AMBER [-h] -g GOLD_STANDARD_FILE [-f FASTA_FILE] [-l LABELS]
-             [-p FILTER] -o OUTPUT_DIR [--stdout] [-d DESC] [-v]
-             [-n MIN_LENGTH] [-m] [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION]
-             [-c] [-r REMOVE_GENOMES] [-k KEYWORD]
+usage: AMBER [-h] -g GOLD_STANDARD_FILE [-l LABELS] [-p FILTER] -o OUTPUT_DIR
+             [--stdout] [-d DESC] [-v] [-n MIN_LENGTH] [-m]
+             [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION] [-c]
+             [-r REMOVE_GENOMES] [-k KEYWORD]
              [--ncbi_nodes_file NCBI_NODES_FILE]
              [--ncbi_names_file NCBI_NAMES_FILE]
              [--rank_as_genome_binning RANK_AS_GENOME_BINNING]
@@ -98,9 +108,6 @@ optional arguments:
   -h, --help            show this help message and exit
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
                         Gold standard - ground truth - file
-  -f FASTA_FILE, --fasta_file FASTA_FILE
-                        FASTA or FASTQ file with sequences of gold standard
-                        (required if gold standard file misses column _LENGTH)
   -l LABELS, --labels LABELS
                         Comma-separated binning names
   -p FILTER, --filter FILTER

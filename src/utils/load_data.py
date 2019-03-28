@@ -212,7 +212,7 @@ def initialize_query(sample_id_to_g_gold_standard, sample_id_to_t_gold_standard,
     return g_query, t_query, g_sequence_ids, t_sequence_ids, sequence_id_to_length
 
 
-def open_query(file_path_query, is_gs, fastx_file, sample_id_to_g_gold_standard, sample_id_to_t_gold_standard, options, label):
+def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_to_t_gold_standard, options, label):
     sample_id_to_g_query = {}
     sample_id_to_t_query = {}
     sample_ids_list = []
@@ -229,11 +229,8 @@ def open_query(file_path_query, is_gs, fastx_file, sample_id_to_g_gold_standard,
                     sample_id_to_g_query[sample_id] = g_query
                     sample_id_to_t_query[sample_id] = t_query
 
-                    # TODO: re-enable check
-                    # if is_gs and not binning_classes.Bin.sequence_id_to_length and is_length_column_available(read_handler):
-                    #     if not fastx_file:
-                    #         exit("Sequences length could not be determined. Please provide a FASTA or FASTQ file using option -f or add column _LENGTH to gold standard.")
-                    #     binning_classes.Bin.sequence_id_to_length = add_length_column.read_lengths_from_fastx_file(fastx_file)
+                    if is_gs and not length:
+                        exit("Sequences length could not be determined. Please add column _LENGTH to gold standard.")
 
                 sample_id_prev = sample_id
 
@@ -351,11 +348,10 @@ def create_genome_queries_from_taxonomic_queries(rank, sample_id_to_g_query, sam
         sample_id_to_queries_list[sample_id].extend(sample_id_to_genome_queries[sample_id])
 
 
-def load_queries(gold_standard_file, fastx_file, query_files, options, labels):
+def load_queries(gold_standard_file, query_files, options, labels):
     sample_ids_list, sample_id_to_g_query, sample_id_to_t_query = \
         open_query(gold_standard_file,
                    True,
-                   fastx_file,
                    None, None,
                    options,
                    None)
@@ -369,7 +365,6 @@ def load_queries(gold_standard_file, fastx_file, query_files, options, labels):
     for query_file, label in zip(query_files, labels):
         query = open_query(query_file,
                            False,
-                           None,
                            sample_id_to_g_query, sample_id_to_t_query,
                            options,
                            label)
