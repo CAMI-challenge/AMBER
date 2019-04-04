@@ -26,6 +26,7 @@ from src.utils import load_ncbi_taxinfo
 
 
 def get_logger(output_dir, silent):
+    make_sure_path_exists(output_dir)
     logger = logging.getLogger('amber')
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -60,7 +61,8 @@ def get_labels(labels, bin_files):
     if labels:
         labels_list = [x.strip() for x in labels.split(',')]
         if len(set(labels_list)) != len(bin_files):
-            exit('Number of different labels does not match the number of binning files. Please check parameter -l, --labels.')
+            logging.getLogger('amber').critical('Number of different labels does not match the number of binning files. Please check parameter -l, --labels.')
+            exit(1)
         return labels_list
     tool_id = []
     for bin_file in bin_files:
@@ -295,7 +297,8 @@ def main(args=None):
     group_t.add_argument('--rank_as_genome_binning', help="Assess taxonomic binning at a rank also as genome binning. Valid ranks: superkingdom, phylum, class, order, family, genus, species, strain", required=False)
 
     args = parser.parse_args(args)
-    logger = get_logger(args.output_dir, args.silent)
+    output_dir = os.path.abspath(args.output_dir)
+    logger = get_logger(output_dir, args.silent)
 
     min_completeness = None
     max_contamination = None
@@ -321,7 +324,6 @@ def main(args=None):
                                options,
                                labels)
 
-    output_dir = os.path.abspath(args.output_dir)
     create_output_directories(output_dir, sample_id_to_queries_list)
 
     df_summary, pd_bins = evaluate_samples_queries(sample_id_to_queries_list,
