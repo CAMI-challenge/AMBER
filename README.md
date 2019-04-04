@@ -91,7 +91,7 @@ Binnings of datasets with multiple samples are supported by AMBER. For each binn
 
 ~~~BASH
 usage: AMBER [-h] -g GOLD_STANDARD_FILE [-l LABELS] [-p FILTER] -o OUTPUT_DIR
-             [--stdout] [-d DESC] [-v] [-n MIN_LENGTH] [-m]
+             [--stdout] [-d DESC] [--silent] [-v] [-n MIN_LENGTH] [-m]
              [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION] [-c]
              [-r REMOVE_GENOMES] [-k KEYWORD]
              [--ncbi_nodes_file NCBI_NODES_FILE]
@@ -116,6 +116,7 @@ optional arguments:
                         Directory to write the results to
   --stdout              Print summary to stdout
   -d DESC, --desc DESC  Description for HTML page
+  --silent              Silent mode
   -v, --version         show program's version number and exit
 
 genome binning-specific arguments:

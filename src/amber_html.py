@@ -6,6 +6,7 @@ import datetime
 import numpy as np
 import math
 import re
+import logging
 from jinja2 import Template
 from statistics import median
 from src import plots
@@ -783,6 +784,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
 
 
 def create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir, desc_text):
+    logging.getLogger('amber').info('Creating HTML page...')
     create_heatmap_bar(output_dir)
     tabs_list = []
 
@@ -815,3 +817,4 @@ def create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_id
 
     with open(os.path.join(output_dir, "index.html"), 'w') as f:
         f.write(html)
+    logging.getLogger('amber').info('done')

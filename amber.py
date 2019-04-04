@@ -2,9 +2,11 @@
 
 import argparse
 import os
+import sys
 import errno
 import matplotlib
 import numpy as np
+import logging
 from collections import OrderedDict
 from collections import defaultdict
 from version import __version__
@@ -23,6 +25,21 @@ from src import binning_classes
 from src.utils import load_ncbi_taxinfo
 
 
+def get_logger(output_dir, silent):
+    logger = logging.getLogger('amber')
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    logging_fh = logging.FileHandler(os.path.join(output_dir, 'log.txt'))
+    logging_fh.setFormatter(formatter)
+    logger.addHandler(logging_fh)
+
+    if not silent:
+        logging_stdout = logging.StreamHandler(sys.stdout)
+        logging_stdout.setFormatter(formatter)
+        logger.addHandler(logging_stdout)
+    return logger
+
+
 def make_sure_path_exists(path):
     try:
         os.makedirs(path)
@@ -32,9 +49,11 @@ def make_sure_path_exists(path):
 
 
 def create_output_directories(output_dir, sample_id_to_queries_list):
+    logging.getLogger('amber').info('Creating output directories...')
     for sample_id in sample_id_to_queries_list:
         for query in sample_id_to_queries_list[sample_id]:
             make_sure_path_exists(os.path.join(output_dir, query.binning_type, query.label))
+    logging.getLogger('amber').info('done')
 
 
 def get_labels(labels, bin_files):
@@ -133,6 +152,7 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
     pd_bins_all = pd.DataFrame()
     df_summary = pd.DataFrame()
     for query in queries_list:
+        logging.getLogger('amber').info('Computing metrics for ' + query.label + ' - ' + query.binning_type + ' binning, ' + sample_id + '...')
         percentage_of_assigned_seqs = compute_percentage_of_assigned_seqs(query)
 
         # Compute metrics per bin
@@ -211,6 +231,7 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
             df = df.join(df_genome_recovery)
             df_summary = pd.concat([df_summary, df], ignore_index=True, sort=True)
             pd_bins_all['sample_id'] = sample_id
+        logging.getLogger('amber').info('done')
     return df_summary, pd_bins_all
 
 
@@ -256,6 +277,7 @@ def main(args=None):
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
     parser.add_argument('--stdout', help="Print summary to stdout", action='store_true')
     parser.add_argument('-d', '--desc', help="Description for HTML page", required=False)
+    parser.add_argument('--silent', help='Silent mode', action='store_true')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
     group_g = parser.add_argument_group('genome binning-specific arguments')
@@ -273,6 +295,7 @@ def main(args=None):
     group_t.add_argument('--rank_as_genome_binning', help="Assess taxonomic binning at a rank also as genome binning. Valid ranks: superkingdom, phylum, class, order, family, genus, species, strain", required=False)
 
     args = parser.parse_args(args)
+    logger = get_logger(args.output_dir, args.silent)
 
     min_completeness = None
     max_contamination = None
@@ -303,6 +326,8 @@ def main(args=None):
 
     df_summary, pd_bins = evaluate_samples_queries(sample_id_to_queries_list,
                                                    min_completeness, max_contamination)
+
+    logger.info('Saving computed metrics...')
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
     if args.stdout:
         print(df_summary.to_string(index=False))
@@ -325,8 +350,10 @@ def main(args=None):
             del bins_columns['name']
         table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
+    logger.info('done')
 
     amber_html.create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, args.output_dir, args.desc)
+    logger.info('AMBER finished successfully. All results have been saved to {}'.format(output_dir))
 
 
 if __name__ == "__main__":

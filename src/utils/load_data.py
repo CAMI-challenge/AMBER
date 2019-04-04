@@ -42,7 +42,7 @@ def read_binning_file(read_handler, file_path, is_gs):
         if line.startswith("@@"):
             for index, column_name in enumerate(line[2:].split('\t')):
                 column_name_to_index[column_name] = index
-            index_seq_id, index_bin_id, index_tax_id, index_length = get_column_indices(column_name_to_index)
+            index_seq_id, index_bin_id, index_tax_id, index_length = get_column_indices(column_name_to_index, is_gs)
             got_column_indices = True
             reading_data = False
             continue
@@ -59,42 +59,15 @@ def read_binning_file(read_handler, file_path, is_gs):
 
         if not got_column_indices:
             logging.getLogger('amber').critical("Header line starting with @@ in file {} is missing or at wrong position.\n".format(file_path))
-            raise RuntimeError
+            exit(1)
 
         if 'SAMPLEID' not in header:
             logging.getLogger('amber').critical("Header in file {} is incomplete. Check if the header of each sample contains at least SAMPLEID.\n".format(file_path))
-            raise RuntimeError
+            exit(1)
 
         reading_data = True
         sequence_id, bin_id, tax_id, length = read_row(line, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs)
         yield header['SAMPLEID'], sequence_id, bin_id, tax_id, length
-
-
-def get_genome_mapping_without_lenghts(mapping_file, remove_genomes_file=None, keyword=None):
-    gold_standard = binning_classes.Query()
-    gold_standard.bin_id_to_list_of_sequence_ids = {}
-    gold_standard.sequence_id_to_genome_id = {}
-
-    filtering_genomes_to_keyword = {}
-    if remove_genomes_file:
-        filtering_genomes_to_keyword = load_unique_common(remove_genomes_file)
-
-    with open(mapping_file, 'r') as read_handler:
-        try:
-            for sample_id, sequence_id, genome_id, length in read_binning_file(read_handler, mapping_file):
-                if genome_id in filtering_genomes_to_keyword and (not keyword or filtering_genomes_to_keyword[genome_id] == keyword):
-                    continue
-                gold_standard.sequence_id_to_genome_id[sequence_id] = genome_id
-                if genome_id not in gold_standard.bin_id_to_list_of_sequence_ids:
-                    gold_standard.bin_id_to_list_of_sequence_ids[genome_id] = []
-                gold_standard.bin_id_to_list_of_sequence_ids[genome_id].append(sequence_id)
-        except:
-            exit("Error. File {} is malformed.".format(mapping_file))
-
-    if len(gold_standard.bin_id_to_list_of_sequence_ids) == 0:
-        exit('All bins of the gold standard have been filtered out due to option --remove_genomes.')
-
-    return gold_standard
 
 
 def read_header(input_stream):
@@ -125,15 +98,15 @@ def read_row(line, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs
     try:
         seq_id = row_data[index_seq_id]
     except:
-        print("Value in column SEQUENCEID could not be read.")
-        raise
+        logging.getLogger('amber').critical("Value in column SEQUENCEID could not be read.")
+        exit(1)
 
     if index_bin_id:
         try:
             bin_id = row_data[index_bin_id]
         except:
-            print("Value in column BINID could not be read.")
-            raise
+            logging.getLogger('amber').critical("Value in column BINID could not be read.")
+            exit(1)
     else:
         bin_id = None
 
@@ -141,8 +114,8 @@ def read_row(line, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs
         try:
             tax_id = row_data[index_tax_id]
         except:
-            print("Value in column TAXID could not be read.")
-            raise
+            logging.getLogger('amber').critical("Value in column TAXID could not be read.")
+            exit(1)
     else:
         tax_id = None
 
@@ -150,24 +123,23 @@ def read_row(line, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs
         try:
             length = int(row_data[index_length])
         except:
-            print("Value in column _LENGTH could not be read. Please provide a value or remove column altogether (and provide a FASTA or FASTQ file instead - see README).")
-            raise
+            logging.getLogger('amber').critical("Value in column LENGTH could not be read.")
+            exit(1)
         return seq_id, bin_id, tax_id, length
     else:
         return seq_id, bin_id, tax_id, int(0)
 
 
-def is_length_column_available(input_stream):
-    header, column_names = read_header(input_stream)
-    input_stream.seek(0)
-    return "_LENGTH" in column_names
-
-
-def get_column_indices(column_name_to_index):
+def get_column_indices(column_name_to_index, is_gs):
     if "SEQUENCEID" not in column_name_to_index:
-        raise RuntimeError("Column not found: {}".format("SEQUENCEID"))
+        logging.getLogger('amber').critical("Column not found: {}".format("SEQUENCEID"))
+        exit(1)
     if "BINID" not in column_name_to_index and "TAXID" not in column_name_to_index:
-        raise RuntimeError("Column not found: {}".format("BINID/TAXID"))
+        logging.getLogger('amber').critical("Column not found: {}".format("BINID/TAXID"))
+        exit(1)
+    if is_gs and "LENGTH" not in column_name_to_index and "_LENGTH" not in column_name_to_index:
+        logging.getLogger('amber').critical("Column not found: {}".format("LENGTH"))
+        exit(1)
     index_seq_id = column_name_to_index["SEQUENCEID"]
 
     index_bin_id = None
@@ -178,7 +150,9 @@ def get_column_indices(column_name_to_index):
         index_tax_id = column_name_to_index["TAXID"]
 
     index_length = None
-    if "_LENGTH" in column_name_to_index:
+    if "LENGTH" in column_name_to_index:
+        index_length = column_name_to_index["LENGTH"]
+    elif "_LENGTH" in column_name_to_index:
         index_length = column_name_to_index["_LENGTH"]
     return index_seq_id, index_bin_id, index_tax_id, index_length
 
@@ -207,7 +181,8 @@ def initialize_query(sample_id_to_g_gold_standard, sample_id_to_t_gold_standard,
             sequence_id_to_length = sample_id_to_t_gold_standard[sample_id].sequence_id_to_length
             t_sequence_ids = sample_id_to_t_gold_standard[sample_id].get_sequence_ids()
     if sequence_id_to_length is None:
-        exit("Error. Sample ID {} not found in the gold standard.".format(sample_id))
+        logging.getLogger('amber').critical("Sample ID {} not found in the gold standard.".format(sample_id))
+        exit(1)
 
     return g_query, t_query, g_sequence_ids, t_sequence_ids, sequence_id_to_length
 
@@ -230,20 +205,21 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
                     sample_id_to_t_query[sample_id] = t_query
 
                     if is_gs and not length:
-                        exit("Sequences length could not be determined. Please add column _LENGTH to gold standard.")
+                        logging.getLogger('amber').critical("Sequences length could not be determined. Please add column _LENGTH to gold standard.")
+                        exit(1)
 
                 sample_id_prev = sample_id
 
                 if is_gs:
                     sequence_id_to_length[sequence_id] = length
                 elif sequence_id not in sequence_id_to_length:
-                    print("Ignoring sequence {} - length unknown (file {})".format(sequence_id, file_path_query), file=sys.stderr)
+                    logging.getLogger('amber').warning("Ignoring sequence {} - length unknown (file {})".format(sequence_id, file_path_query))
                     continue
 
                 if bin_id:
                     if sequence_id_to_length[sequence_id] >= options.min_length:
                         if not is_gs and sequence_id not in g_sequence_ids:
-                            print("Ignoring sequence {} - not found in the genome binning gold standard, sample {}: (file {})".format(sequence_id, sample_id, file_path_query), file=sys.stderr)
+                            logging.getLogger('amber').warning("Ignoring sequence {} - not found in the genome binning gold standard, sample {}: (file {})".format(sequence_id, sample_id, file_path_query))
                         else:
                             if bin_id not in g_query.get_bin_ids():
                                 bin = binning_classes.GenomeBin(bin_id)
@@ -255,7 +231,7 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
                             if is_gs:
                                 bin.mapping_id = bin_id
                     else:
-                        print("Ignoring sequence {} - shorter than {} bps: (file {})".format(sequence_id, options.min_length, file_path_query), file=sys.stderr)
+                        logging.getLogger('amber').warning("Ignoring sequence {} - shorter than {} bps: (file {})".format(sequence_id, options.min_length, file_path_query))
 
                 if tax_id:
                     if not binning_classes.TaxonomicQuery.tax_id_to_parent:
@@ -265,11 +241,11 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
                             exit("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.")
 
                     if tax_id not in binning_classes.TaxonomicQuery.tax_id_to_rank:
-                        print("Ignoring sequence {} - not a valid NCBI taxonomic ID: {} (file {})".format(sequence_id, tax_id, file_path_query), file=sys.stderr)
+                        logging.getLogger('amber').warning("Ignoring sequence {} - not a valid NCBI taxonomic ID: {} (file {})".format(sequence_id, tax_id, file_path_query))
                         continue
 
                     if not is_gs and sequence_id not in t_sequence_ids:
-                        print("Ignoring sequence {} - not found in the taxonomic binning gold standard, sample {}: (file {})".format(sequence_id, sample_id, file_path_query), file=sys.stderr)
+                        logging.getLogger('amber').warning("Ignoring sequence {} - not found in the taxonomic binning gold standard, sample {}: (file {})".format(sequence_id, sample_id, file_path_query))
                         continue
 
                     tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank)
@@ -289,7 +265,8 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
                         bin.add_sequence_id(sequence_id, sequence_id_to_length[sequence_id])
         except BaseException as e:
             traceback.print_exc()
-            exit("Error. File {} is malformed. {}".format(file_path_query, e))
+            logging.getLogger('amber').critical("File {} is malformed. {}".format(file_path_query, e))
+            exit(1)
 
     empty = []
     for sample_id, g_query in sample_id_to_g_query.items():
@@ -313,10 +290,12 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
 
 def load_ncbi_info(ncbi_nodes_file, ncbi_names_file):
     if ncbi_nodes_file:
+        logging.getLogger('amber').info('Loading NCBI files...')
         binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank = \
             load_ncbi_taxinfo.load_tax_info(ncbi_nodes_file)
         if ncbi_names_file:
             binning_classes.TaxonomicQuery.tax_id_to_name = load_ncbi_taxinfo.load_names(binning_classes.TaxonomicQuery.tax_id_to_rank, ncbi_names_file)
+        logging.getLogger('amber').info('done')
 
 
 def create_genome_queries_from_taxonomic_queries(rank, sample_id_to_g_query, sample_id_to_queries_list):
@@ -326,7 +305,7 @@ def create_genome_queries_from_taxonomic_queries(rank, sample_id_to_g_query, sam
             if isinstance(query, binning_classes.GenomeQuery):
                 continue
             if sample_id not in sample_id_to_g_query:
-                print("No genome binning gold standard available for sample " + sample_id)
+                logging.getLogger('amber').warning("No genome binning gold standard available for sample " + sample_id)
                 continue
             g_query = binning_classes.GenomeQuery()
             sample_id_to_genome_queries[sample_id].append(g_query)
@@ -349,6 +328,7 @@ def create_genome_queries_from_taxonomic_queries(rank, sample_id_to_g_query, sam
 
 
 def load_queries(gold_standard_file, query_files, options, labels):
+    logging.getLogger('amber').info('Loading binnings...')
     sample_ids_list, sample_id_to_g_query, sample_id_to_t_query = \
         open_query(gold_standard_file,
                    True,
@@ -379,4 +359,5 @@ def load_queries(gold_standard_file, query_files, options, labels):
     if options.rank_as_genome_binning:
         create_genome_queries_from_taxonomic_queries(options.rank_as_genome_binning, sample_id_to_g_query, sample_id_to_queries_list)
 
+    logging.getLogger('amber').info('done')
     return sample_ids_list, sample_id_to_num_genomes, sample_id_to_queries_list
