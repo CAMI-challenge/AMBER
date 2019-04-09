@@ -164,10 +164,10 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
 
         pd_bins = pd.DataFrame.from_dict(bins_metrics)
         pd_bins[utils_labels.TOOL] = query.label
-
         gs_pd_bins = pd.DataFrame.from_dict(query.gold_standard.get_bins_metrics())
-
         pd_bins_all = pd.concat([pd_bins_all, pd_bins], ignore_index=True, sort=False)
+
+        unifrac_bp, unifrac_seq = query.compute_unifrac()
 
         # Compute metrics over bins
         for rank, pd_bins_rank in pd_bins.groupby('rank'):
@@ -225,6 +225,9 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
                                            (utils_labels.RI_BY_SEQ, [ri_by_seq]),
                                            (utils_labels.ARI_BY_BP, [ari_by_bp]),
                                            (utils_labels.ARI_BY_SEQ, [ari_by_seq]),
+
+                                           (utils_labels.UNIFRAC_BP, [unifrac_bp]),
+                                           (utils_labels.UNIFRAC_SEQ, [unifrac_seq]),
 
                                            (utils_labels.MISCLASSIFICATION_PER_BP, [misclassification_rate_bp]),
                                            (utils_labels.MISCLASSIFICATION_PER_SEQ, [misclassification_rate_seq])]))

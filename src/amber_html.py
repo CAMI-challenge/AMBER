@@ -154,7 +154,7 @@ def upper1(x):
         return x[:1].upper() + x[1:]
 
 
-def get_colors_and_ranges(name):
+def get_colors_and_ranges(name, all_values):
     color1 = 'dodgerblue'
     color2 = 'red'
     hue1 = 12
@@ -162,6 +162,8 @@ def get_colors_and_ranges(name):
 
     if name == upper1(utils_labels.MISCLASSIFICATION_PER_BP):
         return color2, color1, hue2, hue1, 0, 1
+    if name == utils_labels.UNIFRAC_BP or name == utils_labels.UNIFRAC_SEQ:
+        return color2, color1, hue2, hue1, 0, max(all_values)
     return color1, color2, hue1, hue2, 0, 1
 
 
@@ -176,7 +178,7 @@ def get_heatmap_colors(pd_series, **args):
         pd_series.name == upper1(utils_labels.AVG_PRECISION_SEQ_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM):
         return ['background-color: white' for x in values]
 
-    color1, color2, hue1, hue2, min_value, max_value = get_colors_and_ranges(pd_series.name)
+    color1, color2, hue1, hue2, min_value, max_value = get_colors_and_ranges(pd_series.name, values)
 
     cm = sns.diverging_palette(hue1, hue2, sep=50, l=80, n=15, s=90, as_cmap=True)
     norm = MidpointNormalize(vmin=min_value, vmax=max_value, midpoint=median(notnan_values))
@@ -319,7 +321,7 @@ def create_heatmap_div():
     return  heatmap_legend_div
 
 
-def create_table_html(df_summary):
+def create_table_html(df_summary, include_unifrac=False):
     metrics1 = [utils_labels.AVG_PRECISION_BP,
                 utils_labels.AVG_PRECISION_SEQ,
                 utils_labels.AVG_RECALL_BP,
@@ -342,6 +344,9 @@ def create_table_html(df_summary):
                 utils_labels.ARI_BY_SEQ,
                 utils_labels.PERCENTAGE_ASSIGNED_BPS,
                 utils_labels.PERCENTAGE_ASSIGNED_SEQS]
+    if include_unifrac:
+        metrics2.append(utils_labels.UNIFRAC_BP)
+        metrics2.append(utils_labels.UNIFRAC_SEQ)
     all_metrics = [metrics1, metrics2]
     metrics1_label = utils_labels.QUALITY_OF_BINS
     metrics2_label = utils_labels.QUALITY_OF_SAMPLE
@@ -375,7 +380,9 @@ def create_table_html(df_summary):
          utils_labels.AVG_RECALL_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_SEQ, utils_labels.AVG_RECALL_SEQ, utils_labels.TOOLTIP_AVG_RECALL_SEQ),
          utils_labels.AVG_RECALL_SEQ_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.TOOLTIP_AVG_RECALL_SEQ_SEM),
          utils_labels.PERCENTAGE_ASSIGNED_BPS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_BPS),
-         utils_labels.PERCENTAGE_ASSIGNED_SEQS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_SEQS)}
+         utils_labels.PERCENTAGE_ASSIGNED_SEQS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_SEQS),
+         utils_labels.UNIFRAC_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.UNIFRAC_BP, utils_labels.UNIFRAC_BP, utils_labels.TOOLTIP_UNIFRAC_BP),
+         utils_labels.UNIFRAC_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.UNIFRAC_SEQ, utils_labels.UNIFRAC_SEQ, utils_labels.TOOLTIP_UNIFRAC_SEQ)}
     pattern = re.compile('|'.join(map(re.escape, d)))
 
     def translate(match):
@@ -704,7 +711,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
     cc_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
     contamination_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
 
-    pd_mean = df_summary_t.groupby([utils_labels.RANK, utils_labels.TOOL]).mean().reset_index()
+    pd_mean = df_summary_t.groupby([utils_labels.RANK, utils_labels.TOOL, utils_labels.UNIFRAC_BP, utils_labels.UNIFRAC_SEQ]).mean().reset_index()
     pd_mean[utils_labels.SAMPLE] = AVG_OVER_SAMPLES
     for rank, pd_mean_rank in pd_mean.groupby(utils_labels.RANK):
         available_tools = list(pd_mean_rank[utils_labels.TOOL].unique())
@@ -721,7 +728,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
         cc_plots_dict[rank] = column(completeness_minus_contamination_plot, css_classes=['bk-width-auto', 'bk-float-left'])
         contamination_plots_dict[rank] = column(contamination_plot, css_classes=['bk-width-auto', 'bk-float-left'])
 
-        rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank.T))
+        rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank.T, include_unifrac=True))
 
     qbins_plots_list = [v for k, v in qbins_plots_dict.items() if v]
     qsamples_plots_list = [v for k, v in qsamples_plots_dict.items() if v]
@@ -738,7 +745,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
                 continue
             pd_rank_sample = pd_rank_groupby_sample.get_group(sample_id)
             pd_rank_sample = pd_rank_sample.set_index(utils_labels.TOOL).T
-            rank_to_sample_to_html[rank].append(create_table_html(pd_rank_sample))
+            rank_to_sample_to_html[rank].append(create_table_html(pd_rank_sample, include_unifrac=True))
 
     if not rank_to_sample_to_html:
         return None

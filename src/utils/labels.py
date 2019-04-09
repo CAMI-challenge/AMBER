@@ -36,9 +36,11 @@ ACCURACY_PER_SEQ = "Accuracy (seq)"
 MISCLASSIFICATION_PER_BP = "Misclassification rate (bp)"
 MISCLASSIFICATION_PER_SEQ = "Misclassification rate (seq)"
 
+UNIFRAC_BP = "UniFrac (bp)"
+UNIFRAC_SEQ = "UniFrac (seq)"
+
 QUALITY_OF_BINS = "Quality of bins: all bins have the same weight"
 QUALITY_OF_SAMPLE = "Quality for sample: quality weighted by bin sizes"
-
 
 TOOLTIP_AVG_PRECISION_BP = "Average purity (bp)"
 TOOLTIP_AVG_PRECISION_BP_SEM = "Std error of average purity (bp)"
@@ -64,3 +66,5 @@ TOOLTIP_MISCLASSIFICATION_PER_BP = "Misclassification rate (bp)"
 TOOLTIP_MISCLASSIFICATION_PER_SEQ = "Misclassification rate (seq)"
 TOOLTIP_QUALITY_OF_BINS = "Quality of bins: all bins have the same weight"
 TOOLTIP_QUALITY_OF_SAMPLE = "Quality for sample: quality weighted by bin sizes"
+TOOLTIP_UNIFRAC_BP = "UniFrac (bp)"
+TOOLTIP_UNIFRAC_SEQ = "UniFrac (seq)"

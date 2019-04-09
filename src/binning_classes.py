@@ -6,6 +6,8 @@ from collections import defaultdict
 from src.utils import load_ncbi_taxinfo
 from src.utils import exclude_genomes
 from src.utils import filter_tail
+from src.utils import ProfilingTools as pf
+from src import unifrac_distance as uf
 
 
 class Query(ABC):
@@ -89,6 +91,9 @@ class Query(ABC):
         for bin in self.__bins:
             bin.compute_precision_recall(self.__gold_standard)
 
+    def compute_unifrac(self):
+        return None, None
+
 
 class GenomeQuery(Query):
     binning_type = 'genome'
@@ -151,6 +156,8 @@ class TaxonomicQuery(Query):
         super().__init__()
         self.__rank_to_sequence_id_to_bin_id = defaultdict(dict)
         self.__rank_to_bins = defaultdict(list)
+        self.__profile_bp = None
+        self.__profile_seq = None
 
     @property
     def rank_to_sequence_id_to_bin_id(self):
@@ -164,6 +171,38 @@ class TaxonomicQuery(Query):
     def rank_to_sequence_id_to_bin_id(self, rank_sequence_id_bin_id):
         (rank, sequence_id, bin_id) = rank_sequence_id_bin_id
         self.__rank_to_sequence_id_to_bin_id[rank][sequence_id] = bin_id
+
+    def _create_profile(self, percentage_property):
+        if not self.bins_metrics:
+            self.get_bins_metrics()
+
+        class Prediction:
+            def __init__(self):
+                pass
+        profile = []
+        for metrics in self.bins_metrics:
+            prediction = Prediction()
+            prediction.taxid = metrics['mapping_id']
+            prediction.rank = metrics['rank']
+            prediction.percentage = metrics[percentage_property]
+            prediction.taxpath = '|'.join(load_ncbi_taxinfo.get_id_path(metrics['mapping_id'], TaxonomicQuery.tax_id_to_parent, TaxonomicQuery.tax_id_to_rank))
+            prediction.taxpathsn = None
+            profile.append(prediction)
+        return profile
+
+    @property
+    def profile_bp(self):
+        if self.__profile_bp:
+            return self.__profile_bp
+        self.__profile_bp = self._create_profile('true_positive_bps')
+        return self.__profile_bp
+
+    @property
+    def profile_seq(self):
+        if self.__profile_seq:
+            return self.__profile_seq
+        self.__profile_seq = self._create_profile('true_positive_seqs')
+        return self.__profile_seq
 
     def add_bin(self, bin):
         self.rank_to_bins[bin.rank].append(bin)
@@ -212,6 +251,13 @@ class TaxonomicQuery(Query):
         # sort bins by rank and completeness
         self.bins_metrics = sorted(self.bins_metrics, key=lambda t: (rank_to_index[t['rank']], t['completeness_bp']), reverse=True)
         return self.bins_metrics
+
+    def compute_unifrac(self):
+        pf_profile_bp = pf.Profile(profile=self.profile_bp)
+        gs_pf_profile_bp = pf.Profile(profile=self.gold_standard.profile_bp)
+        pf_profile_seq = pf.Profile(profile=self.profile_seq)
+        gs_pf_profile_seq = pf.Profile(profile=self.gold_standard.profile_seq)
+        return uf.compute_unifrac(gs_pf_profile_bp, pf_profile_bp)[0], uf.compute_unifrac(gs_pf_profile_seq, pf_profile_seq)[0]
 
 
 class Bin(ABC):
