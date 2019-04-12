@@ -290,27 +290,24 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir, rank
                  'Percentage of assigned base pairs (%)')
 
 
-def plot_taxonomic_results(df_summary, output_dir):
-    df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
-
-    if len(df_summary_t) == 0:
-        return
+def plot_taxonomic_results(df_summary_t, metrics_list, errors_list, file_name, output_dir):
+    colors_list = ["#006cba", "#008000", "#ba9e00", "red"]
 
     for tool, pd_results in df_summary_t.groupby(utils_labels.TOOL):
-        rank_to_precision = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
-        rank_to_precision_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
-        rank_to_recall = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
-        rank_to_recall_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
-        for index, row in pd_results.iterrows():
-            rank_to_precision[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION_BP]) else row[utils_labels.AVG_PRECISION_BP]
-            rank_to_precision_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_PRECISION_BP_SEM]) else row[utils_labels.AVG_PRECISION_BP_SEM]
-            rank_to_recall[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL_BP]) else row[utils_labels.AVG_RECALL_BP]
-            rank_to_recall_error[row[utils_labels.RANK]] = .0 if np.isnan(row[utils_labels.AVG_RECALL_BP_SEM]) else row[utils_labels.AVG_RECALL_BP_SEM]
+        dict_metric_list = []
+        for metric in metrics_list:
+            rank_to_metric = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+            dict_metric_list.append(rank_to_metric)
+        dict_error_list = []
+        for error in errors_list:
+            rank_to_metric_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+            dict_error_list.append(rank_to_metric_error)
 
-        y_values1 = list(rank_to_precision.values())
-        y_values2 = list(rank_to_recall.values())
-        sem1 = list(rank_to_precision_error.values())
-        sem2 = list(rank_to_recall_error.values())
+        for index, row in pd_results.iterrows():
+            for rank_to_metric, metric in zip(dict_metric_list, metrics_list):
+                rank_to_metric[row[utils_labels.RANK]] = .0 if np.isnan(row[metric]) else row[metric]
+            for rank_to_metric_error, error in zip(dict_error_list, errors_list):
+                rank_to_metric_error[row[utils_labels.RANK]] = .0 if np.isnan(row[error]) else row[error]
 
         fig, axs = plt.subplots(figsize=(6, 5))
 
@@ -319,20 +316,72 @@ def plot_taxonomic_results(df_summary, output_dir):
         axs.set_ylim([0.0, 1.0])
         x_values = range(len(load_ncbi_taxinfo.RANKS))
 
-        axs.plot(x_values, y_values1, color='blue')
-        plt.fill_between(x_values, np.subtract(y_values1, sem1).tolist(), np.add(y_values1, sem1).tolist(), color='blue', alpha=0.5)
+        y_values_list = []
+        for rank_to_metric, color in zip(dict_metric_list, colors_list):
+            y_values = list(rank_to_metric.values())
+            axs.plot(x_values, y_values, color=color)
+            y_values_list.append(y_values)
 
-        axs.plot(x_values, y_values2, color='green')
-        plt.fill_between(x_values, np.subtract(y_values2, sem2).tolist(), np.add(y_values2, sem2).tolist(), color='green', alpha=0.5)
+        for rank_to_metric_error, y_values, color in zip(dict_error_list, y_values_list, colors_list):
+            sem = list(rank_to_metric_error.values())
+            plt.fill_between(x_values, np.subtract(y_values, sem).tolist(), np.add(y_values, sem).tolist(), color=color, alpha=0.5)
 
         plt.xticks(x_values, load_ncbi_taxinfo.RANKS, rotation='vertical')
 
         vals = axs.get_yticks()
         axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
 
-        lgd = plt.legend([utils_labels.AVG_PRECISION_BP[0:].capitalize(), utils_labels.AVG_RECALL_BP[0:].capitalize()], loc=1, borderaxespad=0., handlelength=2, frameon=False)
+        lgd = plt.legend(metrics_list, loc=1, borderaxespad=0., handlelength=2, frameon=False)
 
         plt.tight_layout()
-        fig.savefig(os.path.join(output_dir, 'taxonomic', tool, 'avg_precision_recall.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-        fig.savefig(os.path.join(output_dir, 'taxonomic', tool, 'avg_precision_recall.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        fig.savefig(os.path.join(output_dir, 'taxonomic', tool, file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        fig.savefig(os.path.join(output_dir, 'taxonomic', tool, file_name + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
         plt.close(fig)
+
+
+def create_contamination_column(pd_tool_bins):
+    pd_tool_bins['newcolumn'] = 1 - pd_tool_bins['purity_bp']
+
+
+def create_completeness_minus_contamination_column(pd_tool_bins):
+    pd_tool_bins['newcolumn'] = pd_tool_bins['completeness_bp'] + pd_tool_bins['purity_bp'] - 1
+
+
+def plot_contamination(pd_bins, binning_type, title, xlabel, ylabel, create_column_function, output_dir):
+    if len(pd_bins) == 0:
+        return
+
+    colors_list = create_colors_list()
+
+    fig, axs = plt.subplots(figsize=(6, 5))
+
+    tools = pd_bins[utils_labels.TOOL].unique().tolist()
+
+    for color, tool in zip(colors_list, tools):
+        pd_tool_bins = pd_bins[pd_bins[utils_labels.TOOL] == tool]
+        pd_tool_bins = pd_tool_bins.dropna(subset=['purity_bp'])
+
+        create_column_function(pd_tool_bins)
+        pd_tool_bins = pd_tool_bins.sort_values(by='newcolumn', ascending=False).reset_index()
+        pd_tool_bins = pd_tool_bins.drop(['index'], axis=1)
+
+        axs.plot(list(range(1, len(pd_tool_bins) + 1)), pd_tool_bins['newcolumn'], color=color)
+
+    axs.set_ylim(0.0, 1.0)
+    axs.set_xlim(1, None)
+
+    # transform plot_labels to percentages
+    vals = axs.get_yticks()
+    axs.set_yticklabels(['{:3.0f}'.format(y * 100) for y in vals])
+
+    plt.xlabel(xlabel, fontsize=14)
+    plt.ylabel(ylabel + ' (%)', fontsize=14)
+
+    lgd = plt.legend(tools, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=1, frameon=False, fontsize=12)
+
+    plt.tight_layout()
+
+    file_name = title.lower().replace(' ', '_').replace('-', 'minus').replace('|', '')
+    fig.savefig(os.path.join(output_dir, binning_type, file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, binning_type, file_name + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plt.close(fig)

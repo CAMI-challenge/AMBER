@@ -253,6 +253,8 @@ def plot_genome_binning(sample_id_to_queries_list, df_summary, pd_bins, plot_hea
     if len(df_summary_g) == 0:
         return
 
+    logging.getLogger('amber').info('Creating genome binning plots...')
+
     if plot_heatmaps:
         plot_heat_maps(sample_id_to_queries_list, output_dir)
 
@@ -267,13 +269,40 @@ def plot_genome_binning(sample_id_to_queries_list, df_summary, pd_bins, plot_hea
 
     plot_by_genome.plot_precision_recall_per_bin(pd_bins_g, output_dir)
 
+    plots.plot_contamination(pd_bins[pd_bins['rank'] == 'NA'], 'genome', 'Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', plots.create_contamination_column, output_dir)
+    plots.plot_contamination(pd_bins[pd_bins['rank'] == 'NA'], 'genome', 'Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column, output_dir)
+    logging.getLogger('amber').info('done')
 
-def plot_taxonomic_binning(df_summary, output_dir):
+
+def plot_taxonomic_binning(df_summary, pd_bins, output_dir):
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
+    if len(df_summary_t) == 0:
+        return
+
+    logging.getLogger('amber').info('Creating taxonomic binning plots...')
+
     for rank, pd_group in df_summary_t.groupby('rank'):
         plots.plot_avg_precision_recall(pd_group, output_dir, rank)
         plots.plot_precision_recall(pd_group, output_dir, rank)
         plots.plot_adjusted_rand_index_vs_assigned_bps(pd_group, output_dir, rank)
+
+    metrics_list = [utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP]
+    errors_list = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM]
+    plots.plot_taxonomic_results(df_summary_t, metrics_list, errors_list, 'avg_precision_recall_bp', output_dir)
+
+    metrics_list = [utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ]
+    errors_list = [utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM]
+    plots.plot_taxonomic_results(df_summary_t, metrics_list, errors_list, 'avg_precision_recall_seq', output_dir)
+
+    metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ]
+    plots.plot_taxonomic_results(df_summary_t, metrics_list, [], 'precision_recall', output_dir)
+
+    for rank in load_ncbi_taxinfo.RANKS:
+        pd_bins_rank = pd_bins[pd_bins['rank'] == rank]
+        plots.plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', plots.create_contamination_column, output_dir)
+        plots.plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column, output_dir)
+
+    logging.getLogger('amber').info('done')
 
 
 def main(args=None):
@@ -353,11 +382,8 @@ def main(args=None):
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
     logger.info('done')
 
-    logger.info('Creating plots...')
     plot_genome_binning(sample_id_to_queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
-    plot_taxonomic_binning(df_summary, output_dir)
-    plots.plot_taxonomic_results(df_summary, output_dir)
-    logger.info('done')
+    plot_taxonomic_binning(df_summary, pd_bins, output_dir)
 
     amber_html.create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, args.output_dir, args.desc)
     logger.info('AMBER finished successfully. All results have been saved to {}'.format(output_dir))

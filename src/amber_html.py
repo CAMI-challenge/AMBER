@@ -467,14 +467,6 @@ def create_precision_recall_all_genomes_scatter(pd_genome_bins, tools):
     return p
 
 
-def create_contamination_column(pd_tool_bins):
-    pd_tool_bins['newcolumn'] = 1 - pd_tool_bins['purity_bp']
-
-
-def create_completeness_minus_contamination_column(pd_tool_bins):
-    pd_tool_bins['newcolumn'] = pd_tool_bins['completeness_bp'] + pd_tool_bins['purity_bp'] - 1
-
-
 def create_contamination_plot(pd_bins, tools, title, xlabel, ylabel, create_column_function):
     colors_list = plots.create_colors_list()
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
@@ -596,8 +588,8 @@ def create_genome_binning_plots_panel(pd_bins, pd_mean):
 
     all_samples_div = Div(text='<div style="padding-top: 20px;">All samples</div>', css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
     all_bins_plot = column(create_precision_recall_all_genomes_scatter(pd_bins, pd_mean.index.tolist()), css_classes=['bk-width-auto', 'bk-float-left'])
-    completeness_contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', create_completeness_minus_contamination_column), css_classes=['bk-width-auto', 'bk-float-left'])
-    contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', create_contamination_column), css_classes=['bk-width-auto', 'bk-float-left'])
+    completeness_contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column), css_classes=['bk-width-auto', 'bk-float-left'])
+    contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', plots.create_contamination_column), css_classes=['bk-width-auto', 'bk-float-left'])
 
     return Panel(child=column([click_div, purity_completeness_plot, purity_completeness_bp_plot, all_samples_div, all_bins_plot, completeness_contamination_plot, contamination_plot], sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block']), title='Plots')
 
@@ -724,8 +716,9 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
         qbins_plots_dict[rank] = column(purity_completeness_plot, css_classes=['bk-width-auto', 'bk-float-left'])
         qsamples_plots_dict[rank] = column(purity_completeness_bp_plot, css_classes=['bk-width-auto', 'bk-float-left'])
 
-        completeness_minus_contamination_plot = create_contamination_plot(pd_bins[pd_bins['rank'] == rank], available_tools, rank + ' | Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', create_completeness_minus_contamination_column)
-        contamination_plot = create_contamination_plot(pd_bins[pd_bins['rank'] == rank], available_tools, rank + ' | Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', create_contamination_column)
+        pd_bins_rank = pd_bins[pd_bins['rank'] == rank]
+        completeness_minus_contamination_plot = create_contamination_plot(pd_bins_rank, available_tools, rank + ' | Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column)
+        contamination_plot = create_contamination_plot(pd_bins_rank, available_tools, rank + ' | Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', plots.create_contamination_column)
         cc_plots_dict[rank] = column(completeness_minus_contamination_plot, css_classes=['bk-width-auto', 'bk-float-left'])
         contamination_plots_dict[rank] = column(contamination_plot, css_classes=['bk-width-auto', 'bk-float-left'])
 
