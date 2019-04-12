@@ -240,11 +240,12 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
     return df_summary, pd_bins_all
 
 
-def plot_heat_maps(queries_list, output_dir):
-    for query in queries_list:
-        if isinstance(query, binning_classes.GenomeQuery):
-            df_confusion = precision_recall_per_bin.transform_confusion_matrix(query)
-            plots.plot_heatmap(df_confusion, os.path.join(output_dir, query.label))
+def plot_heat_maps(sample_id_to_queries_list, output_dir):
+    for sample_id in sample_id_to_queries_list:
+        for query in sample_id_to_queries_list[sample_id]:
+            if isinstance(query, binning_classes.GenomeQuery):
+                df_confusion = precision_recall_per_bin.transform_confusion_matrix(query)
+                plots.plot_heatmap(df_confusion, sample_id, os.path.join(output_dir, 'genome', query.label))
 
 
 def plot_genome_binning(sample_id_to_queries_list, df_summary, pd_bins, plot_heatmaps, output_dir):
@@ -257,7 +258,7 @@ def plot_genome_binning(sample_id_to_queries_list, df_summary, pd_bins, plot_hea
 
     plots.create_legend(df_summary_g, output_dir)
     plots.plot_avg_precision_recall(df_summary_g, output_dir)
-    plots.plot_weighed_precision_recall(df_summary_g, output_dir)
+    plots.plot_precision_recall(df_summary_g, output_dir)
     plots.plot_adjusted_rand_index_vs_assigned_bps(df_summary_g, output_dir)
 
     pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
@@ -271,7 +272,7 @@ def plot_taxonomic_binning(df_summary, output_dir):
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
     for rank, pd_group in df_summary_t.groupby('rank'):
         plots.plot_avg_precision_recall(pd_group, output_dir, rank)
-        plots.plot_weighed_precision_recall(pd_group, output_dir, rank)
+        plots.plot_precision_recall(pd_group, output_dir, rank)
         plots.plot_adjusted_rand_index_vs_assigned_bps(pd_group, output_dir, rank)
 
 
@@ -336,13 +337,8 @@ def main(args=None):
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
     if args.stdout:
         print(df_summary.to_string(index=False))
-
-    # TODO: re-enable
-    # plot_genome_binning(sample_id_to_queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
-    # plot_taxonomic_binning(df_summary, output_dir)
-    # plots.plot_taxonomic_results(df_summary, output_dir)
-
     pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
+
     for tool, pd_group in pd_bins_g.groupby(utils_labels.TOOL):
         bins_columns = amber_html.get_genome_bins_columns()
         table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
@@ -355,6 +351,12 @@ def main(args=None):
             del bins_columns['name']
         table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
+    logger.info('done')
+
+    logger.info('Creating plots...')
+    plot_genome_binning(sample_id_to_queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
+    plot_taxonomic_binning(df_summary, output_dir)
+    plots.plot_taxonomic_results(df_summary, output_dir)
     logger.info('done')
 
     amber_html.create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, args.output_dir, args.desc)

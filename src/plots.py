@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+from src.utils import load_data
+from src.utils import labels as utils_labels
+from src.utils import load_ncbi_taxinfo
 import matplotlib
 matplotlib.use('Agg')
 import seaborn as sns
@@ -13,11 +16,6 @@ from collections import OrderedDict
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
-from src.utils import load_data
-from src.utils import labels as utils_labels
-from src.utils import load_ncbi_taxinfo
-
-LEGEND2 = False
 
 
 def create_colors_list():
@@ -78,7 +76,7 @@ def scan_dir(output_dir):
     return data_list, binning_labels, order
 
 
-def plot_heatmap(df_confusion, output_dir, separate_bar=False):
+def plot_heatmap(df_confusion, sample_id, output_dir, separate_bar=False):
     fig, axs = plt.subplots(figsize=(10, 8))
 
     # replace columns and rows labels by numbers
@@ -95,8 +93,8 @@ def plot_heatmap(df_confusion, output_dir, separate_bar=False):
     # plt.yticks(fontsize=14, rotation=0)
     # plt.xticks(fontsize=14)
 
-    fig.savefig(os.path.normpath(output_dir + '/heatmap.eps'), dpi=100, format='eps', bbox_inches='tight')
-    fig.savefig(os.path.normpath(output_dir + '/heatmap.png'), dpi=100, format='png', bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, 'heatmap_' + sample_id + '.eps'), dpi=100, format='eps', bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, 'heatmap_' + sample_id + '.png'), dpi=100, format='png', bbox_inches='tight')
     plt.close(fig)
 
     if not separate_bar:
@@ -155,9 +153,9 @@ def plot_boxplot(pd_bins, metric_name, output_dir):
     plt.ylim(plt.ylim()[::-1])
 
     if metric_name == 'purity':
-        axs.set_xlabel('Purity per bin $p$ (%)' if LEGEND2 else 'Purity per bin (%)', fontsize=14)
+        axs.set_xlabel('Purity per bin (%)', fontsize=14)
     else:
-        axs.set_xlabel('Completeness per genome $r$ (%)' if LEGEND2 else 'Completeness per genome (%)', fontsize=14)
+        axs.set_xlabel('Completeness per genome (%)', fontsize=14)
 
     fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
     fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '.png'), dpi=100, format='png', bbox_inches='tight')
@@ -175,7 +173,7 @@ def plot_boxplot(pd_bins, metric_name, output_dir):
 def plot_summary(df_results, output_dir, rank, plot_type, file_name, xlabel, ylabel):
     colors_list = create_colors_list()
     df_groups = df_results.groupby(utils_labels.TOOL)
-    binning_type = df_groups.head(1)[utils_labels.BINNING_TYPE].iloc[0]
+    binning_type = df_results[utils_labels.BINNING_TYPE].iloc[0]
 
     if len(df_groups) > len(colors_list):
         raise RuntimeError("Plot only supports 29 colors")
@@ -188,7 +186,18 @@ def plot_summary(df_results, output_dir, rank, plot_type, file_name, xlabel, yla
 
     if plot_type == 'e':
         for i, (tool, pd_summary) in enumerate(df_groups):
-            axs.errorbar(float(pd_summary[utils_labels.AVG_PRECISION_BP].iloc[0]), float(pd_summary[utils_labels.AVG_RECALL_BP].iloc[0]), xerr=float(pd_summary[utils_labels.AVG_PRECISION_BP_SEM].iloc[0]), yerr=float(pd_summary[utils_labels.AVG_RECALL_BP_SEM].iloc[0]),
+            df_mean = pd_summary[[utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM]].mean()
+            axs.errorbar(df_mean[utils_labels.AVG_PRECISION_BP], df_mean[utils_labels.AVG_RECALL_BP], xerr=df_mean[utils_labels.AVG_PRECISION_BP_SEM], yerr=df_mean[utils_labels.AVG_RECALL_BP_SEM],
+                         fmt='o',
+                         ecolor=colors_list[i],
+                         mec=colors_list[i],
+                         mfc=colors_list[i],
+                         capsize=3,
+                         markersize=8)
+    if plot_type == 'f':
+        for i, (tool, pd_summary) in enumerate(df_groups):
+            df_mean = pd_summary[[utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM]].mean()
+            axs.errorbar(df_mean[utils_labels.AVG_PRECISION_SEQ], df_mean[utils_labels.AVG_RECALL_SEQ], xerr=df_mean[utils_labels.AVG_PRECISION_SEQ_SEM], yerr=df_mean[utils_labels.AVG_RECALL_SEQ_SEM],
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
@@ -197,10 +206,12 @@ def plot_summary(df_results, output_dir, rank, plot_type, file_name, xlabel, yla
                          markersize=8)
     if plot_type == 'w':
         for i, (tool, pd_summary) in enumerate(df_groups):
-            axs.plot(float(pd_summary[utils_labels.PRECISION_PER_BP].iloc[0]), float(pd_summary[utils_labels.RECALL_PER_BP].iloc[0]), marker='o', color=colors_list[i], markersize=10)
+            df_mean = pd_summary[[utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP]].mean()
+            axs.plot(df_mean[utils_labels.PRECISION_PER_BP], df_mean[utils_labels.RECALL_PER_BP], marker='o', color=colors_list[i], markersize=10)
     elif plot_type == 'p':
         for i, (tool, pd_summary) in enumerate(df_groups):
-            axs.plot(float(pd_summary[utils_labels.ARI_BY_BP].iloc[0]), float(pd_summary[utils_labels.PERCENTAGE_ASSIGNED_BPS].iloc[0]), marker='o', color=colors_list[i], markersize=10)
+            df_mean = pd_summary[[utils_labels.ARI_BY_BP, utils_labels.PERCENTAGE_ASSIGNED_BPS]].mean()
+            axs.plot(df_mean[utils_labels.ARI_BY_BP], df_mean[utils_labels.PERCENTAGE_ASSIGNED_BPS], marker='o', color=colors_list[i], markersize=10)
 
     # turn on grid
     axs.minorticks_on()
@@ -240,19 +251,33 @@ def plot_avg_precision_recall(df_results, output_dir, rank=None):
                  output_dir,
                  rank,
                  'e',
-                 'avg_purity_completeness',
-                 'Truncated average purity per bin $\overline{p}_{99}$ (%)' if LEGEND2 else 'Average purity per bin (%)',
-                 'Average completeness per genome $\overline{r}$ (%)' if LEGEND2 else 'Average completeness per genome (%)')
+                 'avg_purity_completeness_bp',
+                 'Average purity per bin (%)',
+                 'Average completeness per genome (%)')
+    plot_summary(df_results,
+                 output_dir,
+                 rank,
+                 'f',
+                 'avg_purity_completeness_seq',
+                 'Average purity per bin (%)',
+                 'Average completeness per genome (%)')
 
 
-def plot_weighed_precision_recall(summary_per_query, output_dir, rank=None):
+def plot_precision_recall(summary_per_query, output_dir, rank=None):
     plot_summary(summary_per_query,
                  output_dir,
                  rank,
                  'w',
-                 'avg_purity_completeness_per_bp',
-                 'Average purity per base pair $\overline{p}_{bp}$ (%)' if LEGEND2 else 'Average purity per base pair (%)',
-                 'Average completeness per base pair $\overline{r}_{bp}$ (%)' if LEGEND2 else 'Average completeness per base pair (%)')
+                 'purity_completeness_bp',
+                 'Purity per base pair (%)',
+                 'Completeness per base pair (%)')
+    plot_summary(summary_per_query,
+                 output_dir,
+                 rank,
+                 'x',
+                 'purity_completeness_seq',
+                 'Purity per sequence (%)',
+                 'Completeness per sequence (%)')
 
 
 def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir, rank=None):
@@ -261,8 +286,8 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir, rank
                  rank,
                  'p',
                  'ari_vs_assigned_bps',
-                 'Adjusted Rand Index (%)' if LEGEND2 else 'Adjusted Rand Index',
-                 'Percentage of assigned base pairs (%)' if LEGEND2 else 'Percentage of assigned base pairs')
+                 'Adjusted Rand Index (%)',
+                 'Percentage of assigned base pairs (%)')
 
 
 def plot_taxonomic_results(df_summary, output_dir):

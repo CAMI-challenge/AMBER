@@ -6,7 +6,6 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 import pandas as pd
-from src import binning_classes
 
 
 def transform_confusion_matrix(query):
@@ -25,7 +24,7 @@ def transform_confusion_matrix(query):
         genome_id_to_unassigned_bps[genome_id] += gold_standard.sequence_id_to_length[unassigned_seq_id]
 
     df_unassigned = pd.DataFrame.from_dict(genome_id_to_unassigned_bps, orient='index').rename(columns={0: 'unassigned'}).T
-    table = df_confusion.append(df_unassigned)
+    table = df_confusion.append(df_unassigned, sort=False)
     table.fillna(0, inplace=True)
     # use log scale
     # table = table.applymap(np.log).fillna(0)

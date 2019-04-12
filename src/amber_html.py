@@ -479,7 +479,8 @@ def create_contamination_plot(pd_bins, tools, title, xlabel, ylabel, create_colu
     colors_list = plots.create_colors_list()
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
-    p = figure(title=title, plot_width=580, plot_height=400, toolbar_location="below")
+    p = figure(title=title, plot_width=580, plot_height=400, y_range=(0, 1), toolbar_location="below")
+    p.x_range.start = 0
     legend_it = []
     for color, tool in zip(bokeh_colors, tools):
         pd_tool_bins = pd_bins[pd_bins[utils_labels.TOOL] == tool]
