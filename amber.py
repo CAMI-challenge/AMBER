@@ -309,6 +309,7 @@ def main(args=None):
     parser = argparse.ArgumentParser(description="AMBER: Assessment of Metagenome BinnERs",
                                      parents=[argparse_parents.PARSER_MULTI2], prog='AMBER')
     parser.add_argument('-p', '--filter', help=argparse_parents.HELP_FILTER)
+    parser.add_argument('-n', '--min_length', help="Minimum length of sequences", type=int, required=False)
     parser.add_argument('-o', '--output_dir', help="Directory to write the results to", required=True)
     parser.add_argument('--stdout', help="Print summary to stdout", action='store_true')
     parser.add_argument('-d', '--desc', help="Description for HTML page", required=False)
@@ -316,7 +317,6 @@ def main(args=None):
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
     group_g = parser.add_argument_group('genome binning-specific arguments')
-    group_g.add_argument('-n', '--min_length', help="Minimum length of sequences", type=int, required=False)
     group_g.add_argument('-m', '--map_by_completeness', help=argparse_parents.HELP_MAP_BY_RECALL, action='store_true')
     group_g.add_argument('-x', '--min_completeness', help=argparse_parents.HELP_THRESHOLDS_COMPLETENESS, required=False)
     group_g.add_argument('-y', '--max_contamination', help=argparse_parents.HELP_THRESHOLDS_CONTAMINATION, required=False)

@@ -90,9 +90,9 @@ Binnings of datasets with multiple samples are supported by AMBER. For each binn
 ## Running _amber.py_
 
 ~~~BASH
-usage: AMBER [-h] -g GOLD_STANDARD_FILE [-l LABELS] [-p FILTER] -o OUTPUT_DIR
-             [--stdout] [-d DESC] [--silent] [-v] [-n MIN_LENGTH] [-m]
-             [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION] [-c]
+usage: AMBER [-h] -g GOLD_STANDARD_FILE [-l LABELS] [-p FILTER]
+             [-n MIN_LENGTH] -o OUTPUT_DIR [--stdout] [-d DESC] [--silent]
+             [-v] [-m] [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION] [-c]
              [-r REMOVE_GENOMES] [-k KEYWORD]
              [--ncbi_nodes_file NCBI_NODES_FILE]
              [--ncbi_names_file NCBI_NAMES_FILE]
@@ -112,6 +112,8 @@ optional arguments:
                         Comma-separated binning names
   -p FILTER, --filter FILTER
                         Filter out [FILTER]% smallest genome bins (default: 0)
+  -n MIN_LENGTH, --min_length MIN_LENGTH
+                        Minimum length of sequences
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         Directory to write the results to
   --stdout              Print summary to stdout
@@ -120,8 +122,6 @@ optional arguments:
   -v, --version         show program's version number and exit
 
 genome binning-specific arguments:
-  -n MIN_LENGTH, --min_length MIN_LENGTH
-                        Minimum length of sequences
   -m, --map_by_completeness
                         Map genomes to bins by maximizing completeness
   -x MIN_COMPLETENESS, --min_completeness MIN_COMPLETENESS

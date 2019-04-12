@@ -216,29 +216,31 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
                     logging.getLogger('amber').warning("Ignoring sequence {} - length unknown (file {})".format(sequence_id, file_path_query))
                     continue
 
+                if sequence_id_to_length[sequence_id] < options.min_length:
+                    logging.getLogger('amber').warning("Ignoring sequence {} - shorter than {} bps: (file {})".format(sequence_id, options.min_length, file_path_query))
+                    continue
+
                 if bin_id:
-                    if sequence_id_to_length[sequence_id] >= options.min_length:
-                        if not is_gs and sequence_id not in g_sequence_ids:
-                            logging.getLogger('amber').warning("Ignoring sequence {} - not found in the genome binning gold standard, sample {}: (file {})".format(sequence_id, sample_id, file_path_query))
-                        else:
-                            if bin_id not in g_query.get_bin_ids():
-                                bin = binning_classes.GenomeBin(bin_id)
-                                g_query.add_bin(bin)
-                            else:
-                                bin = g_query.get_bin_by_id(bin_id)
-                            g_query.sequence_id_to_bin_id = (sequence_id, bin_id)
-                            bin.add_sequence_id(sequence_id, sequence_id_to_length[sequence_id])
-                            if is_gs:
-                                bin.mapping_id = bin_id
+                    if not is_gs and sequence_id not in g_sequence_ids:
+                        logging.getLogger('amber').warning("Ignoring sequence {} - not found in the genome binning gold standard, sample {}: (file {})".format(sequence_id, sample_id, file_path_query))
                     else:
-                        logging.getLogger('amber').warning("Ignoring sequence {} - shorter than {} bps: (file {})".format(sequence_id, options.min_length, file_path_query))
+                        if bin_id not in g_query.get_bin_ids():
+                            bin = binning_classes.GenomeBin(bin_id)
+                            g_query.add_bin(bin)
+                        else:
+                            bin = g_query.get_bin_by_id(bin_id)
+                        g_query.sequence_id_to_bin_id = (sequence_id, bin_id)
+                        bin.add_sequence_id(sequence_id, sequence_id_to_length[sequence_id])
+                        if is_gs:
+                            bin.mapping_id = bin_id
 
                 if tax_id:
                     if not binning_classes.TaxonomicQuery.tax_id_to_parent:
                         if is_gs:
                             continue
                         else:
-                            exit("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.")
+                            logging.getLogger('amber').critical("Taxonomic binning cannot be assessed. Please provide an NCBI nodes file using option --ncbi_nodes_file.")
+                            exit(1)
 
                     if tax_id not in binning_classes.TaxonomicQuery.tax_id_to_rank:
                         logging.getLogger('amber').warning("Ignoring sequence {} - not a valid NCBI taxonomic ID: {} (file {})".format(sequence_id, tax_id, file_path_query))
@@ -353,8 +355,6 @@ def load_queries(gold_standard_file, query_files, options, labels):
                 continue
             for sample_id in sample_id_to_query:
                 sample_id_to_queries_list[sample_id].append(sample_id_to_query[sample_id])
-
-    # TODO if there is a g_query (t_query), there must be a g_gold_standard (t_gold_standard)
 
     if options.rank_as_genome_binning:
         create_genome_queries_from_taxonomic_queries(options.rank_as_genome_binning, sample_id_to_g_query, sample_id_to_queries_list)
