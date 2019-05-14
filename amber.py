@@ -365,7 +365,8 @@ def main(args=None):
     logger.info('Saving computed metrics...')
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
     if args.stdout:
-        print(df_summary.to_string(index=False))
+        summary_columns = [utils_labels.TOOL] + [col for col in df_summary if col != utils_labels.TOOL]
+        print(df_summary[summary_columns].to_string(index=False))
     pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
 
     for tool, pd_group in pd_bins_g.groupby(utils_labels.TOOL):

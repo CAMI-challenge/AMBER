@@ -1,6 +1,6 @@
 #CAMI Format for Binning
 @Version:0.9.0
-@SampleID:_SAMPLEID_
+@SampleID:CAMI_low
 @@SEQUENCEID	BINID
 RL|S1|C10	Bin_034
 RL|S1|C100	Bin_023

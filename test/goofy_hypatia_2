@@ -1,5 +1,5 @@
 #CAMI concoct default
-@SampleID:
+@SampleID:CAMI_low
 @Version:0.9.0
 @@SEQUENCEID	BINID
 RL|S1|C10	30
