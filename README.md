@@ -1,22 +1,30 @@
 [![CircleCI](https://circleci.com/gh/CAMI-challenge/AMBER/tree/master.svg?style=svg)](https://circleci.com/gh/CAMI-challenge/AMBER/tree/master)
 
 # Introduction
-AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the comparative assessment of genome reconstructions from metagenome benchmark datasets. It provides performance metrics, results rankings, and comparative visualizations for assessing multiple programs or parameter effects. The provided metrics were used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic Interpretation](http://www.cami-challenge.org/).
+AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the comparative assessment of genome reconstructions and taxonomic assignments from metagenome benchmark datasets. It provides performance metrics, results rankings, and comparative visualizations for assessing multiple programs or parameter effects. The provided metrics were used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic Interpretation](http://www.cami-challenge.org/).
 
-**Computed metrics**
+**Metrics computed per bin**
 
-* Average purity (averaged over recovered genome/taxonomic bins)
-* Average completeness (averaged over recovered genome/taxonomic bins)
-* Average purity per base pair
-* Average completeness per base pair
-* (Adjusted) Rand index by sequence and base pair counts
-* Percentage of assigned base pairs
+* Predicted bin size in bps and sequences
+* True positives
+* (Average) Purity
+* (Average) Completeness
+
+**Metrics computed per sample**
+
 * Accuracy
+* Misclassification rate
+* Purity
+* Completeness
+* (Adjusted) Rand index
+* Percentage of assigned base pairs and sequences
 * Number of genomes recovered within levels of completeness and contamination
+* UniFrac (for taxonomic binning)
+
 
 **Example page produced by AMBER**
 
-*https://cami-challenge.github.io/AMBER/*
+*https://cami-challenge.github.io/AMBER/cami_i_hc/*
 
 # Installation
 

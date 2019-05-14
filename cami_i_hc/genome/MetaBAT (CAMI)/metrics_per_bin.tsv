@@ -1,0 +1,646 @@
+sample_id	Bin ID	Mapped genome	Purity (bp)	Completeness (bp)	Predicted size (bp)	True positives (bp)	True size (bp)	Purity (seq)	Completeness (seq)	Predicted size (seq)	True positives (seq)	True size (seq)
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.195.fa	1030743	0.9995614021720428	1.0	3609229	3607646	3607646.0	0.75	1.0	4	3	3.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.321.fa	1048927	0.338541839088828	0.9995179914702538	14559710	4929071	4931448.0	0.08	0.8	50	4	5.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.110.fa	1048912	0.4659270490362801	0.9990842712637128	12040636	5610058	5615200.0	0.35714285714285715	0.8333333333333334	28	10	12.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.182.fa	1036563	0.1307247556899813	0.998898834905855	28339812	3704715	3708799.0	0.10084033613445378	0.8	119	12	15.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.319.fa	1220_BK	0.4371810647418545	0.9987260985347846	8487616	3710625	3715358.0	0.2571428571428571	0.6428571428571429	35	9	14.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.227.fa	1021_AG	0.5028819538363861	0.998607751237965	7793324	3919122	3924586.0	0.6	0.75	5	3	4.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.112.fa	1030872	0.8416534365800771	0.9985752867748705	5633624	4741559	4748324.0	0.8518518518518519	0.8518518518518519	27	23	27.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.132.fa	1285_BA	1.0	0.9985701524502957	4386495	4386495	4392776.0	1.0	0.6666666666666666	6	6	9.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.28.fa	1286_M	1.0	0.9984594063599735	3884714	3884714	3890708.0	1.0	0.5833333333333334	7	7	12.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.284.fa	1285_AY	0.9990217472723522	0.9983092351471194	4018389	4014458	4021257.0	0.9285714285714286	0.7647058823529411	14	13	17.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.127.fa	1286_AT	0.29748964047356685	0.9982360017316081	11913672	3544194	3550457.0	0.15625	0.7142857142857143	32	5	7.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.111.fa	1139_CM	1.0	0.9980161376025013	3405262	3405262	3412031.0	1.0	0.5	3	3	6.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.14.fa	1285_L	0.9685652443120726	0.9978690526337856	5701110	5521897	5533689.0	0.8214285714285714	0.6052631578947368	28	23	38.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.10.fa	1036647	0.9757064290891023	0.9976780508928641	4089724	3990370	3999657.0	0.9180327868852459	0.9032258064516129	61	56	62.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.221.fa	1030794	0.9896396208460501	0.9973955261195452	9491448	9393113	9417641.0	0.8064516129032258	0.6756756756756757	31	25	37.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.122.fa	1285_AB	0.1180506680541646	0.9973278601742763	37408344	4416080	4427912.0	0.056962025316455694	0.6923076923076923	158	9	13.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.73.fa	1286_AU	1.0	0.9971116602625956	4519961	4519961	4533054.0	1.0	0.5	11	11	22.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.338.fa	1220_BE	1.0	0.9970621592247868	4805367	4805367	4819526.0	1.0	0.3333333333333333	4	4	12.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.329.fa	1035984	0.9978790027028224	0.9969461156677575	2777467	2771576	2780066.0	0.975609756097561	0.9302325581395349	82	80	86.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.100.fa	1286_AE	0.8480844689621836	0.9968635621995855	5544285	4702022	4716816.0	0.7674418604651163	0.75	43	33	44.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.261.fa	1048582	1.0	0.9965610595391247	5527112	5527112	5546185.0	1.0	0.9047619047619048	19	19	21.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.364.fa	1048891	1.0	0.9954303844366443	3718474	3718474	3735544.0	1.0	0.8448275862068966	49	49	58.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.264.fa	1035987	1.0	0.9954169483241462	2020350	2020350	2029652.0	1.0	0.8717948717948718	34	34	39.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.4.fa	1036719	1.0	0.9952682684733992	6585718	6585718	6617028.0	1.0	0.918918918918919	68	68	74.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.283.fa	1220_L	0.20450942127758318	0.9951845953245786	52248434	10685297	10737000.0	0.19747899159663865	0.706766917293233	476	94	133.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.215.fa	1030791	0.582328868476303	0.9951453978873412	7293104	4246985	4267703.0	0.40625	0.7647058823529411	32	13	17.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.128.fa	1030725	1.0	0.9950551492047764	3358337	3358337	3375026.0	1.0	0.8888888888888888	16	16	18.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.236.fa	1036623	1.0	0.9949281471975169	2133508	2133508	2144384.0	1.0	0.8518518518518519	23	23	27.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.27.fa	1036770	0.9852089731772297	0.9947486108935713	2333577	2299061	2311198.0	0.898876404494382	0.9090909090909091	89	80	88.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.104.fa	1036797	1.0	0.9945392846344299	4361558	4361558	4385506.0	1.0	0.7777777777777778	14	14	18.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.358.fa	1365_E	0.2249662651857628	0.9944484686362923	23055559	5186723	5215678.0	0.1912568306010929	0.603448275862069	183	35	58.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.109.fa	1220_AS	0.39324882298698416	0.9941133914399061	6590199	2591588	2606934.0	0.11538461538461539	0.25	26	3	12.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.6.fa	1287_D	1.0	0.9940852381229922	4349277	4349277	4375155.0	1.0	0.5510204081632653	27	27	49.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.94.fa	1048576	1.0	0.9940775639215719	2894060	2894060	2911302.0	1.0	0.9078947368421053	69	69	76.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.296.fa	1048777	1.0	0.9940488761426994	6952017	6952017	6993637.0	1.0	0.7647058823529411	13	13	17.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.46.fa	1139_AR	0.9772629992432029	0.9939797230924499	4684215	4577710	4605436.0	0.926829268292683	0.6440677966101694	41	38	59.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.301.fa	1035990	0.9987426200734003	0.9939139639266915	5796975	5789686	5825138.0	0.9428571428571428	0.825	35	33	40.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.108.fa	1286_CF	1.0	0.9936276116558421	4019643	4019643	4045422.0	1.0	0.5833333333333334	14	14	24.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.185.fa	1049029	0.9214857219446039	0.9935091296021381	4342293	4001361	4027503.0	0.3142857142857143	0.8461538461538461	35	11	13.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.378.fa	1036659	0.9778514370324228	0.9933966359187184	5637973	5513100	5549747.0	0.8227848101265823	0.9154929577464789	79	65	71.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.43.fa	1036578	0.9974396151752984	0.9933593404513017	2724981	2718004	2736174.0	0.9696969696969697	0.8648648648648649	33	32	37.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.167.fa	1220_N	0.9760608306818699	0.9930014281910651	3736930	3647471	3673178.0	0.5	0.38461538461538464	10	5	13.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.243.fa	1139_AY	0.4844625431755724	0.9928485987915362	12001578	5814315	5856195.0	0.296875	0.7037037037037037	64	19	27.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.287.fa	1053019	0.19360463742294282	0.9924554216977686	39225579	7594254	7651985.0	0.2553191489361702	0.7142857142857143	235	60	84.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.62.fa	1030893	1.0	0.9923153702849135	2902969	2902969	2925450.0	1.0	0.7777777777777778	7	7	9.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.280.fa	1139_AH	0.22430545278424302	0.9921302866282373	24900215	5585254	5629557.0	0.1278409090909091	0.5113636363636364	352	45	88.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.144.fa	1035975	1.0	0.9921095035726436	6234557	6234557	6284142.0	1.0	0.7230769230769231	47	47	65.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.348.fa	1030965	1.0	0.992070335921011	4727234	4727234	4765019.0	1.0	0.84375	54	54	64.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.113.fa	1021_BF	0.3971499286868967	0.9920099160443336	15166217	6023262	6071776.0	0.375	0.47058823529411764	64	24	51.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.21.fa	1048948	1.0	0.9917383228823907	3833743	3833743	3865680.0	1.0	0.8095238095238095	51	51	63.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.130.fa	1139_BG	0.9788661706280214	0.9912959444794462	5837986	5714607	5764784.0	0.8648648648648649	0.5517241379310345	37	32	58.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.335.fa	1048894	0.5305496203243953	0.9911693274776732	9859206	5230798	5277401.0	0.6666666666666666	0.7555555555555555	51	34	45.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.275.fa	1049080	1.0	0.9906839895696029	6054055	6054055	6110985.0	1.0	0.6551724137931034	19	19	29.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.272.fa	1036677	1.0	0.9905078588070982	3165884	3165884	3196223.0	1.0	0.6923076923076923	27	27	39.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.51.fa	1285_BT	0.9997049162881372	0.9903561755172222	5168025	5166500	5216810.0	0.95	0.5	20	19	38.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.252.fa	1220_I	0.11277020006025998	0.9900328711719257	59093945	6664036	6731126.0	0.09657320872274143	0.6526315789473685	642	62	95.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.391.fa	1139_BO	0.06357871126037254	0.9899531513832431	78114103	4966394	5016797.0	0.03367633302151544	0.6545454545454545	1069	36	55.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.50.fa	1220_BU	0.3511983571210051	0.9898165550758674	25597503	8989801	9082290.0	0.39819004524886875	0.4656084656084656	221	88	189.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.248.fa	1220_H	0.27452833695104256	0.9895906530362935	24402643	6699217	6769685.0	0.34893617021276596	0.6833333333333333	235	82	120.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.339.fa	1035999	1.0	0.9891182755308651	1801128	1801128	1820943.0	1.0	0.7741935483870968	48	48	62.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.396.fa	1285_CO	0.5777783449820177	0.9888164675897653	8149132	4708392	4761644.0	0.07085561497326204	0.803030303030303	748	53	66.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.178.fa	1048999	0.999803302127677	0.9886004911884066	7844518	7842975	7933412.0	0.9	0.8181818181818182	10	9	11.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.175.fa	1049053	1.0	0.9883700219000567	4772145	4772145	4828298.0	1.0	0.7333333333333333	22	22	30.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.33.fa	1048990	1.0	0.9881582776476078	3235998	3235998	3274777.0	1.0	0.5	11	11	22.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.325.fa	1286_CK	0.9958425788395506	0.9875848101424257	5070932	5049850	5113333.0	0.8064516129032258	0.4716981132075472	31	25	53.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.225.fa	1049008	0.34233288252559113	0.9871723950172473	14934674	5112630	5179065.0	0.38392857142857145	0.7678571428571429	112	43	56.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.302.fa	1036761	0.9996068991375311	0.9868583049190395	3909938	3908401	3960448.0	0.9714285714285714	0.8095238095238095	35	34	42.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.196.fa	1036008	1.0	0.9867872653079841	3461704	3461704	3508055.0	1.0	0.8076923076923077	42	42	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.147.fa	1048864	0.5114178314202493	0.9859130857056818	15633135	7995064	8109299.0	0.7608695652173914	0.8974358974358975	46	35	39.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.222.fa	1287_CM	0.10056264755689918	0.9859069886705368	62398387	6274947	6364644.0	0.03891891891891892	0.5373134328358209	925	36	67.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.53.fa	1036698	1.0	0.9857768842646074	3371561	3371561	3420207.0	1.0	0.864406779661017	51	51	59.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.169.fa	1287_AL	0.2031085693602047	0.9857620832728565	23273021	4726950	4795224.0	0.23026315789473684	0.4666666666666667	152	35	75.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.262.fa	1030713	1.0	0.985277452247768	2446572	2446572	2483130.0	1.0	0.8	16	16	20.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.142.fa	1286_CO	0.5635749984854328	0.9852383899486884	7807511	4400118	4466044.0	0.8225806451612904	0.75	62	51	68.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.219.fa	1030824	0.5364798497668063	0.9849895924624928	3881965	2082596	2114333.0	0.7364341085271318	0.9134615384615384	129	95	104.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.129.fa	1285_G	0.9385536990084414	0.9849209041482141	5057896	4747107	4819785.0	0.7450980392156863	0.6229508196721312	51	38	61.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.355.fa	1010920	0.9683041003961418	0.9847457080886641	4607189	4461160	4530266.0	0.8317757009345794	0.8165137614678899	107	89	109.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.174.fa	1049047	0.9972550419873368	0.9845756477541773	3136660	3128050	3177054.0	0.8	0.42857142857142855	15	12	28.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.107.fa	1287_CG	0.9915278121314504	0.984170069894144	6553561	6498038	6602556.0	0.9811320754716981	0.5777777777777777	53	52	90.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.214.fa	evo_1048963.008	0.3061978241875001	0.9840848631961157	16619171	5088754	5171052.0	0.2871287128712871	0.8285714285714286	101	29	35.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.304.fa	1036002	0.9991273432133173	0.9837442734686473	4081788	4078226	4145616.0	0.9795918367346939	0.7741935483870968	49	48	62.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.168.fa	1220_AU	0.21386562104604398	0.9837072240125039	22533603	4819163	4898981.0	0.2361111111111111	0.53125	72	17	32.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.75.fa	1030764	1.0	0.9835107548097608	4638220	4638220	4715983.0	1.0	0.71875	23	23	32.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.176.fa	1049038	1.0	0.9833854519076617	3226468	3226468	3280980.0	1.0	0.5555555555555556	20	20	36.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.83.fa	1285_AN	0.9974918525899046	0.9832173584702106	4239384	4228751	4300932.0	0.65	0.48148148148148145	20	13	27.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.70.fa	1030821	1.0	0.9830245023623408	4037434	4037434	4107155.0	1.0	0.9130434782608695	63	63	69.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.320.fa	1048906	1.0	0.9826245694019803	4403689	4403689	4481558.0	1.0	0.7916666666666666	76	76	96.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.344.fa	1035897	1.0	0.9825961726225346	3220400	3220400	3277440.0	1.0	0.8866666666666667	133	133	150.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.350.fa	1036587	0.9925081772888358	0.982524892331841	3912666	3883353	3952422.0	0.8571428571428571	0.8076923076923077	49	42	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.230.fa	1365_B	0.9912012797072274	0.9824104026250701	3410155	3380150	3440670.0	0.7142857142857143	0.3333333333333333	14	10	30.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.235.fa	1048771	1.0	0.9815851440947214	3843377	3843377	3915480.0	1.0	0.46153846153846156	12	12	26.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.213.fa	1220_AZ	0.1944374162232976	0.9811759280733561	33551243	6523617	6648774.0	0.1778846153846154	0.3978494623655914	208	37	93.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.150.fa	1036758	0.998263476245239	0.9806594280232717	3959059	3952184	4030129.0	0.9836065573770492	0.7317073170731707	61	60	82.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.36.fa	1036656	1.0	0.9804480127341727	3343364	3343364	3410037.0	1.0	0.81	81	81	100.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.383.fa	1286_AB	0.2034451484148331	0.9802440614881298	23104665	4700532	4795267.0	0.04508856682769726	0.6666666666666666	621	28	42.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.164.fa	1365_G	1.0	0.980085300899945	3602034	3602034	3675225.0	1.0	0.72	18	18	25.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.152.fa	1049044	0.9812677947580657	0.9798761018959864	4839206	4748557	4846079.0	0.9253731343283582	0.6888888888888889	67	62	90.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.193.fa	1036575	1.0	0.9798076165916628	5487294	5487294	5600379.0	1.0	0.7631578947368421	29	29	38.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.332.fa	1049059	0.18828497701201874	0.9796721862396944	22418889	4221140	4308727.0	0.06846473029045644	0.7674418604651163	482	33	43.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.123.fa	1139_CL	0.9945039913236343	0.9790385629282969	4912656	4885656	4990259.0	0.8	0.3333333333333333	20	16	48.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.29.fa	1048954	0.9370080433113704	0.9790239730741472	4744066	4445228	4540469.0	0.8313253012048193	0.8023255813953488	83	69	86.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.370.fa	1035996	1.0	0.9787208044094768	3492206	3492206	3568133.0	1.0	0.7916666666666666	38	38	48.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.67.fa	1286_BT	0.1532224797489311	0.9780059072114553	20447933	3133083	3203542.0	0.08411214953271028	0.6428571428571429	107	9	14.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.303.fa	1287_BL	0.11648361517817599	0.977737661503619	36988318	4308533	4406635.0	0.049429657794676805	0.5909090909090909	263	13	22.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.309.fa	1035933	1.0	0.9777258915567343	2450931	2450931	2506767.0	1.0	0.6111111111111112	22	22	36.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.171.fa	1048936	0.9817171976133388	0.9775163448775853	6705099	6582511	6733914.0	0.9130434782608695	0.6176470588235294	23	21	34.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.382.fa	1220_Z	0.27673801876645915	0.9774691570890384	20690211	5725768	5857748.0	0.7297297297297297	0.7343096234309623	481	351	478.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.201.fa	1286_V	1.0	0.9773411090120274	5927135	5927135	6064551.0	1.0	0.4090909090909091	9	9	22.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.255.fa	1036602	1.0	0.9771795187055767	2455829	2455829	2513181.0	1.0	0.7714285714285715	27	27	35.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.18.fa	1036632	1.0	0.9771518724134931	4100183	4100183	4196055.0	1.0	0.6	24	24	40.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.376.fa	1035915	0.6839301163720058	0.9767927540609346	1820455	1245064	1274645.0	0.5660377358490566	0.7692307692307693	53	30	39.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.380.fa	1048657	0.9865128278667635	0.9763424250621732	3786561	3735491	3826005.0	0.9848484848484849	0.9154929577464789	132	130	142.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.91.fa	1048960	0.985602469772734	0.9757190740029483	3868858	3813156	3908047.0	0.9512195121951219	0.7959183673469388	41	39	49.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.216.fa	1030770	0.8547283889109379	0.9754419722232484	2842152	2429268	2490428.0	0.8	0.6666666666666666	30	24	36.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.98.fa	1048984	0.9631803444623988	0.9751318044494673	6148944	5922542	6073581.0	0.7590361445783133	0.7	83	63	90.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.79.fa	1220_AG	1.0	0.9744928143878372	3449153	3449153	3539434.0	1.0	0.41935483870967744	13	13	31.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.179.fa	1030857	0.8256011617544308	0.9736191691882792	6390335	5275868	5418821.0	0.5348837209302325	0.8070175438596491	86	46	57.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.388.fa	evo_1048972.019	0.1898092195867088	0.972652242409281	15443881	2931391	3013812.0	0.5789473684210527	0.8608695652173913	171	99	115.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.131.fa	1286_BG	0.9993070292093651	0.9726079783245035	5029072	5025587	5167125.0	0.9696969696969697	0.5245901639344263	33	32	61.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.166.fa	1036692	1.0	0.9722373482678165	2106815	2106815	2166976.0	1.0	0.78125	75	75	96.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.379.fa	1287_AA	1.0	0.9722121304497311	6285996	6285996	6465663.0	1.0	0.7481481481481481	101	101	135.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.42.fa	1049062	0.7723061930335333	0.9709319827503847	4184589	3231784	3328538.0	0.9069767441860465	0.7959183673469388	43	39	49.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.306.fa	1285_BL	0.9842151223793976	0.9708503785126016	4431710	4361756	4492717.0	0.9230769230769231	0.631578947368421	39	36	57.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.274.fa	1139_AX	0.9818803311336807	0.9706891453780114	6426166	6309726	6500254.0	0.9117647058823529	0.5961538461538461	34	31	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.200.fa	1286_AD	0.8380617872073945	0.9706556544807161	5007768	4196819	4323695.0	0.6666666666666666	0.5	18	12	24.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.228.fa	1049074	0.9100460076203728	0.97036630638313	5459313	4968226	5119949.0	0.9230769230769231	0.6486486486486487	26	24	37.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.281.fa	1036620	0.9454066271462075	0.9693123068804178	4116855	3892102	4015323.0	0.746031746031746	0.734375	63	47	64.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.265.fa	1286_BX	0.2237695510001056	0.9685777041242922	19842655	4440182	4584229.0	0.07236842105263158	0.6875	304	22	32.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.286.fa	1048762	1.0	0.9684751189929337	3170927	3170927	3274144.0	1.0	0.84	21	21	25.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.155.fa	1036653	0.9970553031448192	0.9684611899714234	5259285	5243798	5414567.0	0.8846153846153846	0.8214285714285714	26	23	28.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.333.fa	1285_BK	1.0	0.9664014826342647	3344587	3344587	3460867.0	1.0	0.7777777777777778	7	7	9.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.390.fa	1035945	1.0	0.9654986633228274	2736481	2736481	2834267.0	1.0	0.8425925925925926	91	91	108.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.300.fa	1030710	0.9950482898314265	0.9651848224681444	4457046	4434976	4594950.0	0.8292682926829268	0.6181818181818182	41	34	55.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.312.fa	1030803	1.0	0.9645803820211475	2242197	2242197	2324531.0	1.0	0.625	45	45	72.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.158.fa	1030773	0.9257829249789351	0.9645271451025569	2667944	2469937	2560775.0	0.8615384615384616	0.835820895522388	130	112	134.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.52.fa	1036662	0.9297111258090769	0.9637626378098268	3831218	3561926	3695854.0	0.8333333333333334	0.5833333333333334	42	35	60.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.395.fa	1035978	0.9903151460957756	0.9635914897882628	2484911	2460845	2553826.0	0.9834437086092715	0.7898936170212766	302	297	376.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.194.fa	1036638	0.6928035317754976	0.9618940581684591	2270586	1573070	1635388.0	0.18604651162790697	0.7272727272727273	43	8	11.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.341.fa	1220_G	0.8293210243473182	0.9618384596328361	7116102	5901533	6135680.0	0.6	0.45549738219895286	145	87	191.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.297.fa	1030809	0.9827805310699992	0.9598450302477977	3464741	3405080	3547531.0	0.975	0.6610169491525424	120	117	177.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.173.fa	1285_BE	0.991222080913659	0.9584235184147443	4553471	4513501	4709297.0	0.7857142857142857	0.4782608695652174	14	11	23.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.268.fa	1030860	1.0	0.9582632875195287	4613756	4613756	4814706.0	1.0	0.6808510638297872	32	32	47.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.372.fa	1035972	1.0	0.9581362055747801	2262150	2262150	2360990.0	1.0	0.8468468468468469	94	94	111.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.360.fa	1036572	1.0	0.9555929399823312	2745279	2745279	2872854.0	1.0	0.7125	57	57	80.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.172.fa	1286_W	0.9915537829242916	0.9541501170404879	4691331	4651707	4875236.0	0.7647058823529411	0.35135135135135137	17	13	37.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.323.fa	1036689	0.14000128518754573	0.953838418447362	44024703	6163515	6461802.0	0.18057921635434412	0.8760330578512396	587	106	121.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.85.fa	1030707	1.0	0.951329596689674	3787011	3787011	3980756.0	1.0	0.7733333333333333	58	58	75.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.218.fa	1287_AG	0.5945147946194208	0.9508505608788823	6182011	3675297	3865273.0	0.5833333333333334	0.2916666666666667	12	7	24.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.361.fa	1220_V	0.7167218481891109	0.9501389707873722	8365421	5995680	6310319.0	0.6551724137931034	0.7215189873417721	87	57	79.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.340.fa	1036794	1.0	0.9480948081109496	3322128	3322128	3504004.0	1.0	0.6574074074074074	71	71	108.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.156.fa	1030815	1.0	0.947769317223229	3373982	3373982	3559919.0	1.0	0.5396825396825397	34	34	63.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.159.fa	1048780	0.9913507438726904	0.9455442382791394	7855242	7787300	8235786.0	0.9803921568627451	0.49019607843137253	51	50	102.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.34.fa	1021_B	0.8631034362765543	0.9451444135579947	3965746	3422849	3621509.0	0.75	0.3333333333333333	4	3	9.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.237.fa	evo_1036674.014	0.5245041539463404	0.9423647576166941	5472868	2870542	3046105.0	0.5	0.725	58	29	40.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.202.fa	1049014	1.0	0.9423512169798942	5594693	5594693	5936951.0	1.0	0.5869565217391305	27	27	46.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.299.fa	1139_AK	0.9097818059050128	0.9400914817927121	4594029	4179564	4445912.0	0.813953488372093	0.6481481481481481	43	35	54.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.149.fa	1287_CC	0.8895643934761641	0.9399017629601641	6582569	5855619	6230033.0	0.7027027027027027	0.36619718309859156	37	26	71.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.89.fa	1049026	1.0	0.9395627336565802	3127934	3127934	3329138.0	1.0	0.5757575757575758	19	19	33.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.263.fa	1036671	1.0	0.9368627916089292	2496136	2496136	2664356.0	1.0	0.7884615384615384	82	82	104.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.183.fa	1035936	1.0	0.9367965512326866	2359724	2359724	2518929.0	1.0	0.5142857142857142	18	18	35.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.291.fa	1049086	0.9976418853292032	0.9357723235848324	4266544	4256483	4548631.0	0.8717948717948718	0.34	39	34	100.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.384.fa	1287_B	1.0	0.9348564420311045	6355629	6355629	6798508.0	1.0	0.5420560747663551	58	58	107.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.292.fa	evo_1030827.025	0.25863565884105444	0.9332775530420228	16414179	4245292	4548799.0	0.2740174672489083	0.7492537313432835	916	251	335.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.49.fa	1036752	0.8346508287141498	0.9326608321443568	4308301	3595927	3855557.0	0.8653846153846154	0.7563025210084033	104	90	119.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.307.fa	1036599	1.0	0.9313750747945969	4023694	4023694	4320165.0	1.0	0.4090909090909091	9	9	22.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.369.fa	1220_AQ	0.25337839870622425	0.9307731168150817	16120877	4084682	4388483.0	0.19469026548672566	0.5365853658536586	113	22	41.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.205.fa	1035909	1.0	0.9284584304666452	2634589	2634589	2837595.0	1.0	0.7407407407407407	40	40	54.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.240.fa	1048981	1.0	0.9268750912646538	3979845	3979845	4293831.0	1.0	0.631578947368421	24	24	38.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.244.fa	1139_BS	0.5396163068333755	0.9262329341424191	6735017	3634325	3923770.0	0.34210526315789475	0.5	38	13	26.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.39.fa	1285_CI	1.0	0.9245148689474543	7003214	7003214	7575015.0	1.0	0.3113207547169811	33	33	106.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.133.fa	1285_BJ	0.9854491497556545	0.9234603477036503	3685764	3632133	3933177.0	0.9666666666666667	0.6590909090909091	30	29	44.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.290.fa	1036545	0.9995586670566858	0.9211748029228439	3904082	3902359	4236285.0	0.9838709677419355	0.7530864197530864	62	61	81.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.392.fa	1286_AC	0.33713249301287124	0.9210625156953447	15013320	5061478	5495260.0	0.8216833095577746	0.7137546468401487	701	576	807.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.125.fa	1049023	0.9915626012294948	0.9203946331539756	5494940	5448577	5919827.0	0.8764044943820225	0.7572815533980582	89	78	103.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.381.fa	1030956	1.0	0.9200120968654116	3863531	3863531	4199435.0	1.0	0.725	87	87	120.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.145.fa	1286_L	0.2668113255317815	0.9192402288182041	17512926	4672647	5083162.0	0.11363636363636363	0.2631578947368421	132	15	57.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.278.fa	1285_AT	0.0951232024458492	0.9180690066455052	42984171	4088792	4453687.0	0.07526881720430108	0.4	186	14	35.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.238.fa	1036773	0.9886240376921042	0.9171896311010559	2763019	2731587	2978214.0	0.95	0.76	20	19	25.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.294.fa	1048774	0.9842697554719873	0.9168036048195836	3690661	3632606	3962251.0	0.84	0.8076923076923077	25	21	26.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.343.fa	1287_BZ	0.9923821920832019	0.9166558618705136	6333318	6285072	6856523.0	0.9662921348314607	0.5149700598802395	89	86	167.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.135.fa	1036593	0.6366278839117876	0.9150022819132138	6175683	3931612	4296833.0	0.8	0.8275862068965517	30	24	29.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.253.fa	1048951	1.0	0.9145612071797814	3988984	3988984	4361637.0	1.0	0.5775862068965517	67	67	116.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.25.fa	1286_CQ	0.48986827617186823	0.9130990844961246	7706882	3775357	4134663.0	0.6470588235294118	0.6346153846153846	51	33	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.273.fa	1286_BQ	0.04497566578264929	0.9128950708318052	110574750	4973173	5447694.0	0.04227642276422764	0.4642857142857143	1230	52	112.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.206.fa	1030785	0.9993672698263376	0.9122896962851449	2629873	2628209	2880893.0	0.96	0.6153846153846154	25	24	39.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.310.fa	1021_F	0.8104018838716728	0.9116965798575423	5636902	4568156	5010610.0	0.5918367346938775	0.5576923076923077	49	29	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.289.fa	1139_BY	0.16775566086302549	0.9109294779731058	35994070	6038209	6628624.0	0.12727272727272726	0.5384615384615384	220	28	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.35.fa	1220_W	0.49978551983116637	0.9077976240247233	8667468	4331875	4771851.0	0.42857142857142855	0.42857142857142855	35	15	35.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.102.fa	1036650	0.9976396707570457	0.9035305919971371	4504880	4494247	4974095.0	0.9583333333333334	0.45098039215686275	48	46	102.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.13.fa	1021_O	1.0	0.9033518828405582	5877706	5877706	6506552.0	1.0	0.5833333333333334	21	21	36.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.140.fa	1048873	0.999717530468432	0.902641085040543	7915898	7913662	8767230.0	0.9833333333333333	0.7972972972972973	60	59	74.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.357.fa	1220_CC	0.2436100020315194	0.9011047072020805	25301260	6163640	6840093.0	0.12878787878787878	0.3469387755102041	132	17	49.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.19.fa	1286_AY	0.9961771882212538	0.8998629386742792	3183259	3171090	3523970.0	0.7857142857142857	0.5	14	11	22.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.197.fa	1030788	0.8424525876053133	0.8990166615113127	3239501	2729126	3035679.0	0.875	0.7974683544303798	72	63	79.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.126.fa	1036560	1.0	0.8976245945855659	2472033	2472033	2753972.0	1.0	0.6354166666666666	61	61	96.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.162.fa	1030758	1.0	0.8930005039038279	2660019	2660019	2978743.0	1.0	0.375	3	3	8.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.231.fa	1048957	0.9429079522091833	0.8856783024310007	3901419	3678679	4153516.0	0.95625	0.7536945812807881	160	153	203.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.139.fa	1286_BC	1.0	0.8854857565236719	4772654	4772654	5389871.0	1.0	0.4444444444444444	16	16	36.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.17.fa	1036617	1.0	0.8773790349943013	2534183	2534183	2888356.0	1.0	0.8333333333333334	20	20	24.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.260.fa	1036584	1.0	0.874713646653861	2723616	2723616	3113723.0	1.0	0.5151515151515151	34	34	66.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.86.fa	1052986	0.270913378332284	0.8718522359660941	15875185	4300800	4932946.0	0.2673469387755102	0.7043010752688172	490	131	186.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.266.fa	1030929	0.9868030931578174	0.8714628653197878	5177880	5109548	5863185.0	0.9014084507042254	0.7111111111111111	71	64	90.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.177.fa	1021_S	0.8770987777037917	0.8688088388164156	5412436	4747241	5464080.0	0.6842105263157895	0.37681159420289856	38	26	69.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.31.fa	1285_K	0.987741340376029	0.8643416482939859	4879571	4819754	5576214.0	0.9375	0.46875	48	45	96.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.352.fa	1036776	0.9460770337112716	0.8596983316122119	2216588	2097063	2439301.0	0.9076923076923077	0.6210526315789474	65	59	95.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.362.fa	evo_1030719.009	0.10286271738221553	0.858333036522179	41701951	4289576	4997566.0	0.089058524173028	0.5645161290322581	393	35	62.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.57.fa	1139_AS	0.8418692075751699	0.8581920554868401	6417757	5402912	6295691.0	0.8536585365853658	0.47297297297297297	41	35	74.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.208.fa	1021_A	1.0	0.8574600443581886	2499803	2499803	2915358.0	1.0	0.5	22	22	44.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.192.fa	1035948	1.0	0.8574227240841007	2777007	2777007	3238784.0	1.0	0.4148936170212766	39	39	94.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.74.fa	1286_N	0.9843059923067964	0.8569595454664153	3133935	3084751	3599646.0	0.875	0.30434782608695654	8	7	23.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.270.fa	1036764	1.0	0.8508853291818591	2076926	2076926	2440900.0	1.0	0.6730769230769231	35	35	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.161.fa	1030845	0.3683546072697951	0.8500031688355586	15292343	5633005	6627040.0	0.5089285714285714	0.48717948717948717	112	57	117.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.141.fa	1035924	0.916905021746159	0.8487627281900743	807269	740189	872080.0	0.9130434782608695	0.84	46	42	50.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.207.fa	1220_AC	0.33872566957753036	0.845795230087286	20771269	7035762	8318517.0	0.23225806451612904	0.5142857142857142	155	36	70.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.311.fa	1036665	0.9159067807788701	0.838800095504604	2577580	2360823	2814524.0	0.7142857142857143	0.6521739130434783	42	30	46.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.241.fa	1036806	0.9869446348099454	0.830429862680824	3026342	2986832	3596730.0	0.9565217391304348	0.5116279069767442	23	22	43.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.7.fa	1021_AC	0.722894075479359	0.8272579943597821	6285268	4543583	5492341.0	0.5185185185185185	0.4	27	14	35.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.367.fa	1048768	0.9916291513426818	0.8250353231676528	2776421	2753180	3337045.0	0.9452054794520548	0.6448598130841121	73	69	107.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.345.fa	evo_1048975.026	0.3245858576515747	0.8207036442426596	11352075	3684723	4489712.0	0.3230769230769231	0.5384615384615384	130	42	78.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.223.fa	1049017	1.0	0.8199943694696967	5752527	5752527	7015325.0	1.0	0.17073170731707318	7	7	41.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.97.fa	1220_F	0.4980230659967351	0.8150761472439573	7735716	3852565	4726632.0	0.15789473684210525	0.75	38	6	8.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.157.fa	1036596	0.9734682828569076	0.8081312544060505	4178056	4067205	5032852.0	0.6875	0.559322033898305	48	33	59.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.103.fa	evo_1052962.017	0.1752556291551088	0.7946550122317432	11893792	2084454	2623093.0	0.13432835820895522	0.14285714285714285	67	9	63.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.47.fa	1030722	1.0	0.7891279156816143	2508786	2508786	3179188.0	1.0	0.7735849056603774	41	41	53.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.95.fa	1287_AT	0.11166184819506805	0.7843034669227851	47082357	5257303	6703149.0	0.1373134328358209	0.2987012987012987	335	46	154.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.78.fa	1287_BM	0.2665526308288679	0.7821491022738132	14033600	3740693	4782583.0	0.16666666666666666	0.5961538461538461	186	31	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.365.fa	1220_M	0.9994546460738422	0.7771172399426348	4098256	4096021	5270789.0	0.9818181818181818	0.6206896551724138	55	54	87.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.30.fa	1287_H	0.9967818151408484	0.7695194155256925	3121014	3110970	4042744.0	0.8333333333333334	0.5555555555555556	6	5	9.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.59.fa	1030839	0.5046821789121847	0.7620910079715943	9580689	4835203	6344653.0	0.37209302325581395	0.25806451612903225	86	32	124.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.258.fa	1036605	0.9953728615403679	0.7337799545682044	3486388	3470256	4729287.0	0.9411764705882353	0.6666666666666666	34	32	48.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.90.fa	1048876	0.520108962279995	0.7331821466310942	12682554	6596310	8996823.0	0.375	0.5625	48	18	32.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.326.fa	1285_CR	0.435006336026233	0.7328560135398092	7060419	3071327	4190901.0	0.25	0.2558139534883721	44	11	43.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.366.fa	1053043	0.75434610485731	0.7284013499401463	4676889	3527993	4843474.0	0.5205479452054794	0.6031746031746031	73	38	63.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.242.fa	1030734	0.9588728332461907	0.7171483889857337	3760118	3605475	5027516.0	0.8571428571428571	0.4691358024691358	133	114	243.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.353.fa	1030890	0.9894566904276944	0.712585393295589	2416983	2391500	3356089.0	0.9230769230769231	0.6233766233766234	52	48	77.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.327.fa	1220_AK	0.6524084404856779	0.6995831963756511	4899955	3196772	4569538.0	0.6041666666666666	0.32222222222222224	48	29	90.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.93.fa	1036734	1.0	0.6894034187901883	1603289	1603289	2325618.0	1.0	0.42105263157894735	16	16	38.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.229.fa	1049002	1.0	0.6892427460457371	3390556	3390556	4919248.0	1.0	0.2558139534883721	22	22	86.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.359.fa	1048765	0.9860571599404445	0.6890326297653564	2542165	2506720	3638028.0	0.88	0.4230769230769231	25	22	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.187.fa	1286_CH	0.9868990276199239	0.6866212850238697	4434480	4376384	6373796.0	0.868421052631579	0.36666666666666664	38	33	90.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.58.fa	evo_1048987.032	0.559561740215267	0.6844936028574915	3789807	2120631	3098102.0	0.4117647058823529	0.18421052631578946	17	7	38.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.191.fa	1286_Q	0.20906943224923225	0.6829846372771196	19550022	4087312	5984486.0	0.18764302059496568	0.36771300448430494	437	82	223.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.77.fa	1220_AF	0.5722088997953059	0.6784977657450779	5366056	3070505	4525446.0	0.5319148936170213	0.5102040816326531	47	25	49.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.232.fa	1049077	0.9992875542547324	0.669437304708086	2815653	2813647	4203003.0	0.9090909090909091	0.37037037037037035	11	10	27.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.334.fa	1030767	1.0	0.6601415642497447	937302	937302	1419850.0	1.0	0.3939393939393939	13	13	33.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.80.fa	evo_1048972.030	0.9837858194425585	0.6581336280320138	2047282	2014087	3060301.0	0.875	0.25925925925925924	8	7	27.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.66.fa	evo_1036662.017	0.5007550001853683	0.6575741020855635	4990065	2498800	3800028.0	0.5102040816326531	0.44642857142857145	49	25	56.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.63.fa	1220_B	0.2691555903049257	0.6539268576405668	12518852	3369519	5152746.0	0.3188405797101449	0.4782608695652174	69	22	46.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.180.fa	1036581	0.9978847433695434	0.6537962690608774	2594957	2589468	3960665.0	0.9791666666666666	0.42727272727272725	48	47	110.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.20.fa	1285_CD	0.6332100791386328	0.6534501996859553	3474662	2200191	3367037.0	0.42857142857142855	0.3	7	3	10.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.257.fa	1036722	1.0	0.6478259793855243	1309198	1309198	2020910.0	1.0	0.59375	19	19	32.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.324.fa	1286_BY	1.0	0.6455842980336997	2542708	2542708	3938615.0	1.0	0.23529411764705882	8	8	34.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.259.fa	1286_BK	0.5287664666080806	0.6375531588433858	5127498	2711249	4252585.0	0.5263157894736842	0.2702702702702703	19	10	37.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.114.fa	1048855	0.9994065402869258	0.6312388456362694	2992621	2990845	4738056.0	0.9166666666666666	0.3793103448275862	12	11	29.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.210.fa	1048786	0.9932307214135768	0.6309789015858335	3178773	3157255	5003741.0	0.9591836734693877	0.373015873015873	49	47	126.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.138.fa	1220_BH	0.5816383354633484	0.6215258395236425	6988996	4065068	6540465.0	0.4772727272727273	0.24705882352941178	44	21	85.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.254.fa	1287_CK	0.3681851043936876	0.6168981433750703	6094334	2243843	3637299.0	0.3333333333333333	0.3617021276595745	51	17	47.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.209.fa	1036713	1.0	0.6072505009345165	2668736	2668736	4394786.0	1.0	0.3558282208588957	58	58	163.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.331.fa	1286_BR	1.0	0.6037463238380208	3250988	3250988	5384692.0	1.0	0.11428571428571428	8	8	70.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.44.fa	1048918	0.36649969556440803	0.6009075065779071	9249904	3390087	5641612.0	0.5217391304347826	0.2891566265060241	46	24	83.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.61.fa	1030947	0.9992406832925239	0.600336265052965	5620843	5616575	9355715.0	0.9565217391304348	0.4731182795698925	46	44	93.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.374.fa	1365_F	0.991978301300531	0.5990199797330616	2228705	2210827	3690740.0	0.7619047619047619	0.5333333333333333	21	16	30.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.88.fa	1139_V	0.5868432793555024	0.5941228412812347	4325850	2538596	4272847.0	0.13513513513513514	0.20833333333333334	37	5	24.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.375.fa	evo_1052962.015	0.3277505220071844	0.5927283924527408	4886427	1601529	2701961.0	0.20512820512820512	0.12698412698412698	39	8	63.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.115.fa	1030911	0.4944852086155947	0.5790826639854438	2343425	1158789	2001077.0	0.5636363636363636	0.4305555555555556	55	31	72.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.69.fa	1139_BD	0.2309730034437582	0.5745970612145286	13333108	3079588	5359561.0	0.2191780821917808	0.38095238095238093	73	16	42.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.68.fa	1048975	0.35060898080585157	0.5632866219823357	7149158	2506559	4449882.0	0.3125	0.390625	80	25	64.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.245.fa	1036611	0.7241676647172276	0.5627733622628154	2057344	1489862	2647357.0	0.8333333333333334	0.4	60	50	125.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.256.fa	1286_K	0.9288972818729802	0.5613950553125885	2300334	2136774	3806186.0	0.8333333333333334	0.20833333333333334	12	10	48.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.136.fa	1030875	0.9642664742733598	0.5548380365605214	2095707	2020820	3642180.0	0.7058823529411765	0.19672131147540983	17	12	61.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.45.fa	1287_F	0.5696044267188153	0.5530652098841687	5640295	3212737	5808966.0	0.5833333333333334	0.32558139534883723	24	14	43.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.354.fa	evo_1220_W.025	0.8730525198084765	0.548275507658286	3030647	2645914	4825884.0	0.8	0.11428571428571428	5	4	35.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.15.fa	1220_AI	0.3932835391008502	0.5373413998538746	11283770	4437721	8258662.0	0.3925233644859813	0.3387096774193548	107	42	124.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.101.fa	1036548	0.8988089199115313	0.5185819584523153	3499093	3145016	6064646.0	0.6530612244897959	0.6213592233009708	98	64	103.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.121.fa	1220_AA	0.9966855893032837	0.5185124698550502	2825540	2816175	5431258.0	0.9230769230769231	0.2696629213483146	26	24	89.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.279.fa	1030797	0.9466315096763797	0.5158527853707505	2233790	2114576	4099185.0	0.8571428571428571	0.38095238095238093	28	24	63.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.40.fa	1285_BS	0.5819998262828859	0.5100753313147234	4674266	2720422	5333373.0	0.5094339622641509	0.22131147540983606	53	27	122.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.8.fa	1365_P	0.5224079818985924	0.5085311946283689	5740990	2999139	5897650.0	0.5357142857142857	0.3488372093023256	28	15	43.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.385.fa	1030761	0.9963767004009855	0.5033180648585283	1531477	1525928	3031737.0	0.9047619047619048	0.41304347826086957	21	19	46.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.37.fa	1021_AH	1.0	0.4939897227495715	2846392	2846392	5762047.0	1.0	0.1348314606741573	12	12	89.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.38.fa	1021_AH	0.5735196020507347	0.4909102615789146	4932086	2828648	5762047.0	0.48484848484848486	0.5393258426966292	99	48	89.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.9.fa	1139_AP	0.5293730692357148	0.4901612410319196	4832607	2558252	5219205.0	0.4444444444444444	0.21621621621621623	18	8	37.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.1.fa	1220_U	0.4793797095337781	0.48864964818201234	6175107	2960221	6057962.0	0.3090909090909091	0.20987654320987653	55	17	81.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.316.fa	1285_AG	0.7082542349393108	0.4819705531740918	3615223	2560497	5312559.0	0.5	0.2153846153846154	28	14	65.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.55.fa	1287_Y	1.0	0.47892440761050037	1931153	1931153	4032271.0	1.0	0.34375	11	11	32.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.12.fa	1285_CQ	0.45056562438690967	0.47702999098948046	6213399	2799544	5868696.0	0.37209302325581395	0.2857142857142857	43	16	56.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.99.fa	1036548	0.9635629874022167	0.4720760288399356	2971237	2862974	6064646.0	0.6666666666666666	0.1941747572815534	30	20	103.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.118.fa	1286_CJ	0.9869575290290893	0.4667804843983706	3237270	3195048	6844862.0	0.9591836734693877	0.22169811320754718	49	47	212.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.96.fa	1287_CL	0.7960701403704344	0.4571715974655009	3121740	2485124	5435867.0	0.7	0.19718309859154928	20	14	71.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.119.fa	1220_D	0.6857867893145095	0.4464845915584875	5309293	3641043	8154913.0	0.726027397260274	0.20229007633587787	73	53	262.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.315.fa	1030818	0.6568167359663706	0.43940721038007297	2845130	1868729	4252841.0	0.7258064516129032	0.28846153846153844	62	45	156.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.22.fa	1286_A	0.570135209184183	0.4318350957252795	2593241	1478498	3423756.0	0.2	0.09090909090909091	5	1	11.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.134.fa	1030875	0.9126705614685033	0.40773108413093256	1627126	1485030	3642180.0	0.7368421052631579	0.45901639344262296	38	28	61.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.389.fa	1048987	0.5440485507841721	0.4075718953644954	2312630	1258183	3087021.0	0.4166666666666667	0.13157894736842105	12	5	38.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.247.fa	1139_G	0.9993662546598051	0.40715314472708625	2532563	2530958	6216231.0	0.95	0.24050632911392406	20	19	79.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.351.fa	1285_AW	0.8643793572960861	0.40203250899218407	2052018	1773722	4411887.0	0.7272727272727273	0.18604651162790697	22	16	86.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.84.fa	1286_CM	0.9280577511025137	0.3916985823898809	1605649	1490135	3804290.0	0.75	0.42857142857142855	8	6	14.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.165.fa	1048879	1.0	0.3873951622081635	3621652	3621652	9348728.0	1.0	0.3	15	15	50.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.271.fa	1285_AG	0.9918007897078	0.3676550227489238	1969336	1953189	5312559.0	0.5	0.07692307692307693	10	5	65.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.41.fa	1139_C	0.355724465001234	0.36292402453233585	6653006	2366637	6521026.0	0.26153846153846155	0.16037735849056603	65	17	106.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.356.fa	1030830	0.9855207038287224	0.35089665621549054	1744629	1719368	4899927.0	0.8846153846153846	0.17692307692307693	26	23	130.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.26.fa	1139_CK	0.24778393246077862	0.3508107380785094	9301499	2304762	6569816.0	0.36363636363636365	0.19753086419753085	44	16	81.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.203.fa	1036713	0.9550370975383901	0.3421563643827026	1574498	1503704	4394786.0	0.8987341772151899	0.43558282208588955	79	71	163.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.81.fa	1139_AJ	0.5578341241672663	0.3322505297582512	3286615	1833386	5518083.0	0.625	0.12195121951219512	8	5	41.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.148.fa	1285_E	0.9205690198802907	0.3314630551303526	1496960	1378055	4157492.0	0.5	0.2222222222222222	8	4	18.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.234.fa	1139_AC	1.0	0.3285982217672174	1757641	1757641	5348906.0	1.0	0.04918032786885246	3	3	61.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.377.fa	evo_1036662.016	0.5105315527668475	0.3206080385910716	2410993	1230888	3839230.0	0.5555555555555556	0.17857142857142858	18	10	56.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.116.fa	1030911		0.3205698731233231	729268	641485	2001077.0		0.3055555555555556	29	22	72.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.60.fa	1220_AF	0.40912132357153497	0.3156170684613185	3491160	1428308	4525446.0	0.056074766355140186	0.12244897959183673	107	6	49.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.317.fa	1220_AP	0.5241666595075891	0.31074186237551765	3142863	1647384	5301455.0	0.35714285714285715	0.10204081632653061	14	5	49.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.217.fa	1048786	0.9676898957850275	0.2848336874350611	1472821	1425234	5003741.0	0.7272727272727273	0.06349206349206349	11	8	126.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.105.fa	evo_1048987.032	0.9915771857172524	0.2620039624260273	818610	811715	3098102.0	0.7142857142857143	0.13157894736842105	7	5	38.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.368.fa	1287_BG	0.6227148174134999	0.2253814773182823	1731645	1078321	4784426.0	0.058823529411764705	0.037037037037037035	17	1	27.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.186.fa	1036581	1.0	0.2132654491101873	844673	844673	3960665.0	1.0	0.12727272727272726	14	14	110.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.5.fa	1021_R	0.23557218265134533	0.20854457839461615	6869109	1618171	7759353.0	0.12244897959183673	0.04225352112676056	49	6	142.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.318.fa	1365_F	0.4371124251666167	0.20647620802332323	1743373	762050	3690740.0	0.05333333333333334	0.13333333333333333	75	4	30.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.48.fa	1030722		0.20342395605418742	646723	646723	3179188.0		0.05660377358490566	3	3	53.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.285.fa	1220_Q	0.9204234743315457	0.19868600927505808	1042330	959385	4828649.0	0.8	0.08	5	4	50.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.23.fa	1286_AR	0.2217661117369169	0.18659785823126218	3962003	878638	4708725.0	0.2631578947368421	0.08	38	10	125.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.199.fa	1030935	0.5506725475551577	0.17715267991546887	2055245	1131767	6388653.0	0.47368421052631576	0.09473684210526316	19	9	95.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.151.fa	1036596	0.5784936014822155	0.1707306314590614	1485344	859262	5032852.0	0.18181818181818182	0.13559322033898305	44	8	59.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.373.fa	evo_1036569.038		0.17068669961269034	655437	578108	3386954.0		0.17857142857142858	6	5	28.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.120.fa	evo_1220_W.025	0.8575187584193611	0.16105836775189789	906393	777249	4825884.0	0.6	0.08571428571428572	5	3	35.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.337.fa	1286_Q	0.7193663040869301	0.1512428970508077	1258206	905111	5984486.0	0.8125	0.05829596412556054	16	13	223.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.212.fa	1030749	0.7496533725283893	0.15057106904400086	876301	656922	4362870.0	0.2222222222222222	0.1276595744680851	27	6	47.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.226.fa	1049017	1.0	0.14911853691739158	1046115	1046115	7015325.0	1.0	0.34146341463414637	14	14	41.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.233.fa	1030749		0.14660235120459697	695008	639607	4362870.0		0.1276595744680851	9	6	47.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.276.fa	1036764		0.13752919005284936	335695	335695	2440900.0		0.09615384615384616	5	5	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.3.fa	evo_1036569.028		0.13561649336490703	668562	452546	3336954.0		0.03571428571428571	8	1	28.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.387.fa	evo_1052962.028	0.2599771863749361	0.13280695638223697	1324647	344378	2593072.0	0.2564102564102564	0.3448275862068966	117	30	87.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.288.fa	1220_AC	1.0	0.13273640000976136	1104170	1104170	8318517.0	1.0	0.12857142857142856	9	9	70.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.188.fa	1286_CE	0.42440321845898177	0.12893202811756357	1497114	635380	4928023.0	0.23529411764705882	0.10526315789473684	17	4	38.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.24.fa	1286_CM		0.12617544929540073	755812	480008	3804290.0		0.07142857142857142	6	1	14.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.398.fa	evo_1030827.038	0.5543072398286482	0.12322125902088261	938420	520173	4221455.0	0.5396825396825397	0.09418282548476455	63	34	361.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.137.fa	1052956		0.12165031209335884	723802	305516	2511428.0		0.4186046511627907	32	18	43.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.87.fa	evo_1052956.019	0.3612872706153457	0.11943055390511993	854024	308548	2583493.0	0.09523809523809523	0.0425531914893617	21	2	47.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.163.fa	1286_Q	0.7536575506205878	0.11557817998070344	917759	691676	5984486.0	0.7894736842105263	0.06726457399103139	19	15	223.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.363.fa	evo_1220_W.027		0.11153576303455802	676052	530645	4757622.0		0.058823529411764705	6	2	34.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.246.fa	1365_F		0.10706877211616099	438342	395163	3690740.0		0.03333333333333333	8	1	30.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.72.fa	evo_1030719.009	0.2857240286560074	0.0972429378621513	1700865	485978	4997566.0	0.21739130434782608	0.08064516129032258	23	5	62.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.170.fa	1285_AO	0.22623675742144944	0.0957113798313494	1989133	450015	4701792.0	0.25	0.16417910447761194	44	11	67.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.32.fa	1139_CP	0.43061628436254296	0.09491874553442484	1159984	499508	5262480.0	0.3333333333333333	0.02564102564102564	6	2	78.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.313.fa	1285_BN	0.5198114597142436	0.09430905389632818	814680	423480	4490343.0	0.5	0.043478260869565216	4	2	46.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.189.fa	1035948		0.09365305003359285	303322	303322	3238784.0		0.20212765957446807	19	19	94.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.92.fa	1287_CI		0.08661619982774556	577136	440185	5082017.0		0.037037037037037035	7	2	54.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.190.fa	1139_CG		0.08522904146080577	622865	622865	7308131.0		0.07017543859649122	8	8	114.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.160.fa	1048879		0.0803657994970011	764520	751318	9348728.0		0.16	10	8	50.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.308.fa	1287_CH	0.5311761143889993	0.08031836184811096	985899	523686	6520128.0	0.3333333333333333	0.027777777777777776	9	3	108.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.371.fa	1286_AJ		0.07851756595849825	260297	258030	3286271.0		0.11666666666666667	8	7	60.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.76.fa	1139_CG		0.07736040856410482	653656	565360	7308131.0		0.043859649122807015	7	5	114.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.293.fa	evo_1030719.021	0.32508957178584375	0.07501696003819897	1098002	356949	4758244.0	0.12244897959183673	0.09375	49	6	64.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.394.fa	1287_AO	0.4167110328348015	0.0740806869915538	1042461	434405	5863944.0	0.5454545454545454	0.06818181818181818	11	6	88.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.184.fa	1036581		0.07268754110736454	438171	287891	3960665.0		0.09090909090909091	24	10	110.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.251.fa	1036611		0.07140480109029496	227039	189034	2647357.0		0.088	12	11	125.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.106.fa	1139_V		0.07121130244073799	471785	304275	4272847.0		0.08333333333333333	13	2	24.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.11.fa	1287_G	0.5770058126230033	0.06369195805038276	852111	491673	7719546.0	0.3333333333333333	0.03937007874015748	15	5	127.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.54.fa	evo_1052962.024		0.061637511834191104	532664	157620	2557209.0		0.19047619047619047	37	12	63.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.117.fa	evo_1030719.011	0.35247383653033326	0.06144406670506753	843447	297293	4838433.0	0.13333333333333333	0.03225806451612903	15	2	62.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.305.fa	1036599		0.05829684745837254	251852	251852	4320165.0		0.13636363636363635	3	3	22.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.328.fa	1287_CK		0.05792732464391847	210699	210699	3637299.0		0.06382978723404255	3	3	47.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.224.fa	1036674		0.05599741756337604	354411	155604	2778771.0		0.125	14	5	40.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.386.fa	1287_B		0.055911385262766476	380114	380114	6798508.0		0.04672897196261682	5	5	107.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.330.fa	1021_L		0.05342842183914099	280019	280019	5241012.0		0.06097560975609756	5	5	82.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.82.fa	1287_BR	0.3012840356479865	0.05300043078040847	1011109	304631	5747708.0	0.25	0.1125	36	9	80.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.282.fa	1285_AQ		0.04833362315905802	379771	212907	4404946.0		0.05	19	5	100.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.220.fa	evo_1030827.038		0.047960478081609303	747403	202463	4221455.0		0.060941828254847646	88	22	361.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.181.fa	1035936		0.047286763541171666	200305	119112	2518929.0		0.2	9	7	35.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.211.fa	1030935	0.35552590085032043	0.047081442676570474	846034	300787	6388653.0	0.4	0.10526315789473684	25	10	95.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.346.fa	1220_M		0.045555608467726556	502577	240114	5270789.0		0.011494252873563218	4	1	87.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.314.fa	1021_F		0.04528949569014551	233033	226928	5010610.0		0.07692307692307693	5	4	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.65.fa	1285_BS		0.044817229171858035	330556	239027	5333373.0		0.05737704918032787	15	7	122.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.298.fa	1220_CD		0.04419932808591865	305790	275176	6225796.0		0.027777777777777776	3	2	72.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.56.fa	1030947		0.044152477923921365	522474	413078	9355715.0		0.08602150537634409	14	8	93.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.204.fa	evo_1052956.014		0.0435164850588255	505495	111618	2564959.0		0.16666666666666666	42	7	42.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.250.fa	1285_BQ		0.04122848092770405	570183	308075	7472383.0		0.05555555555555555	18	4	72.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.336.fa	evo_1030719.037		0.03869417467679044	595581	172688	4462894.0		0.03278688524590164	11	2	61.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.198.fa	evo_1220_Q.030		0.034852363719547835	536547	165763	4756148.0		0.041666666666666664	15	2	48.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.2.fa	1220_U		0.03308455880046788	368444	200425	6057962.0		0.024691358024691357	5	2	81.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.277.fa	1021_F		0.032525979870714344	445018	162975	5010610.0		0.057692307692307696	9	3	52.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.124.fa	1286_CA		0.030853384029960563	343148	164043	5316856.0		0.03225806451612903	18	3	93.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.154.fa	evo_1052962.024		0.02826636383651082	340488	72283	2557209.0		0.1746031746031746	43	11	63.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.71.fa	1285_BW		0.027691592395664575	215501	157117	5673816.0		0.11666666666666667	8	7	60.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.393.fa	evo_1030719.005		0.025019333874129975	478001	126948	5073996.0		0.03896103896103896	21	3	77.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.239.fa	1139_AC		0.024243836029274022	313986	129678	5348906.0		0.06557377049180328	24	4	61.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.16.fa	1220_BO		0.021673623119561197	368062	179584	8285832.0		0.018867924528301886	12	2	106.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.347.fa	1285_AW		0.021285223306943265	225134	93908	4411887.0		0.06976744186046512	10	6	86.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.153.fa	1285_A		0.0211843198597526	222884	138869	6555273.0		0.046153846153846156	4	3	65.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.397.fa	evo_1220_Q.019		0.020910721727943175	238092	102706	4911643.0		0.02040816326530612	16	1	49.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.143.fa	1286_CA		0.015205038466341763	245668	80843	5316856.0		0.03225806451612903	12	3	93.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.146.fa	1285_A		0.015045292545405813	294969	98626	6555273.0		0.03076923076923077	11	2	65.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.269.fa	1030719		0.01137779569232766	388464	49793	4376331.0		0.045454545454545456	24	3	66.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.295.fa	1052983		0.0078749404430367	218066	39899	5066578.0		0.008032128514056224	13	2	249.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.267.fa	1220_M		0.007212392679729733	410105	38015	5270789.0		0.022988505747126436	24	2	87.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.249.fa	evo_1030719.009		0.006259447098847719	280302	31282	4997566.0		0.016129032258064516	9	1	62.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.322.fa	1021_BE		0.004463730550468285	404961	23152	5186693.0		0.007633587786259542	22	1	131.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.349.fa	1048957		0.003090393777223923	636010	12836	4153516.0		0.0049261083743842365	152	1	203.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.64.fa	1139_CI		0.001380202577936408	236989	7263	5262271.0		0.014492753623188406	47	1	69.0
+pool	CAMI_high_GoldStandardAssembly.fasta.metabat-bins-_--minContig_1500_--minSamples_5_--numThreads_16_--superspecific.342.fa	1286_H		0.0013139903694894131	285877	6628	5044177.0		0.020833333333333332	81	1	48.0
+pool		1053046		0.0	0	0	5380322.0		0.0	0	0	26.0
+pool		1286_AN		0.0	0	0	3533256.0		0.0	0	0	19.0
+pool		1220_CI		0.0	0	0	3544923.0		0.0	0	0	28.0
+pool		1285_C		0.0	0	0	4003802.0		0.0	0	0	321.0
+pool		1287_P		0.0	0	0	3754388.0		0.0	0	0	8.0
+pool		1139_BL		0.0	0	0	5144408.0		0.0	0	0	42.0
+pool		1286_AV		0.0	0	0	3896588.0		0.0	0	0	16.0
+pool		1139_CC		0.0	0	0	3352209.0		0.0	0	0	19.0
+pool		1286_T		0.0	0	0	4720348.0		0.0	0	0	679.0
+pool		1220_BP		0.0	0	0	5916138.0		0.0	0	0	223.0
+pool		1286_CC		0.0	0	0	4410540.0		0.0	0	0	100.0
+pool		1286_BJ		0.0	0	0	5868298.0		0.0	0	0	58.0
+pool		1139_BM		0.0	0	0	4787236.0		0.0	0	0	57.0
+pool		1220_AM		0.0	0	0	3421865.0		0.0	0	0	25.0
+pool		1220_R		0.0	0	0	5807734.0		0.0	0	0	84.0
+pool		1365_O		0.0	0	0	5892554.0		0.0	0	0	38.0
+pool		1139_BI		0.0	0	0	4804273.0		0.0	0	0	14.0
+pool		1021_Q		0.0	0	0	5434924.0		0.0	0	0	47.0
+pool		1139_BC		0.0	0	0	5269559.0		0.0	0	0	40.0
+pool		evo_1048975.035		0.0	0	0	4527439.0		0.0	0	0	65.0
+pool		1285_BU		0.0	0	0	4737228.0		0.0	0	0	257.0
+pool		1287_AW		0.0	0	0	4714683.0		0.0	0	0	98.0
+pool		1220_BQ		0.0	0	0	6033766.0		0.0	0	0	192.0
+pool		1220_AV		0.0	0	0	4691739.0		0.0	0	0	57.0
+pool		1139_S		0.0	0	0	8064627.0		0.0	0	0	158.0
+pool		1139_BH		0.0	0	0	4449724.0		0.0	0	0	47.0
+pool		1285_CB		0.0	0	0	5040230.0		0.0	0	0	141.0
+pool		1286_AL		0.0	0	0	5256614.0		0.0	0	0	108.0
+pool		1286_X		0.0	0	0	4480805.0		0.0	0	0	59.0
+pool		1220_CH		0.0	0	0	7580532.0		0.0	0	0	139.0
+pool		1286_E		0.0	0	0	5747837.0		0.0	0	0	76.0
+pool		1220_CE		0.0	0	0	4170815.0		0.0	0	0	24.0
+pool		1286_AG		0.0	0	0	4660117.0		0.0	0	0	32.0
+pool		1286_BE		0.0	0	0	3541971.0		0.0	0	0	10.0
+pool		1285_AV		0.0	0	0	5013129.0		0.0	0	0	61.0
+pool		evo_1030719.036		0.0	0	0	4419864.0		0.0	0	0	61.0
+pool		1220_BM		0.0	0	0	8252076.0		0.0	0	0	122.0
+pool		1285_CH		0.0	0	0	4299563.0		0.0	0	0	28.0
+pool		1287_BF		0.0	0	0	5139341.0		0.0	0	0	67.0
+pool		1285_M		0.0	0	0	5200449.0		0.0	0	0	64.0
+pool		1285_N		0.0	0	0	6526026.0		0.0	0	0	82.0
+pool		1287_C		0.0	0	0	4138113.0		0.0	0	0	51.0
+pool		1030704		0.0	0	0	3098414.0		0.0	0	0	31.0
+pool		1285_BZ		0.0	0	0	5523706.0		0.0	0	0	128.0
+pool		evo_1030719.028		0.0	0	0	4482932.0		0.0	0	0	62.0
+pool		1036668		0.0	0	0	3474946.0		0.0	0	0	34.0
+pool		1048963		0.0	0	0	5264539.0		0.0	0	0	36.0
+pool		1139_P		0.0	0	0	7026080.0		0.0	0	0	172.0
+pool		1052962		0.0	0	0	2504935.0		0.0	0	0	94.0
+pool		evo_1036569.020		0.0	0	0	3203117.0		0.0	0	0	23.0
+pool		evo_1048987.039		0.0	0	0	3009458.0		0.0	0	0	38.0
+pool		1285_AM		0.0	0	0	4699406.0		0.0	0	0	79.0
+pool		1287_O		0.0	0	0	5489893.0		0.0	0	0	35.0
+pool		1021_N		0.0	0	0	7891629.0		0.0	0	0	121.0
+pool		1286_CN		0.0	0	0	4980070.0		0.0	0	0	98.0
+pool		1285_Y		0.0	0	0	4966528.0		0.0	0	0	74.0
+pool		1286_I		0.0	0	0	4462938.0		0.0	0	0	69.0
+pool		1285_AR		0.0	0	0	5668097.0		0.0	0	0	136.0
+pool		1220_AL		0.0	0	0	4651645.0		0.0	0	0	50.0
+pool		1286_BH		0.0	0	0	5536190.0		0.0	0	0	91.0
+pool		evo_1030719.013		0.0	0	0	4830853.0		0.0	0	0	107.0
+pool		1285_T		0.0	0	0	3734711.0		0.0	0	0	14.0
+pool		1021_M		0.0	0	0	5854787.0		0.0	0	0	51.0
+pool		1036746		0.0	0	0	2406712.0		0.0	0	0	34.0
+pool		1021_AZ		0.0	0	0	7187123.0		0.0	0	0	103.0
+pool		1365_H		0.0	0	0	3425264.0		0.0	0	0	14.0
+pool		1049065		0.0	0	0	3769298.0		0.0	0	0	32.0
+pool		evo_1048975.038		0.0	0	0	4492770.0		0.0	0	0	64.0
+pool		1030746		0.0	0	0	3547923.0		0.0	0	0	2.0
+pool		1053010		0.0	0	0	7479360.0		0.0	0	0	38.0
+pool		1287_AN		0.0	0	0	7584207.0		0.0	0	0	70.0
+pool		evo_1048963.035		0.0	0	0	5330561.0		0.0	0	0	40.0
+pool		1048924		0.0	0	0	5047472.0		0.0	0	0	20.0
+pool		1285_BY		0.0	0	0	4367400.0		0.0	0	0	27.0
+pool		1052980		0.0	0	0	4908221.0		0.0	0	0	245.0
+pool		1030917		0.0	0	0	2976284.0		0.0	0	0	56.0
+pool		1139_CD		0.0	0	0	6848441.0		0.0	0	0	126.0
+pool		1285_CP		0.0	0	0	6528023.0		0.0	0	0	71.0
+pool		1139_M		0.0	0	0	4998990.0		0.0	0	0	44.0
+pool		1285_AH		0.0	0	0	3127048.0		0.0	0	0	11.0
+pool		1285_X		0.0	0	0	4001535.0		0.0	0	0	30.0
+pool		1139_R		0.0	0	0	6582214.0		0.0	0	0	67.0
+pool		1048915		0.0	0	0	5643120.0		0.0	0	0	16.0
+pool		1285_I		0.0	0	0	3378248.0		0.0	0	0	24.0
+pool		1021_G		0.0	0	0	6251331.0		0.0	0	0	87.0
+pool		1139_F		0.0	0	0	4162808.0		0.0	0	0	23.0
+pool		1139_U		0.0	0	0	6316279.0		0.0	0	0	76.0
+pool		1286_BP		0.0	0	0	3977668.0		0.0	0	0	14.0
+pool		1220_BV		0.0	0	0	7094793.0		0.0	0	0	90.0
+pool		1036725		0.0	0	0	2120985.0		0.0	0	0	55.0
+pool		1021_AN		0.0	0	0	7733870.0		0.0	0	0	135.0
+pool		1048933		0.0	0	0	4635496.0		0.0	0	0	34.0
+pool		1285_BG		0.0	0	0	3344694.0		0.0	0	0	7.0
+pool		1021_U		0.0	0	0	5815714.0		0.0	0	0	60.0
+pool		evo_1048969.022		0.0	0	0	3530958.0		0.0	0	0	89.0
+pool		1285_O		0.0	0	0	5684790.0		0.0	0	0	98.0
+pool		evo_1036569.002		0.0	0	0	3128277.0		0.0	0	0	23.0
+pool		evo_1030827.033		0.0	0	0	4471035.0		0.0	0	0	345.0
+pool		1021_T		0.0	0	0	3465574.0		0.0	0	0	14.0
+pool		1285_AZ		0.0	0	0	4201623.0		0.0	0	0	10.0
+pool		1036542		0.0	0	0	5236188.0		0.0	0	0	18.0
+pool		1021_I		0.0	0	0	7482256.0		0.0	0	0	98.0
+pool		evo_1030719.017		0.0	0	0	4711147.0		0.0	0	0	61.0
+pool		1053052		0.0	0	0	5074685.0		0.0	0	0	249.0
+pool		evo_1030719.003		0.0	0	0	5023578.0		0.0	0	0	66.0
+pool		1285_Z		0.0	0	0	3897410.0		0.0	0	0	41.0
+pool		1286_AQ		0.0	0	0	2971967.0		0.0	0	0	27.0
+pool		1286_AZ		0.0	0	0	3764595.0		0.0	0	0	29.0
+pool		1048882		0.0	0	0	7638482.0		0.0	0	0	11.0
+pool		1048972		0.0	0	0	2997087.0		0.0	0	0	27.0
+pool		1220_BL		0.0	0	0	6060169.0		0.0	0	0	81.0
+pool		1286_AW		0.0	0	0	3609363.0		0.0	0	0	18.0
+pool		evo_1036686.005		0.0	0	0	4246250.0		0.0	0	0	48.0
+pool		1139_O		0.0	0	0	2637439.0		0.0	0	0	10.0
+pool		1285_F		0.0	0	0	3943376.0		0.0	0	0	14.0
+pool		1139_Q		0.0	0	0	6609881.0		0.0	0	0	114.0
+pool		1286_BL		0.0	0	0	3332762.0		0.0	0	0	20.0
+pool		1286_U		0.0	0	0	4001074.0		0.0	0	0	37.0
+pool		1285_W		0.0	0	0	4744273.0		0.0	0	0	51.0
+pool		1286_BN		0.0	0	0	4000292.0		0.0	0	0	39.0
+pool		1036686		0.0	0	0	4591985.0		0.0	0	0	50.0
+pool		1139_CA		0.0	0	0	4365427.0		0.0	0	0	54.0
+pool		evo_1036569.014		0.0	0	0	3128768.0		0.0	0	0	23.0
+pool		evo_1036686.032		0.0	0	0	4640662.0		0.0	0	0	53.0
+pool		1285_AI		0.0	0	0	5149325.0		0.0	0	0	101.0
+pool		1286_C		0.0	0	0	4312366.0		0.0	0	0	30.0
+pool		evo_1048969.002		0.0	0	0	3668521.0		0.0	0	0	86.0
+pool		1030731		0.0	0	0	3063189.0		0.0	0	0	21.0
+pool		1021_Y		0.0	0	0	5533966.0		0.0	0	0	51.0
+pool		evo_1048963.038		0.0	0	0	5299365.0		0.0	0	0	36.0
+pool		1053007		0.0	0	0	7310196.0		0.0	0	0	66.0
+pool		evo_1036569.031		0.0	0	0	3372290.0		0.0	0	0	28.0
+pool		1285_CJ		0.0	0	0	4299213.0		0.0	0	0	75.0
+pool		1049211		0.0	0	0	3547012.0		0.0	0	0	18.0
+pool		1287_AF		0.0	0	0	3562920.0		0.0	0	0	15.0
+pool		1286_AA		0.0	0	0	3783235.0		0.0	0	0	16.0
+pool		1220_T		0.0	0	0	5811062.0		0.0	0	0	35.0
+pool		1285_CC		0.0	0	0	2879580.0		0.0	0	0	76.0
+pool		1365_I		0.0	0	0	3611219.0		0.0	0	0	6.0
+pool		1220_K		0.0	0	0	3874974.0		0.0	0	0	3.0
+pool		1048909		0.0	0	0	5643643.0		0.0	0	0	14.0
+pool		1286_BO		0.0	0	0	5029833.0		0.0	0	0	65.0
+pool		1139_AZ		0.0	0	0	7585659.0		0.0	0	0	62.0
+pool		1139_CB		0.0	0	0	6765952.0		0.0	0	0	82.0
+pool		1285_AE		0.0	0	0	5053880.0		0.0	0	0	91.0
+pool		1285_AP		0.0	0	0	3953001.0		0.0	0	0	202.0
+pool		1048888		0.0	0	0	8637167.0		0.0	0	0	41.0
+pool		1286_F		0.0	0	0	3765568.0		0.0	0	0	9.0
+pool		1048867		0.0	0	0	7094726.0		0.0	0	0	109.0
+pool		1048900		0.0	0	0	5188649.0		0.0	0	0	30.0
+pool		1287_CP		0.0	0	0	4568973.0		0.0	0	0	29.0
+pool		1286_CL		0.0	0	0	2941264.0		0.0	0	0	40.0
+pool		1287_BV		0.0	0	0	4644240.0		0.0	0	0	37.0
+pool		1286_AH		0.0	0	0	3944725.0		0.0	0	0	28.0
+pool		1287_AV		0.0	0	0	3845226.0		0.0	0	0	23.0
+pool		1030827		0.0	0	0	4401233.0		0.0	0	0	378.0
+pool		1285_Q		0.0	0	0	5243722.0		0.0	0	0	102.0
+pool		1036779		0.0	0	0	5341403.0		0.0	0	0	84.0
+pool		1021_H		0.0	0	0	7479763.0		0.0	0	0	93.0
+pool		1139_AQ		0.0	0	0	4402454.0		0.0	0	0	18.0
+pool		1220_AH		0.0	0	0	4344214.0		0.0	0	0	48.0
+pool		1285_CA		0.0	0	0	3243076.0		0.0	0	0	23.0
+pool		1286_CB		0.0	0	0	3961278.0		0.0	0	0	13.0
+pool		1139_BV		0.0	0	0	3821022.0		0.0	0	0	31.0
+pool		1139_CH		0.0	0	0	3851283.0		0.0	0	0	34.0
+pool		evo_1220_W.003		0.0	0	0	4781739.0		0.0	0	0	32.0
+pool		1286_CD		0.0	0	0	5159159.0		0.0	0	0	132.0
+pool		1287_BW		0.0	0	0	3422976.0		0.0	0	0	9.0
+pool		1049068		0.0	0	0	3591095.0		0.0	0	0	19.0
+pool		1285_H		0.0	0	0	3630774.0		0.0	0	0	10.0
+pool		1139_BN		0.0	0	0	5518398.0		0.0	0	0	39.0
+pool		1036569		0.0	0	0	3543650.0		0.0	0	0	28.0
+pool		1021_BD		0.0	0	0	6216233.0		0.0	0	0	107.0
+pool		1220_AB		0.0	0	0	3999571.0		0.0	0	0	27.0
+pool		1021_AR		0.0	0	0	4573036.0		0.0	0	0	30.0
+pool		1220_Y		0.0	0	0	3604941.0		0.0	0	0	21.0
+pool		1285_BX		0.0	0	0	3246333.0		0.0	0	0	12.0
+pool		evo_1036686.006		0.0	0	0	4259603.0		0.0	0	0	47.0
+pool		evo_1036569.006		0.0	0	0	3130311.0		0.0	0	0	23.0
+pool		1139_BZ		0.0	0	0	5095657.0		0.0	0	0	49.0
+pool		1286_AS		0.0	0	0	4213272.0		0.0	0	0	62.0
+pool		1139_I		0.0	0	0	4869525.0		0.0	0	0	32.0
+pool		evo_1052956.020		0.0	0	0	2544999.0		0.0	0	0	42.0
+pool		1285_BB		0.0	0	0	3945713.0		0.0	0	0	20.0
+pool		1021_W		0.0	0	0	4944331.0		0.0	0	0	26.0
+pool		1285_BC		0.0	0	0	4270100.0		0.0	0	0	67.0
+pool		1139_AO		0.0	0	0	5370264.0		0.0	0	0	50.0
+pool		evo_1220_Q.021		0.0	0	0	4702319.0		0.0	0	0	49.0
+pool		1021_AE		0.0	0	0	7717063.0		0.0	0	0	133.0
+pool		1287_CD		0.0	0	0	3944751.0		0.0	0	0	25.0
+pool		1036710		0.0	0	0	4980004.0		0.0	0	0	63.0
+pool		1036590		0.0	0	0	4190420.0		0.0	0	0	12.0
+pool		1285_BI		0.0	0	0	3870877.0		0.0	0	0	9.0
+pool		1285_CM		0.0	0	0	5864153.0		0.0	0	0	74.0
+pool		1220_BW		0.0	0	0	3594566.0		0.0	0	0	8.0
+pool		1286_CG		0.0	0	0	3819951.0		0.0	0	0	24.0
+pool		1036551		0.0	0	0	3113870.0		0.0	0	0	45.0
+pool		evo_1036686.021		0.0	0	0	4393264.0		0.0	0	0	49.0
+pool		1220_BA		0.0	0	0	6432480.0		0.0	0	0	46.0
+pool		1285_AJ		0.0	0	0	4021923.0		0.0	0	0	24.0
+pool		1220_CK		0.0	0	0	4016903.0		0.0	0	0	176.0
+pool		1139_BU		0.0	0	0	3714038.0		0.0	0	0	59.0
+pool		1285_U		0.0	0	0	5008556.0		0.0	0	0	32.0
+pool		1021_AI		0.0	0	0	5151344.0		0.0	0	0	51.0
+pool		1139_BT		0.0	0	0	5219571.0		0.0	0	0	33.0
+pool		1285_CN		0.0	0	0	4656265.0		0.0	0	0	60.0
+pool		evo_1220_Q.034		0.0	0	0	4725452.0		0.0	0	0	49.0
+pool		1286_BI		0.0	0	0	4878741.0		0.0	0	0	73.0
+pool		1286_AX		0.0	0	0	4142539.0		0.0	0	0	25.0
+pool		1139_AN		0.0	0	0	4786366.0		0.0	0	0	46.0
+pool		1287_BU		0.0	0	0	3952383.0		0.0	0	0	18.0
+pool		1139_BK		0.0	0	0	4731115.0		0.0	0	0	62.0
+pool		1035912		0.0	0	0	953746.0		0.0	0	0	25.0
+pool		1287_AE		0.0	0	0	4266455.0		0.0	0	0	25.0
+pool		1049041		0.0	0	0	4983191.0		0.0	0	0	55.0
+pool		1286_AM		0.0	0	0	7705122.0		0.0	0	0	101.0
+pool		1220_BI		0.0	0	0	8117559.0		0.0	0	0	103.0
+pool		1049071		0.0	0	0	4970338.0		0.0	0	0	39.0
+pool		1220_CG		0.0	0	0	3757101.0		0.0	0	0	8.0
+pool		evo_1048972.034		0.0	0	0	3048076.0		0.0	0	0	29.0
+pool		1220_C		0.0	0	0	4391312.0		0.0	0	0	24.0
+pool		1048969		0.0	0	0	3851385.0		0.0	0	0	339.0
+pool		1048903		0.0	0	0	5368281.0		0.0	0	0	34.0
+pool		1286_CI		0.0	0	0	4104131.0		0.0	0	0	37.0
+pool		1286_BF		0.0	0	0	4946240.0		0.0	0	0	25.0
+pool		1139_CE		0.0	0	0	3604947.0		0.0	0	0	37.0
+pool		1220_BC		0.0	0	0	9535748.0		0.0	0	0	70.0
+pool		1286_BA		0.0	0	0	4658572.0		0.0	0	0	78.0
+pool		1048930		0.0	0	0	4407838.0		0.0	0	0	21.0
+pool		1285_CL		0.0	0	0	3366176.0		0.0	0	0	9.0
+pool		1139_BW		0.0	0	0	5262281.0		0.0	0	0	63.0
+pool		1021_BA		0.0	0	0	4427657.0		0.0	0	0	57.0
+pool		1285_BP		0.0	0	0	3783721.0		0.0	0	0	13.0
+pool		1220_BT		0.0	0	0	4067179.0		0.0	0	0	12.0
+pool		1286_AK		0.0	0	0	4454054.0		0.0	0	0	69.0
+pool		1139_BQ		0.0	0	0	6551849.0		0.0	0	0	136.0
+pool		1285_D		0.0	0	0	4107932.0		0.0	0	0	20.0
+pool		1285_AF		0.0	0	0	6733218.0		0.0	0	0	55.0
+pool		1052989		0.0	0	0	4907445.0		0.0	0	0	261.0
+pool		1286_CR		0.0	0	0	4218784.0		0.0	0	0	27.0
+pool		1139_J		0.0	0	0	4494273.0		0.0	0	0	32.0
+pool		1139_BE		0.0	0	0	6386296.0		0.0	0	0	1920.0
+pool		1053016		0.0	0	0	7620688.0		0.0	0	0	43.0
+pool		1287_I		0.0	0	0	4692173.0		0.0	0	0	57.0
+pool		1030833		0.0	0	0	5496576.0		0.0	0	0	96.0
+pool		1053013		0.0	0	0	7376694.0		0.0	0	0	23.0
+pool		1365_D		0.0	0	0	2789188.0		0.0	0	0	20.0
