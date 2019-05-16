@@ -342,8 +342,10 @@ def main(args=None):
 
     labels = get_labels(args.labels, args.bin_files)
 
+    genome_to_unique_common = load_data.load_unique_common(args.remove_genomes)
+
     options = binning_classes.Options(filter_tail_percentage=args.filter,
-                                      filter_genomes_file=args.remove_genomes,
+                                      genome_to_unique_common=genome_to_unique_common,
                                       filter_keyword=args.keyword,
                                       map_by_completeness=args.map_by_completeness,
                                       min_length=args.min_length,

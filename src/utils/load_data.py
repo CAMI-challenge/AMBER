@@ -20,10 +20,14 @@ except ImportError:
 
 
 def load_unique_common(unique_common_file_path):
+    if not unique_common_file_path:
+        return None
+    logging.getLogger('amber').info('Loading list of genomes to be removed...')
     genome_to_unique_common = {}
     with open(unique_common_file_path) as read_handler:
         for line in read_handler:
             genome_to_unique_common[line.split("\t")[0]] = line.split("\t")[1].strip('\n')
+    logging.getLogger('amber').info('done')
     return genome_to_unique_common
 
 
@@ -329,6 +333,23 @@ def create_genome_queries_from_taxonomic_queries(rank, sample_id_to_g_query, sam
         sample_id_to_queries_list[sample_id].extend(sample_id_to_genome_queries[sample_id])
 
 
+def get_gs_sample_id_to_num_genomes(sample_id_to_g_query, options):
+    if not sample_id_to_g_query:
+        return None
+    sample_id_to_num_genomes = {}
+    if options.genome_to_unique_common:
+        for sample_id, g_query in sample_id_to_g_query.items():
+            count = 0
+            for bin in g_query.bins:
+                if bin.id not in options.genome_to_unique_common or (options.filter_keyword and options.genome_to_unique_common[bin.id] != options.filter_keyword):
+                    count += 1
+            sample_id_to_num_genomes[sample_id] = count
+    else:
+        for sample_id, g_query in sample_id_to_g_query.items():
+            sample_id_to_num_genomes[sample_id] = len(g_query.bins)
+    return sample_id_to_num_genomes
+
+
 def load_queries(gold_standard_file, query_files, options, labels):
     logging.getLogger('amber').info('Loading binnings...')
     sample_ids_list, sample_id_to_g_query, sample_id_to_t_query = \
@@ -337,11 +358,7 @@ def load_queries(gold_standard_file, query_files, options, labels):
                    None, None,
                    options,
                    None)
-    sample_id_to_num_genomes = None
-    if sample_id_to_g_query:
-        sample_id_to_num_genomes = {}
-        for sample_id, g_query in sample_id_to_g_query.items():
-            sample_id_to_num_genomes[sample_id] = len(g_query.bins)
+    sample_id_to_num_genomes = get_gs_sample_id_to_num_genomes(sample_id_to_g_query, options)
 
     sample_id_to_queries_list = defaultdict(list)
     for query_file, label in zip(query_files, labels):

@@ -138,8 +138,8 @@ class GenomeQuery(Query):
 
         if self.options.filter_tail_percentage:
             filter_tail.filter_tail(self.bins_metrics, self.options.filter_tail_percentage)
-        if self.options.filter_genomes_file:
-            self.bins_metrics = exclude_genomes.filter_data(self.bins_metrics, self.options.filter_genomes_file, self.options.filter_keyword)
+        if self.options.genome_to_unique_common:
+            self.bins_metrics = exclude_genomes.filter_data(self.bins_metrics, self.options.genome_to_unique_common, self.options.filter_keyword)
 
         # sort bins by completeness
         self.bins_metrics = sorted(self.bins_metrics, key=lambda t: t['completeness_bp'], reverse=True)
@@ -244,8 +244,6 @@ class TaxonomicQuery(Query):
 
         if self.options.filter_tail_percentage:
             filter_tail.filter_tail(self.bins_metrics, self.options.filter_tail_percentage)
-        if self.options.filter_genomes_file:
-            self.bins_metrics = exclude_genomes.filter_data(self.bins_metrics, self.options.filter_genomes_file, self.options.filter_keyword)
 
         rank_to_index = dict(zip(load_ncbi_taxinfo.RANKS[::-1], list(range(len(load_ncbi_taxinfo.RANKS)))))
         # sort bins by rank and completeness
@@ -497,9 +495,9 @@ class TaxonomicBin(Bin):
 
 
 class Options:
-    def __init__(self, filter_tail_percentage, filter_genomes_file, filter_keyword, map_by_completeness, min_length, rank_as_genome_binning):
+    def __init__(self, filter_tail_percentage, genome_to_unique_common, filter_keyword, map_by_completeness, min_length, rank_as_genome_binning):
         self.__filter_tail_percentage = float(filter_tail_percentage) if filter_tail_percentage else .0
-        self.__filter_genomes_file = filter_genomes_file
+        self.__genome_to_unique_common = genome_to_unique_common
         self.__filter_keyword = filter_keyword
         self.__map_by_completeness = map_by_completeness
         self.__min_length = int(min_length) if min_length else 0
@@ -512,8 +510,8 @@ class Options:
         return self.__filter_tail_percentage
 
     @property
-    def filter_genomes_file(self):
-        return self.__filter_genomes_file
+    def genome_to_unique_common(self):
+        return self.__genome_to_unique_common
 
     @property
     def filter_keyword(self):
@@ -535,9 +533,9 @@ class Options:
     def filter_tail_percentage(self, filter_tail_percentage):
         self.__filter_tail_percentage = filter_tail_percentage
 
-    @filter_genomes_file.setter
-    def filter_genomes_file(self, filter_genomes_file):
-        self.__filter_genomes_file = filter_genomes_file
+    @genome_to_unique_common.setter
+    def genome_to_unique_common(self, genome_to_unique_common):
+        self.__genome_to_unique_common = genome_to_unique_common
 
     @filter_keyword.setter
     def filter_keyword(self, filter_keyword):
