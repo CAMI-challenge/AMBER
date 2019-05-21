@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from src.utils import load_ncbi_taxinfo
@@ -109,11 +110,67 @@ class GenomeQuery(Query):
     @sequence_id_to_bin_id.setter
     def sequence_id_to_bin_id(self, sequence_id_bin_id):
         (sequence_id, bin_id) = sequence_id_bin_id
-        self.__sequence_id_to_bin_id[sequence_id] = bin_id
+
+        # check if sequence is already in a bin
+        if sequence_id in self.__sequence_id_to_bin_id:
+            if isinstance(self.__sequence_id_to_bin_id[sequence_id], str):
+                self.__sequence_id_to_bin_id[sequence_id] = {self.__sequence_id_to_bin_id[sequence_id], bin_id}
+            elif isinstance(self.__sequence_id_to_bin_id[sequence_id], set):
+                self.__sequence_id_to_bin_id[sequence_id].update(bin_id)
+        else:
+            self.__sequence_id_to_bin_id[sequence_id] = bin_id
 
     def compute_true_positives(self):
-        for bin in self.bins:
+        # start with larger bins to minimize the effect of lenient evaluation (some sequences can initially occur in multiple bins)
+        bins_sorted_by_size = sorted(self.bins, key=lambda x: x.length, reverse=True)
+        lenient_eval = False
+        for bin in bins_sorted_by_size:
+            if bin.length == 0:
+                continue
+
             bin.compute_true_positives(self.gold_standard, self.options.map_by_completeness)
+
+            sequence_id_to_remove = []
+            for sequence_id in bin.sequence_ids:
+                # if sequence is already in a single bin, do nothing
+                if not isinstance(self.__sequence_id_to_bin_id[sequence_id], set):
+                    continue
+                lenient_eval = True
+
+                # if sequence is a true positive in this bin, it must not belong to any other bin anymore
+                gs_mapping_id = self.gold_standard.sequence_id_to_bin_id[sequence_id]
+                if (isinstance(gs_mapping_id, set) and bin.mapping_id in gs_mapping_id) or\
+                    (isinstance(gs_mapping_id, str) and bin.mapping_id == gs_mapping_id):
+
+                    for other_bin_id in self.__sequence_id_to_bin_id[sequence_id]:
+                        if other_bin_id != bin.id:
+                            other_bin = self.get_bin_by_id(other_bin_id)
+                            other_bin.remove_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
+                            # if bin becomes empty, discard bin
+                            if other_bin.length == 0:
+                                self.bins.remove(other_bin)
+                    self.__sequence_id_to_bin_id[sequence_id] = bin.id
+
+                    # sequences in gold standard belonging to mapped genome/bin must now belong to this genome/bin only
+                    for other_bin_id in gs_mapping_id:
+                        if other_bin_id != bin.mapping_id:
+                            other_bin = self.gold_standard.get_bin_by_id(other_bin_id)
+                            other_bin.remove_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
+                    self.gold_standard.sequence_id_to_bin_id[sequence_id] = bin.mapping_id
+                else:
+                    # if sequence is not a true positive and can belong to other bins, remove it from this bin
+                    sequence_id_to_remove.append(sequence_id)
+
+            for sequence_id in sequence_id_to_remove:
+                bin.remove_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
+                if isinstance(self.__sequence_id_to_bin_id[sequence_id], set):
+                    self.__sequence_id_to_bin_id[sequence_id].discard(bin.id)
+                    if len(self.__sequence_id_to_bin_id[sequence_id]) == 1:
+                        self.__sequence_id_to_bin_id[sequence_id] = next(iter(self.__sequence_id_to_bin_id[sequence_id]))
+
+            # recompute confusion matrix
+            if lenient_eval:
+                bin.compute_confusion_matrix(self.gold_standard, recompute=True)
 
     def get_bins_metrics(self):
         if self.bins_metrics:
@@ -170,6 +227,8 @@ class TaxonomicQuery(Query):
     @rank_to_sequence_id_to_bin_id.setter
     def rank_to_sequence_id_to_bin_id(self, rank_sequence_id_bin_id):
         (rank, sequence_id, bin_id) = rank_sequence_id_bin_id
+        if sequence_id in self.__rank_to_sequence_id_to_bin_id[rank]:
+            logging.getLogger('amber').warning("Sequence {} is being added to multiple bins at rank {}.)".format(sequence_id, rank))
         self.__rank_to_sequence_id_to_bin_id[rank][sequence_id] = bin_id
 
     def _create_profile(self, percentage_property):
@@ -369,6 +428,11 @@ class Bin(ABC):
             self.__sequence_ids.add(sequence_id)
             self.__length += length
 
+    def remove_sequence_id(self, sequence_id, length):
+        if sequence_id in self.__sequence_ids:
+            self.__sequence_ids.remove(sequence_id)
+            self.__length -= length
+
     @abstractmethod
     def compute_confusion_matrix(self, gold_standard):
         pass
@@ -392,11 +456,19 @@ class GenomeBin(Bin):
     def __init__(self, id):
         super().__init__(id)
 
-    def compute_confusion_matrix(self, gold_standard):
+    def compute_confusion_matrix(self, gold_standard, recompute=False):
+        if recompute:
+            self.__mapping_id_to_length = defaultdict(int)
+            self.__mapping_id_to_num_seqs = defaultdict(int)
         for sequence_id in self.sequence_ids:
             mapping_id = gold_standard.sequence_id_to_bin_id[sequence_id]
-            self.mapping_id_to_length[mapping_id] += gold_standard.sequence_id_to_length[sequence_id]
-            self.mapping_id_to_num_seqs[mapping_id] += 1
+            if isinstance(mapping_id, str):
+                self.mapping_id_to_length[mapping_id] += gold_standard.sequence_id_to_length[sequence_id]
+                self.mapping_id_to_num_seqs[mapping_id] += 1
+            elif isinstance(mapping_id, set):
+                for x in mapping_id:
+                    self.mapping_id_to_length[x] += gold_standard.sequence_id_to_length[sequence_id]
+                    self.mapping_id_to_num_seqs[x] += 1
 
     def compute_true_positives(self, gold_standard, map_by_completeness):
         if len(self.mapping_id_to_length) == 0:

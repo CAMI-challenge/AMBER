@@ -160,7 +160,7 @@ def get_colors_and_ranges(name, all_values):
     hue1 = 12
     hue2 = 240
 
-    if name == upper1(utils_labels.MISCLASSIFICATION_PER_BP):
+    if name == upper1(utils_labels.MISCLASSIFICATION_PER_BP) or name == upper1(utils_labels.MISCLASSIFICATION_PER_SEQ):
         return color2, color1, hue2, hue1, 0, 1
     if name == utils_labels.UNIFRAC_BP or name == utils_labels.UNIFRAC_SEQ:
         return color2, color1, hue2, hue1, 0, max(all_values)

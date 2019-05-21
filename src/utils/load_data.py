@@ -4,6 +4,7 @@ import os
 import sys
 import traceback
 import logging
+import copy
 from collections import defaultdict
 from src import binning_classes
 
@@ -177,9 +178,13 @@ def initialize_query(sample_id_to_g_gold_standard, sample_id_to_t_gold_standard,
         t_query.gold_standard = t_query
     else:
         if sample_id_to_g_gold_standard and sample_id in sample_id_to_g_gold_standard:
-            g_query.gold_standard = sample_id_to_g_gold_standard[sample_id]
-            sequence_id_to_length = sample_id_to_g_gold_standard[sample_id].sequence_id_to_length
-            g_sequence_ids = sample_id_to_g_gold_standard[sample_id].get_sequence_ids()
+
+            # make deep copy due to lenient evaluation
+            g_gold_standard = copy.deepcopy(sample_id_to_g_gold_standard[sample_id])
+
+            g_query.gold_standard = g_gold_standard
+            sequence_id_to_length = g_gold_standard.sequence_id_to_length
+            g_sequence_ids = g_gold_standard.get_sequence_ids()
         if sample_id_to_t_gold_standard and sample_id in sample_id_to_t_gold_standard:
             t_query.gold_standard = sample_id_to_t_gold_standard[sample_id]
             sequence_id_to_length = sample_id_to_t_gold_standard[sample_id].sequence_id_to_length
