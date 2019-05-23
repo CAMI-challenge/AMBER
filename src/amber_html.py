@@ -468,17 +468,19 @@ def create_precision_recall_all_genomes_scatter(pd_genome_bins, tools):
 
 
 def create_contamination_plot(pd_bins, tools, title, xlabel, ylabel, create_column_function):
+    pd_bins_copy = pd_bins[[utils_labels.TOOL, 'purity_bp', 'completeness_bp']].copy().dropna(subset=['purity_bp'])
+    create_column_function(pd_bins_copy)
+
     colors_list = plots.create_colors_list()
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
-    p = figure(title=title, plot_width=580, plot_height=400, y_range=(0, 1), toolbar_location="below")
+    p = figure(title=title, plot_width=580, plot_height=400, toolbar_location="below")
     p.x_range.start = 0
+    p.y_range.start = pd_bins_copy['newcolumn'].min()
+    p.y_range.end = 1
     legend_it = []
     for color, tool in zip(bokeh_colors, tools):
-        pd_tool_bins = pd_bins[pd_bins[utils_labels.TOOL] == tool]
-        pd_tool_bins = pd_tool_bins.dropna(subset=['purity_bp'])
-
-        create_column_function(pd_tool_bins)
+        pd_tool_bins = pd_bins_copy[pd_bins_copy[utils_labels.TOOL] == tool]
         pd_tool_bins = pd_tool_bins.sort_values(by='newcolumn', ascending=False).reset_index()
         pd_tool_bins = pd_tool_bins.drop(['index'], axis=1)
 

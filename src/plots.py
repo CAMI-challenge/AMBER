@@ -351,24 +351,25 @@ def plot_contamination(pd_bins, binning_type, title, xlabel, ylabel, create_colu
     if len(pd_bins) == 0:
         return
 
+    pd_bins_copy = pd_bins[[utils_labels.TOOL, 'purity_bp', 'completeness_bp']].copy().dropna(subset=['purity_bp'])
+    create_column_function(pd_bins_copy)
+
     colors_list = create_colors_list()
 
     fig, axs = plt.subplots(figsize=(6, 5))
 
-    tools = pd_bins[utils_labels.TOOL].unique().tolist()
+    tools = pd_bins_copy[utils_labels.TOOL].unique().tolist()
 
     for color, tool in zip(colors_list, tools):
-        pd_tool_bins = pd_bins[pd_bins[utils_labels.TOOL] == tool]
-        pd_tool_bins = pd_tool_bins.dropna(subset=['purity_bp'])
-
-        create_column_function(pd_tool_bins)
+        pd_tool_bins = pd_bins_copy[pd_bins_copy[utils_labels.TOOL] == tool]
         pd_tool_bins = pd_tool_bins.sort_values(by='newcolumn', ascending=False).reset_index()
         pd_tool_bins = pd_tool_bins.drop(['index'], axis=1)
 
         axs.plot(list(range(1, len(pd_tool_bins) + 1)), pd_tool_bins['newcolumn'], color=color)
 
-    axs.set_ylim(0.0, 1.0)
+    axs.set_ylim(pd_bins_copy['newcolumn'].min(), 1.0)
     axs.set_xlim(1, None)
+    axs.grid(which='major', linestyle='-', linewidth='0.5', color='lightgrey')
 
     # transform plot_labels to percentages
     vals = axs.get_yticks()
