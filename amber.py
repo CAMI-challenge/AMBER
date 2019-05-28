@@ -133,7 +133,10 @@ def compute_percentage_of_assigned_seqs(query):
         for bin in query.bins:
             num_seqs[bin.rank] += len(bin.sequence_ids)
         for rank in num_seqs.keys():
-            percentage_of_assigned_seqs[rank] = num_seqs[rank] / gs_num_seqs[rank]
+            if gs_num_seqs[rank] == 0:
+                percentage_of_assigned_seqs[rank] = 0
+            else:
+                percentage_of_assigned_seqs[rank] = num_seqs[rank] / gs_num_seqs[rank]
         for rank in load_ncbi_taxinfo.RANKS:
             if rank not in percentage_of_assigned_seqs:
                 percentage_of_assigned_seqs[rank] = .0
@@ -172,6 +175,9 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
         # Compute metrics over bins
         for rank, pd_bins_rank in pd_bins.groupby('rank'):
             gs_pd_bins_rank = gs_pd_bins[gs_pd_bins['rank'] == rank]
+            if gs_pd_bins_rank.empty:
+                continue
+
             precision_bp_rows = pd_bins_rank[pd_bins_rank['purity_bp'].notnull()]['purity_bp']
             precision_seq_rows = pd_bins_rank[pd_bins_rank['purity_seq'].notnull()]['purity_seq']
             recall_bp_rows = pd_bins_rank[pd_bins_rank['true_size'] > 0]['completeness_bp']

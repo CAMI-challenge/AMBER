@@ -367,7 +367,8 @@ def plot_contamination(pd_bins, binning_type, title, xlabel, ylabel, create_colu
 
         axs.plot(list(range(1, len(pd_tool_bins) + 1)), pd_tool_bins['newcolumn'], color=color)
 
-    axs.set_ylim(pd_bins_copy['newcolumn'].min(), 1.0)
+    min_value = pd_bins_copy['newcolumn'].min()
+    axs.set_ylim(min_value if min_value < 1.0 else .9, 1.0)
     axs.set_xlim(1, None)
     axs.grid(which='major', linestyle='-', linewidth='0.5', color='lightgrey')
 

@@ -500,7 +500,7 @@ def create_contamination_plot(pd_bins, tools, title, xlabel, ylabel, create_colu
 def create_tax_figure(tool, df_summary, metrics_list, errors_list):
     rank_indices = list(range(len(load_ncbi_taxinfo.RANKS)))
 
-    df = df_summary.set_index("rank").loc[load_ncbi_taxinfo.RANKS]
+    df = df_summary.set_index("rank").reindex(load_ncbi_taxinfo.RANKS)
     df["x"] = rank_indices
     for metric, error in zip(metrics_list, errors_list):
         if error:
