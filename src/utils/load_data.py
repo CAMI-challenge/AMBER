@@ -176,6 +176,8 @@ def initialize_query(sample_id_to_g_gold_standard, sample_id_to_t_gold_standard,
         g_query.sequence_id_to_length = t_query.sequence_id_to_length = sequence_id_to_length = {}
         g_query.gold_standard = g_query
         t_query.gold_standard = t_query
+        g_query.is_gold_standard = True
+        t_query.is_gold_standard = True
     else:
         if sample_id_to_g_gold_standard and sample_id in sample_id_to_g_gold_standard:
 
@@ -239,7 +241,6 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
                         else:
                             bin = g_query.get_bin_by_id(bin_id)
                         g_query.sequence_id_to_bin_id = (sequence_id, bin_id)
-                        bin.add_sequence_id(sequence_id, sequence_id_to_length[sequence_id])
                         if is_gs:
                             bin.mapping_id = bin_id
 
@@ -270,10 +271,7 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
                             bin = binning_classes.TaxonomicBin(tax_id)
                             bin.rank = binning_classes.TaxonomicQuery.tax_id_to_rank[tax_id]
                             t_query.add_bin(bin)
-                        else:
-                            bin = t_query.get_bin_by_id(tax_id)
                         t_query.rank_to_sequence_id_to_bin_id = (binning_classes.TaxonomicQuery.tax_id_to_rank[tax_id], sequence_id, tax_id)
-                        bin.add_sequence_id(sequence_id, sequence_id_to_length[sequence_id])
         except BaseException as e:
             traceback.print_exc()
             logging.getLogger('amber').critical("File {} is malformed. {}".format(file_path_query, e))
@@ -329,10 +327,7 @@ def create_genome_queries_from_taxonomic_queries(rank, sample_id_to_g_query, sam
                 if bin_id not in g_query.get_bin_ids():
                     bin = binning_classes.GenomeBin(bin_id)
                     g_query.add_bin(bin)
-                else:
-                    bin = g_query.get_bin_by_id(bin_id)
                 g_query.sequence_id_to_bin_id = (sequence_id, bin_id)
-                bin.add_sequence_id(sequence_id, query.gold_standard.sequence_id_to_length[sequence_id])
 
     for sample_id in sample_id_to_genome_queries:
         sample_id_to_queries_list[sample_id].extend(sample_id_to_genome_queries[sample_id])

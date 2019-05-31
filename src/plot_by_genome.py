@@ -10,7 +10,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 from src import plots
-from src.utils import labels
+from src.utils import labels as utils_labels
 
 
 def plot_by_genome(data, out_file=None, sort_by='completeness'):
@@ -48,7 +48,7 @@ def plot_by_genome(data, out_file=None, sort_by='completeness'):
 
 def plot_precision_recall_per_bin(pd_bins, output_dir):
     colors_list = plots.create_colors_list()
-    df_groups = pd_bins.groupby(labels.TOOL)
+    df_groups = pd_bins[[utils_labels.TOOL, 'purity_bp', 'completeness_bp']].dropna().groupby(utils_labels.TOOL)
     if len(df_groups) > len(colors_list):
         raise RuntimeError("Plot only supports 29 colors")
 
