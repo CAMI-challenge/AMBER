@@ -142,12 +142,14 @@ class GenomeQuery(Query):
         self.get_bin_by_id(bin_id).add_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
 
     def update_gold_standard(self, bin):
+        is_eval_lenient = False
         for sequence_id in bin.sequence_ids:
             gs_mapping_id = self.gold_standard.sequence_id_to_bin_id[sequence_id]
 
             # if sequence is already in a single bin, do nothing
             if not isinstance(gs_mapping_id, set):
                 continue
+            is_eval_lenient = True
 
             # if sequence is a true positive, remove it from alternative bins
             if (isinstance(gs_mapping_id, set) and bin.mapping_id in gs_mapping_id) or\
@@ -158,15 +160,47 @@ class GenomeQuery(Query):
                         other_bin = self.gold_standard.get_bin_by_id(other_bin_id)
                         other_bin.remove_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
                 self.gold_standard.sequence_id_to_bin_id[sequence_id] = bin.mapping_id
+        return is_eval_lenient
+
+    def update_gold_standard_all_bins(self, bins_sorted_by_size):
+        for bin in bins_sorted_by_size:
+            bin.compute_confusion_matrix(self.gold_standard, recompute=True)
+        # check for remaining sequences in multiple genomes/bins in gold standard
+        for sequence_id in self.gold_standard.sequence_id_to_bin_id:
+            gs_mapping_id = self.gold_standard.sequence_id_to_bin_id[sequence_id]
+            if not isinstance(gs_mapping_id, set):
+                continue
+            max_mapping_dict = dict.fromkeys(gs_mapping_id, 0)
+            # find unique bin mapping for sequence using the predicted bins
+            for bin in bins_sorted_by_size:
+                for mapping_id in gs_mapping_id:
+                    if mapping_id in bin.mapping_id_to_length and bin.mapping_id_to_length[mapping_id] > max_mapping_dict[mapping_id]:
+                        max_mapping_dict[mapping_id] = bin.mapping_id_to_length[mapping_id]
+            # if binner has not assigned any sequence of the possible genomes, find unique bin using the gold standard
+            if all(length == 0 for length in max_mapping_dict.values()):
+                for bin in self.gold_standard.bins:
+                    for mapping_id in gs_mapping_id:
+                        if mapping_id in bin.mapping_id_to_length and bin.mapping_id_to_length[mapping_id] > max_mapping_dict[mapping_id]:
+                            max_mapping_dict[mapping_id] = bin.mapping_id_to_length[mapping_id]
+            mapping_id = max(max_mapping_dict, key=max_mapping_dict.get)
+            for other_bin_id in gs_mapping_id:
+                if other_bin_id != mapping_id:
+                    other_bin = self.gold_standard.get_bin_by_id(other_bin_id)
+                    other_bin.remove_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
+            self.gold_standard.sequence_id_to_bin_id[sequence_id] = mapping_id
 
     def compute_true_positives(self):
-        # start with larger bins to minimize the effect of lenient evaluation (some sequences can initially occur in multiple bins)
+        is_eval_lenient = False
+        # start with larger bins to minimize the effect of lenient evaluation
         bins_sorted_by_size = sorted(self.bins, key=lambda x: x.length, reverse=True)
         for bin in bins_sorted_by_size:
             if bin.length == 0:
                 continue
             bin.compute_true_positives(self.gold_standard, self.options.map_by_completeness)
-            self.update_gold_standard(bin)
+            if self.update_gold_standard(bin):
+                is_eval_lenient = True
+        if is_eval_lenient:
+            self.update_gold_standard_all_bins(bins_sorted_by_size)
 
     def get_bins_metrics(self):
         if self.bins_metrics:
