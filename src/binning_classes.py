@@ -237,6 +237,7 @@ class TaxonomicQuery(Query):
     tax_id_to_parent = None
     tax_id_to_rank = None
     tax_id_to_name = None
+    tax_id_to_tax_id = None
     binning_type = 'taxonomic'
 
     def __init__(self):

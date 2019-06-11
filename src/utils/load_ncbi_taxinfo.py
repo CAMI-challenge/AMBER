@@ -5,6 +5,18 @@ DICT_RANK_TO_INDEX = dict(zip(RANKS, list(range(len(RANKS)))))
 RANKS_LOW2HIGH = list(reversed(RANKS))
 
 
+def load_merged(names_file_path):
+    tax_id_to_tax_id = {}
+    with open(names_file_path) as read_handler:
+        for line in read_handler:
+            if len(line.strip()) == 0:
+                continue
+            line = line.split('|')
+            line = list(map(str.strip, line))
+            tax_id_to_tax_id[line[0]] = line[1]
+    return tax_id_to_tax_id
+
+
 def load_names(tax_id_to_rank, names_file_path):
     tax_id_to_name = {}
     with open(names_file_path) as read_handler:

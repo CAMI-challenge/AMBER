@@ -253,8 +253,11 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
                             exit(1)
 
                     if tax_id not in binning_classes.TaxonomicQuery.tax_id_to_rank:
-                        logging.getLogger('amber').warning("Ignoring sequence {} - not a valid NCBI taxonomic ID: {} (file {})".format(sequence_id, tax_id, file_path_query))
-                        continue
+                        if binning_classes.TaxonomicQuery.tax_id_to_tax_id and tax_id in binning_classes.TaxonomicQuery.tax_id_to_tax_id:
+                            tax_id = binning_classes.TaxonomicQuery.tax_id_to_tax_id[tax_id]
+                        else:
+                            logging.getLogger('amber').warning("Ignoring sequence {} - not a valid NCBI taxonomic ID: {} (file {})".format(sequence_id, tax_id, file_path_query))
+                            continue
 
                     if not is_gs and sequence_id not in t_sequence_ids:
                         logging.getLogger('amber').warning("Ignoring sequence {} - not found in the taxonomic binning gold standard, sample {}: (file {})".format(sequence_id, sample_id, file_path_query))
@@ -297,13 +300,15 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
     return sample_ids_list, sample_id_to_g_query, sample_id_to_t_query
 
 
-def load_ncbi_info(ncbi_nodes_file, ncbi_names_file):
+def load_ncbi_info(ncbi_nodes_file, ncbi_names_file, ncbi_merged_file):
     if ncbi_nodes_file:
         logging.getLogger('amber').info('Loading NCBI files...')
         binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank = \
             load_ncbi_taxinfo.load_tax_info(ncbi_nodes_file)
         if ncbi_names_file:
             binning_classes.TaxonomicQuery.tax_id_to_name = load_ncbi_taxinfo.load_names(binning_classes.TaxonomicQuery.tax_id_to_rank, ncbi_names_file)
+        if ncbi_merged_file:
+            binning_classes.TaxonomicQuery.tax_id_to_tax_id = load_ncbi_taxinfo.load_merged(ncbi_merged_file)
         logging.getLogger('amber').info('done')
 
 
