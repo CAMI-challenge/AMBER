@@ -20,7 +20,6 @@ class Query(ABC):
         self.__options = None
         self.__bins_metrics = None
         self.__gold_standard = None
-        self.__is_gold_standard = False
 
     @property
     def sequence_id_to_length(self):
@@ -46,10 +45,6 @@ class Query(ABC):
     def gold_standard(self):
         return self.__gold_standard
 
-    @property
-    def is_gold_standard(self):
-        return self.__is_gold_standard
-
     @sequence_id_to_length.setter
     def sequence_id_to_length(self, sequence_id_to_length):
         self.__sequence_id_to_length = sequence_id_to_length
@@ -74,17 +69,9 @@ class Query(ABC):
     def gold_standard(self, gold_standard):
         self.__gold_standard = gold_standard
 
-    @is_gold_standard.setter
-    def is_gold_standard(self, is_gold_standard):
-        self.__is_gold_standard = is_gold_standard
-
     def add_bin(self, bin):
         self.__bins.append(bin)
         self.__bin_id_to_bin[bin.id] = bin
-
-    def remove_bin(self, bin):
-        self.__bins.remove(bin)
-        self.__bin_id_to_bin.pop(bin.id)
 
     def get_bin_ids(self):
         return self.__bin_id_to_bin.keys()
@@ -126,13 +113,6 @@ class GenomeQuery(Query):
 
         # check if sequence is already in a bin
         if sequence_id in self.__sequence_id_to_bin_id:
-            # sequence can only be in multiple bins of the gold standard binning
-            if not self.is_gold_standard:
-                logging.getLogger('amber').warning("Sequence {} cannot be in multiple bins.".format(sequence_id))
-                if self.get_bin_by_id(bin_id).length == 0:
-                    self.remove_bin(self.get_bin_by_id(bin_id))
-                return
-
             if isinstance(self.__sequence_id_to_bin_id[sequence_id], str):
                 self.__sequence_id_to_bin_id[sequence_id] = {self.__sequence_id_to_bin_id[sequence_id], bin_id}
             elif isinstance(self.__sequence_id_to_bin_id[sequence_id], set):
@@ -141,66 +121,9 @@ class GenomeQuery(Query):
             self.__sequence_id_to_bin_id[sequence_id] = bin_id
         self.get_bin_by_id(bin_id).add_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
 
-    def update_gold_standard(self, bin):
-        is_eval_lenient = False
-        for sequence_id in bin.sequence_ids:
-            gs_mapping_id = self.gold_standard.sequence_id_to_bin_id[sequence_id]
-
-            # if sequence is already in a single bin, do nothing
-            if not isinstance(gs_mapping_id, set):
-                continue
-            is_eval_lenient = True
-
-            # if sequence is a true positive, remove it from alternative bins
-            if (isinstance(gs_mapping_id, set) and bin.mapping_id in gs_mapping_id) or\
-                (isinstance(gs_mapping_id, str) and bin.mapping_id == gs_mapping_id):
-                # sequences in gold standard belonging to mapped genome/bin must now belong to this genome/bin only
-                for other_bin_id in gs_mapping_id:
-                    if other_bin_id != bin.mapping_id:
-                        other_bin = self.gold_standard.get_bin_by_id(other_bin_id)
-                        other_bin.remove_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
-                self.gold_standard.sequence_id_to_bin_id[sequence_id] = bin.mapping_id
-        return is_eval_lenient
-
-    def update_gold_standard_all_bins(self, bins_sorted_by_size):
-        for bin in bins_sorted_by_size:
-            bin.compute_confusion_matrix(self.gold_standard, recompute=True)
-        # check for remaining sequences in multiple genomes/bins in gold standard
-        for sequence_id in self.gold_standard.sequence_id_to_bin_id:
-            gs_mapping_id = self.gold_standard.sequence_id_to_bin_id[sequence_id]
-            if not isinstance(gs_mapping_id, set):
-                continue
-            max_mapping_dict = dict.fromkeys(gs_mapping_id, 0)
-            # find unique bin mapping for sequence using the predicted bins
-            for bin in bins_sorted_by_size:
-                for mapping_id in gs_mapping_id:
-                    if mapping_id in bin.mapping_id_to_length and bin.mapping_id_to_length[mapping_id] > max_mapping_dict[mapping_id]:
-                        max_mapping_dict[mapping_id] = bin.mapping_id_to_length[mapping_id]
-            # if binner has not assigned any sequence of the possible genomes, find unique bin using the gold standard
-            if all(length == 0 for length in max_mapping_dict.values()):
-                for bin in self.gold_standard.bins:
-                    for mapping_id in gs_mapping_id:
-                        if mapping_id in bin.mapping_id_to_length and bin.mapping_id_to_length[mapping_id] > max_mapping_dict[mapping_id]:
-                            max_mapping_dict[mapping_id] = bin.mapping_id_to_length[mapping_id]
-            mapping_id = max(max_mapping_dict, key=max_mapping_dict.get)
-            for other_bin_id in gs_mapping_id:
-                if other_bin_id != mapping_id:
-                    other_bin = self.gold_standard.get_bin_by_id(other_bin_id)
-                    other_bin.remove_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
-            self.gold_standard.sequence_id_to_bin_id[sequence_id] = mapping_id
-
     def compute_true_positives(self):
-        is_eval_lenient = False
-        # start with larger bins to minimize the effect of lenient evaluation
-        bins_sorted_by_size = sorted(self.bins, key=lambda x: x.length, reverse=True)
-        for bin in bins_sorted_by_size:
-            if bin.length == 0:
-                continue
+        for bin in self.bins:
             bin.compute_true_positives(self.gold_standard, self.options.map_by_completeness)
-            if self.update_gold_standard(bin):
-                is_eval_lenient = True
-        if is_eval_lenient:
-            self.update_gold_standard_all_bins(bins_sorted_by_size)
 
     def get_bins_metrics(self):
         if self.bins_metrics:
@@ -461,11 +384,6 @@ class Bin(ABC):
             self.__sequence_ids.add(sequence_id)
             self.__length += length
 
-    def remove_sequence_id(self, sequence_id, length):
-        if sequence_id in self.__sequence_ids:
-            self.__sequence_ids.remove(sequence_id)
-            self.__length -= length
-
     @abstractmethod
     def compute_confusion_matrix(self, gold_standard):
         pass
@@ -489,10 +407,7 @@ class GenomeBin(Bin):
     def __init__(self, id):
         super().__init__(id)
 
-    def compute_confusion_matrix(self, gold_standard, recompute=False):
-        if recompute:
-            self.__mapping_id_to_length = defaultdict(int)
-            self.__mapping_id_to_num_seqs = defaultdict(int)
+    def compute_confusion_matrix(self, gold_standard):
         for sequence_id in self.sequence_ids:
             mapping_id = gold_standard.sequence_id_to_bin_id[sequence_id]
             if isinstance(mapping_id, str):

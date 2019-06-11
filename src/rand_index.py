@@ -29,16 +29,27 @@ def preprocess_counts(bin_ids, query, by_bp_counts):
         sequence_id_to_bin_id = query.rank_to_sequence_id_to_bin_id[rank]
 
     for bin in query.get_bins_by_id(bin_ids):
-        for sequence_id in bin.sequence_ids:
-            if sequence_id in gs_sequence_id_to_mapping_id:
-                mapping_id = gs_sequence_id_to_mapping_id[sequence_id]
-                bin_id_to_mapping_id_to_length[bin.id][mapping_id] += query.gold_standard.sequence_id_to_length[sequence_id] if by_bp_counts else 1
+        if len(bin.mapping_id_to_length) == 0:
+            bin.compute_confusion_matrix(query.gold_standard)
+        bin_id_to_mapping_id_to_length[bin.id] = bin.mapping_id_to_length if by_bp_counts else bin.mapping_id_to_num_seqs
 
     for sequence_id in sequence_id_to_bin_id:
         if sequence_id in gs_sequence_id_to_mapping_id:
             mapping_id = gs_sequence_id_to_mapping_id[sequence_id]
             bin_id = sequence_id_to_bin_id[sequence_id]
-            mapping_id_to_bin_id_to_length[mapping_id][bin_id] += query.gold_standard.sequence_id_to_length[sequence_id] if by_bp_counts else 1
+            if isinstance(mapping_id, str):
+                if isinstance(bin_id, str):
+                    mapping_id_to_bin_id_to_length[mapping_id][bin_id] += query.gold_standard.sequence_id_to_length[sequence_id] if by_bp_counts else 1
+                elif isinstance(bin_id, set):
+                    for x in bin_id:
+                        mapping_id_to_bin_id_to_length[mapping_id][x] += query.gold_standard.sequence_id_to_length[sequence_id] if by_bp_counts else 1
+            elif isinstance(mapping_id, set):
+                for x in mapping_id:
+                    if isinstance(bin_id, str):
+                        mapping_id_to_bin_id_to_length[x][bin_id] += query.gold_standard.sequence_id_to_length[sequence_id] if by_bp_counts else 1
+                    elif isinstance(bin_id, set):
+                        for y in bin_id:
+                            mapping_id_to_bin_id_to_length[x][y] += query.gold_standard.sequence_id_to_length[sequence_id] if by_bp_counts else 1
 
     return bin_id_to_mapping_id_to_length, mapping_id_to_bin_id_to_length
 
