@@ -9,12 +9,10 @@ from src import binning_classes
 
 try:
     import load_ncbi_taxinfo
-    import add_length_column
 except ImportError:
     sys.path.append(os.path.dirname(__file__))
     try:
         import load_ncbi_taxinfo
-        import add_length_column
     finally:
         sys.path.remove(os.path.dirname(__file__))
 

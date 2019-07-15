@@ -164,8 +164,10 @@ def plot_boxplot(pd_bins, metric_name, output_dir):
     # remove labels but keep grid
     axs.get_yaxis().set_ticklabels([])
     for tic in axs.yaxis.get_major_ticks():
-        tic.tick1On = tic.tick2On = False
-        tic.label1On = tic.label2On = False
+        tic.tick1line.set_visible(False)
+        tic.tick2line.set_visible(False)
+        tic.label1.set_visible(False)
+        tic.label2.set_visible(False)
     fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '_wo_legend.eps'), dpi=100, format='eps', bbox_inches='tight')
     plt.close(fig)
 

@@ -136,7 +136,7 @@ def create_heatmap_bar(output_dir):
     # hide heatmap
     pltx.gca().set_visible(False)
 
-    fig.savefig(os.path.join(output_dir, 'heatmap_bar.png'), dpi=100, format='png', bbox_inches='tight', pad_inches=-.035, transparent=True)
+    fig.savefig(os.path.join(output_dir, 'heatmap_bar.png'), dpi=100, format='png', bbox_inches='tight', pad_inches=-.001, transparent=True)
     pltx.close(fig)
 
 
