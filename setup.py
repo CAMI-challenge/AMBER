@@ -22,7 +22,7 @@ setup(
     classifiers = [
         'Natural Language :: English',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
         'Intended Audience :: Science/Research',
         'Operating System :: POSIX'

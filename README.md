@@ -30,7 +30,7 @@ AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the compar
 
 ## Requirements
 
-AMBER requires Python 3.5 or above.
+AMBER requires Python 3.7.
 
 See [default.txt](requirements/default.txt) for all dependencies.
 
@@ -277,7 +277,7 @@ tox
 You can use all libraries that AMBER depends on by activating tox's virtual environment with the command: 
 
 ~~~BASH
-source  <project_directory>/.tox/py35/bin/activate
+source  <project_directory>/.tox/py37/bin/activate
 ~~~
 
 ### Update GitHub page
