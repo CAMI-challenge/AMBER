@@ -210,6 +210,10 @@ def plot_summary(df_results, output_dir, rank, plot_type, file_name, xlabel, yla
         for i, (tool, pd_summary) in enumerate(df_groups):
             df_mean = pd_summary[[utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP]].mean()
             axs.plot(df_mean[utils_labels.PRECISION_PER_BP], df_mean[utils_labels.RECALL_PER_BP], marker='o', color=colors_list[i], markersize=10)
+    if plot_type == 'x':
+        for i, (tool, pd_summary) in enumerate(df_groups):
+            df_mean = pd_summary[[utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ]].mean()
+            axs.plot(df_mean[utils_labels.PRECISION_PER_SEQ], df_mean[utils_labels.RECALL_PER_SEQ], marker='o', color=colors_list[i], markersize=10)
     elif plot_type == 'p':
         for i, (tool, pd_summary) in enumerate(df_groups):
             df_mean = pd_summary[[utils_labels.ARI_BY_BP, utils_labels.PERCENTAGE_ASSIGNED_BPS]].mean()
