@@ -4,6 +4,7 @@ TOOL = "Tool"
 RANK = "rank"
 BINNING_TYPE = "binning type"
 SAMPLE = "Sample"
+GS = 'Gold standard'
 
 AVG_PRECISION_BP = "Average purity (bp)"
 AVG_PRECISION_BP_SEM = "Std error of average purity (bp)"

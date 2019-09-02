@@ -169,14 +169,23 @@ def get_colors_and_ranges(name, all_values):
 
 def get_heatmap_colors(pd_series, **args):
     values = pd_series.tolist()
+
+    if pd_series.name == upper1(utils_labels.AVG_PRECISION_BP_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_BP_SEM) or\
+        pd_series.name == upper1(utils_labels.AVG_PRECISION_SEQ_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM):
+        return ['background-color: white' for x in values]
+
     notnan_values = [x for x in values if isinstance(x, (float, int)) and not np.isnan(x)]
     if not notnan_values:
         red = 'background-color: red'
         return [red for x in values]
 
-    if pd_series.name == upper1(utils_labels.AVG_PRECISION_BP_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_BP_SEM) or\
-        pd_series.name == upper1(utils_labels.AVG_PRECISION_SEQ_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM):
-        return ['background-color: white' for x in values]
+    dropped_gs = False
+    if pd_series.index[0] == utils_labels.GS:
+        pd_series.drop(utils_labels.GS)
+        values = values[1:]
+        dropped_gs = True
+    if len(values) == 0:
+        return ['']
 
     color1, color2, hue1, hue2, min_value, max_value = get_colors_and_ranges(pd_series.name, values)
 
@@ -195,7 +204,11 @@ def get_heatmap_colors(pd_series, **args):
             return_colors.append('background-color: red')
         else:
             return_colors.append('background-color: {}'. format(x))
-    return return_colors
+
+    if dropped_gs:
+        return [''] + return_colors
+    else:
+        return return_colors
 
 
 def create_title_div(id, name, info):
@@ -597,8 +610,10 @@ def create_genome_binning_plots_panel(pd_bins, pd_mean):
 
 
 def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir):
+    if pd_bins.empty:
+        return None
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
-    if df_summary_g.size == 0:
+    if df_summary_g.empty:
         return None
 
     sample_to_html = {}
@@ -699,7 +714,10 @@ def create_tax_ranks_panel(qbins_plots_list, qsamples_plots_list, cc_plots_dict_
 
 
 def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, output_dir):
+    if pd_bins.empty:
+        return None
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
+
     rank_to_sample_to_html = defaultdict(list)
     qbins_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
     qsamples_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])

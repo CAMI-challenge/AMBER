@@ -6,6 +6,7 @@ import traceback
 import logging
 from collections import defaultdict
 from src import binning_classes
+from src.utils import labels as utils_labels
 
 try:
     import load_ncbi_taxinfo
@@ -353,7 +354,7 @@ def load_queries(gold_standard_file, query_files, options, labels):
                    True,
                    None, None,
                    options,
-                   None)
+                   utils_labels.GS)
     sample_id_to_num_genomes = get_gs_sample_id_to_num_genomes(sample_id_to_g_query, options)
 
     sample_id_to_queries_list = defaultdict(list)
@@ -372,5 +373,12 @@ def load_queries(gold_standard_file, query_files, options, labels):
     if options.rank_as_genome_binning:
         create_genome_queries_from_taxonomic_queries(options.rank_as_genome_binning, sample_id_to_g_query, sample_id_to_queries_list)
 
+    sample_id_to_gs_list = defaultdict(list)
+    for sample_id_to_query in [sample_id_to_g_query, sample_id_to_t_query]:
+        if not sample_id_to_query:
+            continue
+        for sample_id in sample_id_to_query:
+            sample_id_to_gs_list[sample_id].append(sample_id_to_query[sample_id])
+
     logging.getLogger('amber').info('done')
-    return sample_ids_list, sample_id_to_num_genomes, sample_id_to_queries_list
+    return sample_id_to_gs_list, sample_ids_list, sample_id_to_num_genomes, sample_id_to_queries_list

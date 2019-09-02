@@ -360,7 +360,7 @@ def main(args=None):
 
     load_data.load_ncbi_info(args.ncbi_nodes_file, args.ncbi_names_file, args.ncbi_merged_file)
 
-    sample_ids_list, sample_id_to_num_genomes, sample_id_to_queries_list = \
+    sample_id_to_gs_list, sample_ids_list, sample_id_to_num_genomes, sample_id_to_queries_list = \
         load_data.load_queries(args.gold_standard_file,
                                args.bin_files,
                                options,
@@ -368,6 +368,8 @@ def main(args=None):
 
     create_output_directories(output_dir, sample_id_to_queries_list)
 
+    df_summary_gs, pd_bins_gs = evaluate_samples_queries(sample_id_to_gs_list,
+                                                         min_completeness, max_contamination)
     df_summary, pd_bins = evaluate_samples_queries(sample_id_to_queries_list,
                                                    min_completeness, max_contamination)
 
@@ -395,7 +397,13 @@ def main(args=None):
     plot_genome_binning(sample_id_to_queries_list, df_summary, pd_bins, args.plot_heatmaps, output_dir)
     plot_taxonomic_binning(df_summary, pd_bins, output_dir)
 
-    amber_html.create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, args.output_dir, args.desc)
+    amber_html.create_html(sample_id_to_num_genomes,
+                           pd.concat([df_summary_gs, df_summary], ignore_index=True),
+                           pd_bins,
+                           [utils_labels.GS] + labels,
+                           sample_ids_list,
+                           args.output_dir,
+                           args.desc)
     logger.info('AMBER finished successfully. All results have been saved to {}'.format(output_dir))
 
 
