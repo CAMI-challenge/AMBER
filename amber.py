@@ -184,14 +184,12 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
             recall_seq_rows = pd_bins_rank[pd_bins_rank['true_size'] > 0]['completeness_seq']
 
             avg_precision_bp = precision_bp_rows.mean()
-            sem_precision_bp = precision_bp_rows.sem()
             avg_recall_bp = recall_bp_rows.mean()
-            sem_recall_bp = recall_bp_rows.sem()
+            f1_score_bp = 2 * avg_precision_bp * avg_recall_bp / (avg_precision_bp + avg_recall_bp)
 
             avg_precision_seq = precision_seq_rows.mean()
-            sem_precision_seq = precision_seq_rows.sem()
             avg_recall_seq = recall_seq_rows.mean()
-            sem_recall_seq = recall_seq_rows.sem()
+            f1_score_seq = 2 * avg_precision_seq * avg_recall_seq / (avg_precision_seq + avg_recall_seq)
 
             precision_bp, recall_bp, accuracy_bp, misclassification_rate_bp,\
                 precision_seq, recall_seq, accuracy_seq, misclassification_rate_seq,\
@@ -207,20 +205,23 @@ def evaluate_all(queries_list, sample_id, min_completeness, max_contamination):
                                            (utils_labels.SAMPLE, sample_id),
                                            (utils_labels.RANK, rank),
                                            (utils_labels.AVG_PRECISION_BP, [avg_precision_bp]),
-                                           (utils_labels.AVG_PRECISION_BP_SEM, [sem_precision_bp]),
+                                           (utils_labels.AVG_PRECISION_BP_SEM, [precision_bp_rows.sem()]),
                                            (utils_labels.AVG_RECALL_BP, [avg_recall_bp]),
-                                           (utils_labels.AVG_RECALL_BP_SEM, [sem_recall_bp]),
+                                           (utils_labels.AVG_RECALL_BP_SEM, [recall_bp_rows.sem()]),
+                                           (utils_labels.F1_SCORE_BP, [f1_score_bp]),
 
                                            (utils_labels.AVG_PRECISION_SEQ, [avg_precision_seq]),
-                                           (utils_labels.AVG_PRECISION_SEQ_SEM, [sem_precision_seq]),
+                                           (utils_labels.AVG_PRECISION_SEQ_SEM, [precision_seq_rows.sem()]),
                                            (utils_labels.AVG_RECALL_SEQ, [avg_recall_seq]),
-                                           (utils_labels.AVG_RECALL_SEQ_SEM, [sem_recall_seq]),
+                                           (utils_labels.AVG_RECALL_SEQ_SEM, [recall_seq_rows.sem()]),
+                                           (utils_labels.F1_SCORE_SEQ, [f1_score_seq]),
 
                                            (utils_labels.PRECISION_PER_BP, [precision_bp]),
                                            (utils_labels.PRECISION_PER_SEQ, [precision_seq]),
-
                                            (utils_labels.RECALL_PER_BP, [recall_bp]),
                                            (utils_labels.RECALL_PER_SEQ, [recall_seq]),
+                                           (utils_labels.F1_SCORE_PER_BP, [2 * precision_bp * recall_bp / (precision_bp + recall_bp)]),
+                                           (utils_labels.F1_SCORE_PER_SEQ, [2 * precision_seq * recall_seq / (precision_seq + recall_seq)]),
 
                                            (utils_labels.ACCURACY_PER_BP, [accuracy_bp]),
                                            (utils_labels.ACCURACY_PER_SEQ, [accuracy_seq]),

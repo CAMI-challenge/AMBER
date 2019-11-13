@@ -339,6 +339,8 @@ def create_table_html(df_summary, include_unifrac=False):
                 utils_labels.AVG_PRECISION_SEQ,
                 utils_labels.AVG_RECALL_BP,
                 utils_labels.AVG_RECALL_SEQ,
+                utils_labels.F1_SCORE_BP,
+                utils_labels.F1_SCORE_SEQ,
                 utils_labels.AVG_PRECISION_BP_SEM,
                 utils_labels.AVG_PRECISION_SEQ_SEM,
                 utils_labels.AVG_RECALL_BP_SEM,
@@ -351,6 +353,8 @@ def create_table_html(df_summary, include_unifrac=False):
                 utils_labels.PRECISION_PER_SEQ,
                 utils_labels.RECALL_PER_BP,
                 utils_labels.RECALL_PER_SEQ,
+                utils_labels.F1_SCORE_PER_BP,
+                utils_labels.F1_SCORE_PER_SEQ,
                 utils_labels.RI_BY_BP,
                 utils_labels.RI_BY_SEQ,
                 utils_labels.ARI_BY_BP,
@@ -372,30 +376,41 @@ def create_table_html(df_summary, include_unifrac=False):
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
     styles_hidden_thead = styles + [{'selector': 'thead', 'props': [('display', 'none')]}]
 
-    d = {utils_labels.ACCURACY_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ACCURACY_PER_BP, utils_labels.ACCURACY_PER_BP, utils_labels.TOOLTIP_ACCURACY_PER_BP),
-         utils_labels.ACCURACY_PER_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ACCURACY_PER_SEQ, utils_labels.ACCURACY_PER_SEQ, utils_labels.TOOLTIP_ACCURACY_PER_SEQ),
-         utils_labels.MISCLASSIFICATION_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_BP),
-         utils_labels.MISCLASSIFICATION_PER_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.MISCLASSIFICATION_PER_SEQ, utils_labels.MISCLASSIFICATION_PER_SEQ, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_SEQ),
-         utils_labels.PRECISION_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PRECISION_PER_BP, utils_labels.PRECISION_PER_BP, utils_labels.TOOLTIP_PRECISION_PER_BP),
-         utils_labels.PRECISION_PER_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PRECISION_PER_SEQ, utils_labels.PRECISION_PER_SEQ, utils_labels.TOOLTIP_PRECISION_PER_SEQ),
-         utils_labels.RECALL_PER_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RECALL_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.TOOLTIP_RECALL_PER_BP),
-         utils_labels.RECALL_PER_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RECALL_PER_SEQ, utils_labels.RECALL_PER_SEQ, utils_labels.TOOLTIP_RECALL_PER_SEQ),
-         utils_labels.RI_BY_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RI_BY_BP, utils_labels.RI_BY_BP, utils_labels.TOOLTIP_RI_BY_BP),
-         utils_labels.RI_BY_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.RI_BY_SEQ, utils_labels.RI_BY_SEQ, utils_labels.TOOLTIP_RI_BY_SEQ),
-         utils_labels.ARI_BY_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ARI_BY_BP, utils_labels.ARI_BY_BP, utils_labels.TOOLTIP_ARI_BY_BP),
-         utils_labels.ARI_BY_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.ARI_BY_SEQ, utils_labels.ARI_BY_SEQ, utils_labels.TOOLTIP_ARI_BY_SEQ),
-         utils_labels.AVG_PRECISION_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_BP, utils_labels.AVG_PRECISION_BP, utils_labels.TOOLTIP_AVG_PRECISION_BP),
-         utils_labels.AVG_PRECISION_BP_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_PRECISION_BP_SEM, utils_labels.TOOLTIP_AVG_PRECISION_BP_SEM),
-         utils_labels.AVG_PRECISION_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_PRECISION_SEQ, utils_labels.TOOLTIP_AVG_PRECISION_SEQ),
-         utils_labels.AVG_PRECISION_SEQ_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.TOOLTIP_AVG_PRECISION_SEQ_SEM),
-         utils_labels.AVG_RECALL_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_BP, utils_labels.AVG_RECALL_BP, utils_labels.TOOLTIP_AVG_RECALL_BP),
-         utils_labels.AVG_RECALL_BP_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_RECALL_BP_SEM, utils_labels.TOOLTIP_AVG_RECALL_BP_SEM),
-         utils_labels.AVG_RECALL_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_SEQ, utils_labels.AVG_RECALL_SEQ, utils_labels.TOOLTIP_AVG_RECALL_SEQ),
-         utils_labels.AVG_RECALL_SEQ_SEM: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.TOOLTIP_AVG_RECALL_SEQ_SEM),
-         utils_labels.PERCENTAGE_ASSIGNED_BPS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_BPS),
-         utils_labels.PERCENTAGE_ASSIGNED_SEQS: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_SEQS),
-         utils_labels.UNIFRAC_BP: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.UNIFRAC_BP, utils_labels.UNIFRAC_BP, utils_labels.TOOLTIP_UNIFRAC_BP),
-         utils_labels.UNIFRAC_SEQ: '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(utils_labels.UNIFRAC_SEQ, utils_labels.UNIFRAC_SEQ, utils_labels.TOOLTIP_UNIFRAC_SEQ)}
+    def get_html_dict(metrics):
+        d_dict = {}
+        for tuple in metrics:
+            d_dict[tuple[0]] = '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(tuple[0], tuple[0], tuple[1])
+        return d_dict
+
+    d = get_html_dict([(utils_labels.ACCURACY_PER_BP, utils_labels.TOOLTIP_ACCURACY_PER_BP),
+                       (utils_labels.ACCURACY_PER_SEQ, utils_labels.TOOLTIP_ACCURACY_PER_SEQ),
+                       (utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_BP),
+                       (utils_labels.MISCLASSIFICATION_PER_SEQ, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_SEQ),
+                       (utils_labels.PRECISION_PER_BP, utils_labels.TOOLTIP_PRECISION_PER_BP),
+                       (utils_labels.PRECISION_PER_SEQ, utils_labels.TOOLTIP_PRECISION_PER_SEQ),
+                       (utils_labels.RECALL_PER_BP, utils_labels.TOOLTIP_RECALL_PER_BP),
+                       (utils_labels.RECALL_PER_SEQ, utils_labels.TOOLTIP_RECALL_PER_SEQ),
+                       (utils_labels.F1_SCORE_PER_BP, utils_labels.TOOLTIP_F1_SCORE_PER_BP),
+                       (utils_labels.F1_SCORE_PER_SEQ, utils_labels.TOOLTIP_F1_SCORE_PER_SEQ),
+                       (utils_labels.RI_BY_BP, utils_labels.TOOLTIP_RI_BY_BP),
+                       (utils_labels.RI_BY_SEQ, utils_labels.TOOLTIP_RI_BY_SEQ),
+                       (utils_labels.ARI_BY_BP, utils_labels.TOOLTIP_ARI_BY_BP),
+                       (utils_labels.ARI_BY_SEQ, utils_labels.TOOLTIP_ARI_BY_SEQ),
+                       (utils_labels.AVG_PRECISION_BP, utils_labels.TOOLTIP_AVG_PRECISION_BP),
+                       (utils_labels.AVG_PRECISION_BP_SEM, utils_labels.TOOLTIP_AVG_PRECISION_BP_SEM),
+                       (utils_labels.AVG_PRECISION_SEQ, utils_labels.TOOLTIP_AVG_PRECISION_SEQ),
+                       (utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.TOOLTIP_AVG_PRECISION_SEQ_SEM),
+                       (utils_labels.AVG_RECALL_BP, utils_labels.TOOLTIP_AVG_RECALL_BP),
+                       (utils_labels.AVG_RECALL_BP_SEM, utils_labels.TOOLTIP_AVG_RECALL_BP_SEM),
+                       (utils_labels.AVG_RECALL_SEQ, utils_labels.TOOLTIP_AVG_RECALL_SEQ),
+                       (utils_labels.F1_SCORE_BP, utils_labels.TOOLTIP_F1_SCORE_BP),
+                       (utils_labels.F1_SCORE_SEQ, utils_labels.TOOLTIP_F1_SCORE_SEQ),
+                       (utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.TOOLTIP_AVG_RECALL_SEQ_SEM),
+                       (utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_BPS),
+                       (utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_SEQS),
+                       (utils_labels.UNIFRAC_BP, utils_labels.TOOLTIP_UNIFRAC_BP),
+                       (utils_labels.UNIFRAC_SEQ, utils_labels.TOOLTIP_UNIFRAC_SEQ)])
+
     pattern = re.compile('|'.join(map(re.escape, d)))
 
     def translate(match):

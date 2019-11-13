@@ -153,9 +153,9 @@ def plot_boxplot(pd_bins, metric_name, output_dir):
     plt.ylim(plt.ylim()[::-1])
 
     if metric_name == 'purity':
-        axs.set_xlabel('Purity per bin (%)', fontsize=14)
+        axs.set_xlabel('Purity per bin [%]', fontsize=14)
     else:
-        axs.set_xlabel('Completeness per genome (%)', fontsize=14)
+        axs.set_xlabel('Completeness per genome [%]', fontsize=14)
 
     fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
     fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '.png'), dpi=100, format='png', bbox_inches='tight')
@@ -258,15 +258,15 @@ def plot_avg_precision_recall(df_results, output_dir, rank=None):
                  rank,
                  'e',
                  'avg_purity_completeness_bp',
-                 'Average purity per bin (%)',
-                 'Average completeness per genome (%)')
+                 'Average purity per bin [%]',
+                 'Average completeness per genome [%]')
     plot_summary(df_results,
                  output_dir,
                  rank,
                  'f',
                  'avg_purity_completeness_seq',
-                 'Average purity per bin (%)',
-                 'Average completeness per genome (%)')
+                 'Average purity per bin [%]',
+                 'Average completeness per genome [%]')
 
 
 def plot_precision_recall(summary_per_query, output_dir, rank=None):
@@ -275,15 +275,15 @@ def plot_precision_recall(summary_per_query, output_dir, rank=None):
                  rank,
                  'w',
                  'purity_completeness_bp',
-                 'Purity per base pair (%)',
-                 'Completeness per base pair (%)')
+                 'Purity per base pair [%]',
+                 'Completeness per base pair [%]')
     plot_summary(summary_per_query,
                  output_dir,
                  rank,
                  'x',
                  'purity_completeness_seq',
-                 'Purity per sequence (%)',
-                 'Completeness per sequence (%)')
+                 'Purity per sequence [%]',
+                 'Completeness per sequence [%]')
 
 
 def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir, rank=None):
@@ -292,8 +292,8 @@ def plot_adjusted_rand_index_vs_assigned_bps(summary_per_query, output_dir, rank
                  rank,
                  'p',
                  'ari_vs_assigned_bps',
-                 'Adjusted Rand Index (%)',
-                 'Percentage of assigned base pairs (%)')
+                 'Adjusted Rand Index',
+                 'Assigned base pairs [%]')
 
 
 def plot_taxonomic_results(df_summary_t, metrics_list, errors_list, file_name, output_dir):
@@ -383,7 +383,7 @@ def plot_contamination(pd_bins, binning_type, title, xlabel, ylabel, create_colu
     axs.set_yticklabels(['{:3.0f}'.format(y * 100) for y in vals])
 
     plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel(ylabel + ' (%)', fontsize=14)
+    plt.ylabel(ylabel + ' [%]', fontsize=14)
 
     lgd = plt.legend(tools, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=1, frameon=False, fontsize=12)
 
