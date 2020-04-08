@@ -1,3 +1,18 @@
+# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import os
 from collections import OrderedDict
 from collections import defaultdict
@@ -174,18 +189,17 @@ def get_heatmap_colors(pd_series, **args):
         pd_series.name == upper1(utils_labels.AVG_PRECISION_SEQ_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM):
         return ['background-color: white' for x in values]
 
-    notnan_values = [x for x in values if isinstance(x, (float, int)) and not np.isnan(x)]
-    if not notnan_values:
-        red = 'background-color: red'
-        return [red for x in values]
-
     dropped_gs = False
     if pd_series.index[0] == utils_labels.GS:
-        pd_series.drop(utils_labels.GS)
         values = values[1:]
         dropped_gs = True
     if len(values) == 0:
         return ['']
+
+    notnan_values = [x for x in values if isinstance(x, (float, int)) and not np.isnan(x)]
+    if not notnan_values:
+        red = 'background-color: red'
+        return [red for x in values]
 
     color1, color2, hue1, hue2, min_value, max_value = get_colors_and_ranges(pd_series.name, values)
 
@@ -369,8 +383,8 @@ def create_table_html(df_summary, include_unifrac=False):
     metrics2_label = utils_labels.QUALITY_OF_SAMPLE
     all_metrics_labels = [metrics1_label, metrics2_label]
 
-    styles = [{'selector': 'td', 'props': [('width', '95pt')]},
-              {'selector': 'th', 'props': [('width', '95pt'), ('text-align', 'left')]},
+    styles = [{'selector': 'td', 'props': [('width', '115pt')]},
+              {'selector': 'th', 'props': [('width', '115pt'), ('text-align', 'left')]},
               {'selector': 'th:nth-child(1)', 'props': [('width', '190pt'), ('font-weight', 'normal')]},
               {'selector': '', 'props': [('width', 'max-content'), ('width', '-moz-max-content'), ('border-top', '1px solid lightgray'), ('border-spacing', '0px')]},
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
@@ -478,13 +492,13 @@ def create_precision_recall_all_genomes_scatter(pd_genome_bins, tools):
     p = figure(title='Quality per bin', plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
     p.add_tools(HoverTool(tooltips=[('Sample', '@sample_id'),
                                     ('Genome', '@mapping_id'),
-                                    ('Purity of bin (bp)', '@purity_bp'),
-                                    ('Completeness of bin (bp)', '@completeness_bp')], toggleable=False))
+                                    ('Purity of bin (bp)', '@precision_bp'),
+                                    ('Completeness of bin (bp)', '@recall_bp')], toggleable=False))
 
     legend_it = []
     for color, tool in zip(bokeh_colors, tools):
         source = ColumnDataSource(data=pd_genome_bins[pd_genome_bins[utils_labels.TOOL] == tool])
-        pcircle = p.circle('purity_bp', 'completeness_bp', color=color, alpha=0.8, source=source)
+        pcircle = p.circle('precision_bp', 'recall_bp', color=color, alpha=0.8, source=source)
         legend_it.append((tool, [pcircle]))
     p.add_layout(Legend(items=legend_it), 'right')
     p.xaxis.axis_label = 'Purity per bin (bp)'
@@ -496,7 +510,7 @@ def create_precision_recall_all_genomes_scatter(pd_genome_bins, tools):
 
 
 def create_contamination_plot(pd_bins, tools, title, xlabel, ylabel, create_column_function):
-    pd_bins_copy = pd_bins[[utils_labels.TOOL, 'purity_bp', 'completeness_bp']].copy().dropna(subset=['purity_bp'])
+    pd_bins_copy = pd_bins[[utils_labels.TOOL, 'precision_bp', 'recall_bp']].copy().dropna(subset=['precision_bp'])
     create_column_function(pd_bins_copy)
 
     colors_list = plots.create_colors_list()
@@ -504,7 +518,7 @@ def create_contamination_plot(pd_bins, tools, title, xlabel, ylabel, create_colu
 
     p = figure(title=title, plot_width=580, plot_height=400, toolbar_location="below")
     p.x_range.start = 0
-    p.y_range.start = pd_bins_copy['newcolumn'].min()
+    # p.y_range.start = pd_bins_copy['newcolumn'].min()
     p.y_range.end = 1
     legend_it = []
     for color, tool in zip(bokeh_colors, tools):
@@ -597,31 +611,42 @@ def create_rankings_table(df_summary, show_rank=False):
 
 
 def get_genome_bins_columns():
-    return OrderedDict([('id', 'Bin ID'),
-                        ('mapping_id', 'Mapped genome'),
-                        ('purity_bp', utils_labels.PRECISION_PER_BP),
-                        ('completeness_bp', utils_labels.RECALL_PER_BP),
-                        ('predicted_size', 'Predicted size (bp)'),
-                        ('true_positive_bps', 'True positives (bp)'),
-                        ('true_size', 'True size (bp)'),
-                        ('purity_seq', utils_labels.PRECISION_PER_SEQ),
-                        ('completeness_seq', utils_labels.RECALL_PER_SEQ),
-                        ('predicted_num_seqs', 'Predicted size (seq)'),
-                        ('true_positive_seqs', 'True positives (seq)'),
-                        ('true_num_seqs', 'True size (seq)')])
+    return OrderedDict([('bin_id', 'Bin ID'),
+                        ('genome_id', 'Most abundant genome'),
+                        ('precision_bp', utils_labels.PRECISION_PER_BP),
+                        ('recall_bp', utils_labels.RECALL_PER_BP),
+                        ('total_length', 'Bin size (bp)'),
+                        ('length_gs', 'Size of most abundant genome (bp)'),
+                        ('precision_seq', utils_labels.PRECISION_PER_SEQ),
+                        ('recall_seq', utils_labels.RECALL_PER_SEQ),
+                        ('genome_seq_counts', 'Bin size (seq)'),
+                        ('seq_counts_gs', 'Size of most abundant genome (seq)')])
+    # return OrderedDict([('id', 'Bin ID'),
+    #                     ('most_abundant_genome', 'Most abundant genome'),
+    #                     ('most_complete_genome', 'Most complete genome'),
+    #                     ('precision_bp', utils_labels.PRECISION_PER_BP),
+    #                     ('recall_bp', utils_labels.RECALL_PER_BP),
+    #                     ('predicted_size', 'Bin size (bp)'),
+    #                     ('true_size', 'Size of most abundant genome (bp)'),
+    #                     ('true_size_recall', 'Size of most complete genome (bp)'),
+    #                     ('precision_seq', utils_labels.PRECISION_PER_SEQ),
+    #                     ('recall_seq', utils_labels.RECALL_PER_SEQ),
+    #                     ('predicted_num_seqs', 'Bin size (seq)'),
+    #                     ('true_num_seqs', 'Size of most abundant genome (seq)'),
+    #                     ('true_num_seqs_recall', 'Size of most complete genome (seq)')])
 
 
 def create_genome_binning_plots_panel(pd_bins, pd_mean):
     click_div = Div(text=CLICK_ON_LEGENDS_DIV, css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
     purity_completeness_plot = column(create_precision_recall_figure(pd_mean, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, utils_labels.QUALITY_OF_BINS), css_classes=['bk-width-auto', 'bk-float-left'])
-    purity_completeness_bp_plot = column(create_precision_recall_figure(pd_mean, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, utils_labels.QUALITY_OF_SAMPLE), css_classes=['bk-width-auto', 'bk-float-left'])
+    purity_recall_bp_plot = column(create_precision_recall_figure(pd_mean, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, utils_labels.QUALITY_OF_SAMPLE), css_classes=['bk-width-auto', 'bk-float-left'])
 
     all_samples_div = Div(text='<div style="padding-top: 20px;">All samples</div>', css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
     all_bins_plot = column(create_precision_recall_all_genomes_scatter(pd_bins, pd_mean.index.tolist()), css_classes=['bk-width-auto', 'bk-float-left'])
     completeness_contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column), css_classes=['bk-width-auto', 'bk-float-left'])
     contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', plots.create_contamination_column), css_classes=['bk-width-auto', 'bk-float-left'])
 
-    return Panel(child=column([click_div, purity_completeness_plot, purity_completeness_bp_plot, all_samples_div, all_bins_plot, completeness_contamination_plot, contamination_plot], sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block']), title='Plots')
+    return Panel(child=column([click_div, purity_completeness_plot, purity_recall_bp_plot, all_samples_div, all_bins_plot, completeness_contamination_plot, contamination_plot], sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block']), title='Plots')
 
 
 def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir):
@@ -704,13 +729,13 @@ def get_tax_bins_columns():
     return OrderedDict([('mapping_id', 'Taxon ID'),
                         ('name', 'Scientific name'),
                         ('rank', 'Taxonomic rank'),
-                        ('purity_bp', utils_labels.PRECISION_PER_BP),
-                        ('completeness_bp', utils_labels.RECALL_PER_BP),
+                        ('precision_bp', utils_labels.PRECISION_PER_BP),
+                        ('recall_bp', utils_labels.RECALL_PER_BP),
                         ('predicted_size', 'Predicted size (bp)'),
                         ('true_positive_bps', 'True positives (bp)'),
                         ('true_size', 'True size (bp)'),
-                        ('purity_seq', utils_labels.PRECISION_PER_SEQ),
-                        ('completeness_seq', utils_labels.RECALL_PER_SEQ),
+                        ('precision_seq', utils_labels.PRECISION_PER_SEQ),
+                        ('recall_seq', utils_labels.RECALL_PER_SEQ),
                         ('predicted_num_seqs', 'Predicted size (seq)'),
                         ('true_positive_seqs', 'True positives (seq)'),
                         ('true_num_seqs', 'True size (seq)')])
@@ -747,9 +772,9 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
         pd_mean_rank = pd_mean_rank.set_index(utils_labels.TOOL).reindex(available_tools)
 
         purity_completeness_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, rank)
-        purity_completeness_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, rank)
+        purity_recall_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, rank)
         qbins_plots_dict[rank] = column(purity_completeness_plot, css_classes=['bk-width-auto', 'bk-float-left'])
-        qsamples_plots_dict[rank] = column(purity_completeness_bp_plot, css_classes=['bk-width-auto', 'bk-float-left'])
+        qsamples_plots_dict[rank] = column(purity_recall_bp_plot, css_classes=['bk-width-auto', 'bk-float-left'])
 
         pd_bins_rank = pd_bins[pd_bins['rank'] == rank]
         completeness_minus_contamination_plot = create_contamination_plot(pd_bins_rank, available_tools, rank + ' | Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column)

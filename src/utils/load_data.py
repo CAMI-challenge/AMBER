@@ -1,4 +1,17 @@
-#!/usr/bin/env python
+# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
 import sys
@@ -6,6 +19,7 @@ import traceback
 import logging
 from collections import defaultdict
 from src import binning_classes
+from src import new_classes
 from src.utils import labels as utils_labels
 
 try:
@@ -30,7 +44,7 @@ def load_unique_common(unique_common_file_path):
     return genome_to_unique_common
 
 
-def read_binning_file(read_handler, file_path, is_gs):
+def read_cami_file(read_handler, file_path, function_get_index, function_read_row, is_gs=False):
     header = {}
     column_name_to_index = {}
     got_column_indices = False
@@ -45,7 +59,7 @@ def read_binning_file(read_handler, file_path, is_gs):
         if line.startswith("@@"):
             for index, column_name in enumerate(line[2:].split('\t')):
                 column_name_to_index[column_name] = index
-            index_seq_id, index_bin_id, index_tax_id, index_length = get_column_indices(column_name_to_index, is_gs)
+            indices = function_get_index(column_name_to_index, is_gs)
             got_column_indices = True
             reading_data = False
             continue
@@ -69,33 +83,12 @@ def read_binning_file(read_handler, file_path, is_gs):
             exit(1)
 
         reading_data = True
-        sequence_id, bin_id, tax_id, length = read_row(line, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs)
-        yield header['SAMPLEID'], sequence_id, bin_id, tax_id, length
+        row_values = function_read_row(line, indices, is_gs)
+        yield header['SAMPLEID'], row_values
 
 
-def read_header(input_stream):
-    """
-    @Version:0.9.1
-    @SampleID:RH_S1
-
-    @@SEQUENCEID    BINID   TAXID
-    """
-    header = {}
-    column_names = {}
-    for line in input_stream:
-        if len(line.strip()) == 0 or line.startswith("#"):
-            continue
-        line = line.rstrip('\n')
-        if line.startswith("@@"):
-            for index, column_name in enumerate(line[2:].split('\t')):
-                column_names[column_name] = index
-            return header, column_names
-        if line.startswith("@"):
-            key, value = line[1:].split(':', 1)
-            header[key] = value.strip()
-
-
-def read_row(line, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs):
+def read_row(line, index_vars, is_gs):
+    index_seq_id, index_bin_id, index_tax_id, index_length = index_vars
     line = line.rstrip('\n')
     row_data = line.split('\t')
     try:
@@ -133,6 +126,25 @@ def read_row(line, index_seq_id, index_bin_id, index_tax_id, index_length, is_gs
         return seq_id, bin_id, tax_id, int(0)
 
 
+def read_row_genome_coverage(line, index_vars, is_gs=False):
+    index_genome_id, index_coverage, = index_vars
+    line = line.rstrip('\n')
+    row_data = line.split('\t')
+    try:
+        genome_id = row_data[index_genome_id]
+    except:
+        logging.getLogger('amber').critical("Value in column GENOMEID could not be read.")
+        exit(1)
+
+    if index_coverage:
+        try:
+            coverage = row_data[index_coverage]
+        except:
+            logging.getLogger('amber').critical("Value in column COVERAGE could not be read.")
+            exit(1)
+    return genome_id, float(coverage)
+
+
 def get_column_indices(column_name_to_index, is_gs):
     if "SEQUENCEID" not in column_name_to_index:
         logging.getLogger('amber').critical("Column not found: {}".format("SEQUENCEID"))
@@ -158,6 +170,16 @@ def get_column_indices(column_name_to_index, is_gs):
     elif "_LENGTH" in column_name_to_index:
         index_length = column_name_to_index["_LENGTH"]
     return index_seq_id, index_bin_id, index_tax_id, index_length
+
+
+def get_column_indices_genome_coverage(column_name_to_index, is_gs=False):
+    if "GENOMEID" not in column_name_to_index:
+        logging.getLogger('amber').critical("Column not found: {}".format("GENOMEID"))
+        exit(1)
+    if "COVERAGE" not in column_name_to_index:
+        logging.getLogger('amber').critical("Column not found: {}".format("COVERAGE"))
+        exit(1)
+    return column_name_to_index["GENOMEID"], column_name_to_index["COVERAGE"]
 
 
 def initialize_query(sample_id_to_g_gold_standard, sample_id_to_t_gold_standard, is_gs, sample_id, options, label):
@@ -198,7 +220,7 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
     with open(file_path_query) as read_handler:
         try:
             sample_id_prev = 0
-            for sample_id, sequence_id, bin_id, tax_id, length in read_binning_file(read_handler, file_path_query, is_gs):
+            for sample_id, (sequence_id, bin_id, tax_id, length) in read_cami_file(read_handler, file_path_query, get_column_indices, read_row, is_gs):
 
                 if sample_id != sample_id_prev:
                     sample_ids_list.append(sample_id)
@@ -292,15 +314,47 @@ def open_query(file_path_query, is_gs, sample_id_to_g_gold_standard, sample_id_t
     return sample_ids_list, sample_id_to_g_query, sample_id_to_t_query
 
 
+def open_coverages(file_path):
+    logging.getLogger('amber').info('Loading coverage file...')
+    sample_id_to_coverages = {}
+    with open(file_path) as read_handler:
+        try:
+            sample_id_prev = 0
+            for sample_id, (genome_id, coverage) in read_cami_file(read_handler, file_path, get_column_indices_genome_coverage, read_row_genome_coverage, False):
+                if sample_id != sample_id_prev:
+                    genome_id_to_coverage = {}
+                    sample_id_to_coverages[sample_id] = genome_id_to_coverage
+                sample_id_prev = sample_id
+                genome_id_to_coverage[genome_id] = coverage
+        except BaseException as e:
+            traceback.print_exc()
+            logging.getLogger('amber').critical("File {} is malformed. {}".format(file_path, e))
+            exit(1)
+    logging.getLogger('amber').info('done')
+    return sample_id_to_coverages
+
+
+# def load_ncbi_info(ncbi_nodes_file, ncbi_names_file, ncbi_merged_file):
+#     if ncbi_nodes_file:
+#         logging.getLogger('amber').info('Loading NCBI files...')
+#         binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank = \
+#             load_ncbi_taxinfo.load_tax_info(ncbi_nodes_file)
+#         if ncbi_names_file:
+#             binning_classes.TaxonomicQuery.tax_id_to_name = load_ncbi_taxinfo.load_names(binning_classes.TaxonomicQuery.tax_id_to_rank, ncbi_names_file)
+#         if ncbi_merged_file:
+#             binning_classes.TaxonomicQuery.tax_id_to_tax_id = load_ncbi_taxinfo.load_merged(ncbi_merged_file)
+#         logging.getLogger('amber').info('done')
+
+
 def load_ncbi_info(ncbi_nodes_file, ncbi_names_file, ncbi_merged_file):
     if ncbi_nodes_file:
         logging.getLogger('amber').info('Loading NCBI files...')
-        binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank = \
+        new_classes.TaxonomicQueryNEW.tax_id_to_parent, new_classes.TaxonomicQueryNEW.tax_id_to_rank = \
             load_ncbi_taxinfo.load_tax_info(ncbi_nodes_file)
-        if ncbi_names_file:
-            binning_classes.TaxonomicQuery.tax_id_to_name = load_ncbi_taxinfo.load_names(binning_classes.TaxonomicQuery.tax_id_to_rank, ncbi_names_file)
-        if ncbi_merged_file:
-            binning_classes.TaxonomicQuery.tax_id_to_tax_id = load_ncbi_taxinfo.load_merged(ncbi_merged_file)
+        # if ncbi_names_file:
+        #     binning_classes.TaxonomicQuery.tax_id_to_name = load_ncbi_taxinfo.load_names(binning_classes.TaxonomicQuery.tax_id_to_rank, ncbi_names_file)
+        # if ncbi_merged_file:
+        #     binning_classes.TaxonomicQuery.tax_id_to_tax_id = load_ncbi_taxinfo.load_merged(ncbi_merged_file)
         logging.getLogger('amber').info('done')
 
 

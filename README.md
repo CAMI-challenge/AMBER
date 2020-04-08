@@ -1,7 +1,7 @@
 [![CircleCI](https://circleci.com/gh/CAMI-challenge/AMBER/tree/master.svg?style=svg)](https://circleci.com/gh/CAMI-challenge/AMBER/tree/master)
 
-# Introduction
-AMBER (Assessment of Metagenome BinnERs) is an evaluation package for the comparative assessment of genome reconstructions and taxonomic assignments from metagenome benchmark datasets. It provides performance metrics, results rankings, and comparative visualizations for assessing multiple programs or parameter effects. The provided metrics were used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic Interpretation](http://www.cami-challenge.org/).
+# AMBER: Assessment of Metagenome BinnERs
+AMBER is an evaluation package for the comparative assessment of genome reconstructions and taxonomic assignments from metagenome benchmark datasets. It provides performance metrics, results rankings, and comparative visualizations for assessing multiple programs or parameter effects. The provided metrics were used in the first community benchmarking challenge of the initiative for the [Critical Assessment of Metagenomic Interpretation](http://www.cami-challenge.org/).
 
 **Metrics computed per bin**
 
@@ -72,7 +72,7 @@ As input, AMBER uses three files and an additional file for assessing taxonomic 
 @Version:0.9.1
 @SampleID:gsa
 
-@@SEQUENCEID BINID      TAXID  _LENGTH
+@@SEQUENCEID BINID      TAXID  LENGTH
 RH|P|C37126  Sample6_89 45202  25096
 RH|P|C3274   Sample9_91 32644  10009
 RH|P|C26099  1053046    765201 689201
@@ -82,11 +82,11 @@ RH|P|C20873  1053046    765201 339258
 See [here](./test/gsa_mapping.binning) another example. Observations:
 * The value of the SampleID header tag must uniquely identify a sample and be the same in the gold standard and the predictions (input 2 below).
 * Column BINID (TAXID) is required to assess genome (taxonomic) binning.
-* Column _LENGTH can be added to a mapping file using tool [_src/utils/add_length_column.py_](README_TOOLS.md#srcutilsadd_length_columnpy).
+* Column _LENGTH can be added to a mapping file using tool [_src/utils/add_length_column.py_](#srcutilsadd_length_columnpy).
 
 2. One or more files, each containing the bin assignments from a binning program, also in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format). Column _LENGTH is not required  (_LENGTH is only required in the gold standard).
 
-Note: a tool for converting FASTA files, such that each file represents a bin, is available (see [_src/utils/convert_fasta_bins_to_biobox_format.py_](README_TOOLS.md#srcutilsconvert_fasta_bins_to_biobox_formatpy)).
+Note: a tool for converting FASTA files, such that each file represents a bin, is available (see [_src/utils/convert_fasta_bins_to_biobox_format.py_](#srcutilsconvert_fasta_bins_to_biobox_formatpy)).
 
 3. For assessing **taxonomic binning**, AMBER also requires the file **nodes.dmp** from NCBI. Download taxdump.tar.gz from [ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz), extract nodes.tmp, and provide it to AMBER with option `--ncbi_nodes_file`.
 
@@ -222,7 +222,7 @@ python3 src/utils/add_length_column.py -g test/gsa_mapping.binning \
 @Version:0.9.1
 @SampleID:gsa
 
-@@SEQUENCEID BINID           _LENGTH
+@@SEQUENCEID BINID           LENGTH
 RL|S1|C10817 Sample18_57     20518
 RL|S1|C11497 Sample22_57     37672
 RL|S1|C6571  evo_1286_AP.033 69914

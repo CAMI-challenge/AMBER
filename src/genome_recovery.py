@@ -1,5 +1,20 @@
 #!/usr/bin/env python
 
+# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import argparse
 import numpy as np
 import collections
@@ -24,12 +39,12 @@ def calc_table(pd_bins_rank, min_completeness, max_contamination):
 
     genome_recovery = np.zeros((len(max_contamination), len(min_completeness)), dtype=int)
     for row in pd_bins_rank.itertuples():
-        if np.isnan(row.purity_bp):
+        if np.isnan(row.precision_bp):
             continue
-        contamination = 1 - row.purity_bp
+        contamination = 1 - row.precision_bp
         for i in range(len(max_contamination)):
             for j in range(len(min_completeness)):
-                if row.completeness_bp > min_completeness[j] and contamination < max_contamination[i]:
+                if row.recall_bp > min_completeness[j] and contamination < max_contamination[i]:
                     genome_recovery[i][j] += 1
     return genome_recovery
 

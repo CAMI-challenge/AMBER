@@ -1,4 +1,17 @@
-#!/usr/bin/env python
+# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 RANKS = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain']
 DICT_RANK_TO_INDEX = dict(zip(RANKS, list(range(len(RANKS)))))
@@ -47,7 +60,7 @@ def check_parent_is_species(tax_id_to_parent, tax_id_to_rank, tax_id):
     if tax_id_to_parent[tax_id] in tax_id_to_parent:
         if tax_id_to_rank[tax_id_to_parent[tax_id]] == "species":
             return True
-        elif tax_id_to_parent[tax_id] != '1' and tax_id_to_rank[tax_id_to_parent[tax_id]] not in RANKS:
+        elif tax_id_to_parent[tax_id] != 1 and tax_id_to_rank[tax_id_to_parent[tax_id]] not in RANKS:
             return check_parent_is_species(tax_id_to_parent, tax_id_to_rank, tax_id_to_parent[tax_id])
     return False
 
@@ -61,8 +74,8 @@ def load_tax_info(ncbi_nodes_file):
                 continue
             line = line.split('|')
             line = list(map(str.strip, line))
-            tax_id = line[0]
-            tax_id_to_parent[tax_id] = line[1]
+            tax_id = int(line[0])
+            tax_id_to_parent[tax_id] = int(line[1])
             tax_id_to_rank[tax_id] = line[2]
 
     for tax_id, rank in tax_id_to_rank.items():
@@ -75,12 +88,12 @@ def load_tax_info(ncbi_nodes_file):
 def get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank):
     if tax_id not in tax_id_to_rank:
         # TODO report this in a log file
-        return None
+        return []
 
     while tax_id_to_rank[tax_id] not in RANKS:
         tax_id = tax_id_to_parent[tax_id]
-        if tax_id == '1':
-            return None
+        if tax_id == 1:
+            return []
 
     index = DICT_RANK_TO_INDEX[tax_id_to_rank[tax_id]]
     path = [''] * (index + 1)
@@ -89,7 +102,7 @@ def get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank):
     id = tax_id
     while id in tax_id_to_parent:
         id = tax_id_to_parent[id]
-        if id == '1':
+        if id == 1:
             break
         if tax_id_to_rank[id] not in RANKS:
             continue
