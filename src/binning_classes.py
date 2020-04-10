@@ -13,235 +13,449 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import numpy as np
-import logging
+import pandas as pd
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from src.utils import load_ncbi_taxinfo
-from src.utils import exclude_genomes
-from src.utils import filter_tail
-from src.utils import ProfilingTools as pf
-from src import unifrac_distance as uf
+from collections import OrderedDict
+from src.utils import labels as utils_labels
+
+
+class Metrics():
+    def __init__(self):
+        self.__percentage_of_assigned_bps = .0
+        self.__percentage_of_assigned_seqs = .0
+        self.__accuracy_bp = .0
+        self.__accuracy_seq = .0
+        self.__rand_index_bp = .0
+        self.__adjusted_rand_index_bp = .0
+        self.__rand_index_seq = .0
+        self.__adjusted_rand_index_seq = .0
+        self.__precision_avg_bp = .0
+        self.__precision_avg_bp_var = .0
+        self.__precision_avg_bp_sem = .0
+        self.__precision_avg_seq  = .0
+        self.__precision_avg_seq_sem = .0
+        self.__precision_weighted_bp = .0
+        self.__precision_weighted_seq = .0
+        self.__recall_avg_bp = .0
+        self.__recall_avg_bp_var = .0
+        self.__recall_avg_bp_sem = .0
+        self.__recall_avg_seq = .0
+        self.__recall_avg_seq_sem = .0
+        self.__recall_weighted_bp = .0
+        self.__recall_weighted_seq = .0
+        self.__f1_score_bp = .0
+        self.__f1_score_seq = .0
+
+    @property
+    def percentage_of_assigned_bps(self):
+        return self.__percentage_of_assigned_bps
+
+    @property
+    def percentage_of_assigned_seqs(self):
+        return self.__percentage_of_assigned_seqs
+
+    @property
+    def accuracy_bp(self):
+        return self.__accuracy_bp
+
+    @property
+    def accuracy_seq(self):
+        return self.__accuracy_seq
+
+    @property
+    def rand_index_bp(self):
+        return self.__rand_index_bp
+
+    @property
+    def adjusted_rand_index_bp(self):
+        return self.__adjusted_rand_index_bp
+
+    @property
+    def rand_index_seq(self):
+        return self.__rand_index_seq
+
+    @property
+    def adjusted_rand_index_seq(self):
+        return self.__adjusted_rand_index_seq
+
+    @property
+    def precision_avg_bp(self):
+        return self.__precision_avg_bp
+
+    @property
+    def precision_avg_bp_var(self):
+        return self.__precision_avg_bp_var
+
+    @property
+    def precision_avg_bp_sem(self):
+        return self.__precision_avg_bp_sem
+
+    @property
+    def precision_avg_seq(self):
+        return self.__precision_avg_seq
+
+    @property
+    def precision_avg_seq_sem(self):
+        return self.__precision_avg_seq_sem
+
+    @property
+    def precision_weighted_bp(self):
+        return self.__precision_weighted_bp
+
+    @property
+    def precision_weighted_seq(self):
+        return self.__precision_weighted_seq
+
+    @property
+    def recall_avg_bp(self):
+        return self.__recall_avg_bp
+
+    @property
+    def recall_avg_bp_var(self):
+        return self.__recall_avg_bp_var
+
+    @property
+    def recall_avg_bp_sem(self):
+        return self.__recall_avg_bp_sem
+
+    @property
+    def recall_avg_seq(self):
+        return self.__recall_avg_seq
+
+    @property
+    def recall_avg_seq_sem(self):
+        return self.__recall_avg_seq_sem
+
+    @property
+    def recall_weighted_bp(self):
+        return self.__recall_weighted_bp
+
+    @property
+    def recall_weighted_seq(self):
+        return self.__recall_weighted_seq
+
+    @percentage_of_assigned_bps.setter
+    def percentage_of_assigned_bps(self, percentage_of_assigned_bps):
+        self.__percentage_of_assigned_bps = percentage_of_assigned_bps
+
+    @percentage_of_assigned_seqs.setter
+    def percentage_of_assigned_seqs(self, percentage_of_assigned_seqs):
+        self.__percentage_of_assigned_seqs = percentage_of_assigned_seqs
+
+    @accuracy_bp.setter
+    def accuracy_bp(self, accuracy_bp):
+        self.__accuracy_bp = accuracy_bp
+
+    @accuracy_seq.setter
+    def accuracy_seq(self, accuracy_seq):
+        self.__accuracy_seq = accuracy_seq
+
+    @rand_index_bp.setter
+    def rand_index_bp(self, rand_index_bp):
+        self.__rand_index_bp = rand_index_bp
+
+    @adjusted_rand_index_bp.setter
+    def adjusted_rand_index_bp(self, adjusted_rand_index_bp):
+        self.__adjusted_rand_index_bp = adjusted_rand_index_bp
+
+    @rand_index_seq.setter
+    def rand_index_seq(self, rand_index_seq):
+        self.__rand_index_seq = rand_index_seq
+
+    @adjusted_rand_index_seq.setter
+    def adjusted_rand_index_seq(self, adjusted_rand_index_seq):
+        self.__adjusted_rand_index_seq = adjusted_rand_index_seq
+
+    @precision_avg_bp.setter
+    def precision_avg_bp(self, precision_avg_bp):
+        self.__precision_avg_bp = precision_avg_bp
+
+    @precision_avg_bp_var.setter
+    def precision_avg_bp_var(self, precision_avg_bp_var):
+        self.__precision_avg_bp_var = precision_avg_bp_var
+
+    @precision_avg_bp_sem.setter
+    def precision_avg_bp_sem(self, precision_avg_bp_sem):
+        self.__precision_avg_bp_sem = precision_avg_bp_sem
+
+    @precision_avg_seq.setter
+    def precision_avg_seq(self, precision_avg_seq):
+        self.__precision_avg_seq = precision_avg_seq
+
+    @precision_avg_seq_sem.setter
+    def precision_avg_seq_sem(self, precision_avg_seq_sem):
+        self.__precision_avg_seq_sem = precision_avg_seq_sem
+
+    @precision_weighted_bp.setter
+    def precision_weighted_bp(self, precision_weighted_bp):
+        self.__precision_weighted_bp = precision_weighted_bp
+
+    @precision_weighted_seq.setter
+    def precision_weighted_seq(self, precision_weighted_seq):
+        self.__precision_weighted_seq = precision_weighted_seq
+
+    @recall_avg_bp.setter
+    def recall_avg_bp(self, recall_avg_bp):
+        self.__recall_avg_bp = recall_avg_bp
+
+    @recall_avg_bp_var.setter
+    def recall_avg_bp_var(self, recall_avg_bp_var):
+        self.__recall_avg_bp_var = recall_avg_bp_var
+
+    @recall_avg_bp_sem.setter
+    def recall_avg_bp_sem(self, recall_avg_bp_sem):
+        self.__recall_avg_bp_sem = recall_avg_bp_sem
+
+    @recall_avg_seq.setter
+    def recall_avg_seq(self, recall_avg_seq):
+        self.__recall_avg_seq = recall_avg_seq
+
+    @recall_avg_seq_sem.setter
+    def recall_avg_seq_sem(self, recall_avg_seq_sem):
+        self.__recall_avg_seq_sem = recall_avg_seq_sem
+
+    @recall_weighted_bp.setter
+    def recall_weighted_bp(self, recall_weighted_bp):
+        self.__recall_weighted_bp = recall_weighted_bp
+
+    @recall_weighted_seq.setter
+    def recall_weighted_seq(self, recall_weighted_seq):
+        self.__recall_weighted_seq = recall_weighted_seq
+
+    @staticmethod
+    def compute_rand_index(confusion_df, col_name, gs_col_name, field):
+        def choose2(n):
+            return (n * (n - 1)) / 2.0
+
+        bin_mapping_comb = confusion_df[field].apply(choose2).sum()
+        bin_comb = confusion_df.groupby(col_name).agg({field: 'sum'})[field].apply(choose2).sum()
+        mapping_comb = confusion_df.groupby(gs_col_name).agg({field: 'sum'})[field].apply(choose2).sum()
+        num_bp_comb = choose2(confusion_df[field].sum())
+
+        rand_index = ((num_bp_comb - bin_comb - mapping_comb + 2 * bin_mapping_comb) / num_bp_comb) if num_bp_comb != 0 else .0
+
+        temp = (bin_comb * mapping_comb / num_bp_comb) if num_bp_comb != 0 else .0
+        ret = bin_mapping_comb - temp
+        denominator = (((bin_comb + mapping_comb) / 2.0) - temp)
+        adjusted_rand_index = (ret / denominator) if denominator != 0 else .0
+
+        return rand_index, adjusted_rand_index
+
+    def get_ordered_dict(self):
+        return OrderedDict([(utils_labels.TOOL, None),
+                            (utils_labels.BINNING_TYPE, None),
+                            (utils_labels.SAMPLE, None),
+                            (utils_labels.RANK, None),
+                            (utils_labels.AVG_PRECISION_BP, [self.__precision_avg_bp]),
+                            (utils_labels.AVG_PRECISION_BP_SEM, [self.__precision_avg_bp_sem]),
+
+                            ('avg_precision_bp_var', [self.__precision_avg_bp_var]),
+                            (utils_labels.AVG_RECALL_BP, [self.__recall_avg_bp]),
+                            (utils_labels.AVG_RECALL_BP_SEM, [self.__recall_avg_bp_sem]),
+                            ('avg_recall_bp_var', [self.__recall_avg_bp_var]),
+                            (utils_labels.F1_SCORE_BP, [2 * self.__precision_avg_bp * self.__recall_avg_bp / (self.__precision_avg_bp + self.__recall_avg_bp)]),
+
+                            (utils_labels.AVG_PRECISION_SEQ, [self.__precision_avg_seq]),
+                            (utils_labels.AVG_PRECISION_SEQ_SEM, [self.__precision_avg_seq_sem]),
+                            (utils_labels.AVG_RECALL_SEQ, [self.__recall_avg_seq]),
+                            (utils_labels.AVG_RECALL_SEQ_SEM, [self.__recall_avg_seq_sem]),
+                            (utils_labels.F1_SCORE_SEQ, [2 * self.__precision_avg_seq * self.__recall_avg_seq / (self.__precision_avg_seq + self.__recall_avg_seq)]),
+
+                            (utils_labels.PRECISION_PER_BP, [self.__precision_weighted_bp]),
+                            (utils_labels.PRECISION_PER_SEQ, [self.__precision_weighted_seq]),
+                            (utils_labels.RECALL_PER_BP, [self.__recall_weighted_bp]),
+                            (utils_labels.RECALL_PER_SEQ, [self.__recall_weighted_seq]),
+                            (utils_labels.F1_SCORE_PER_BP, [2 * self.__precision_weighted_bp * self.__recall_weighted_bp / (self.__precision_weighted_bp + self.__recall_weighted_bp)]),
+                            (utils_labels.F1_SCORE_PER_SEQ, [2 * self.__precision_weighted_seq * self.__recall_weighted_seq / (self.__precision_weighted_seq + self.__recall_weighted_seq)]),
+
+                            (utils_labels.ACCURACY_PER_BP, [self.__accuracy_bp]),
+                            (utils_labels.ACCURACY_PER_SEQ, [self.__accuracy_seq]),
+
+                            (utils_labels.PERCENTAGE_ASSIGNED_BPS, [self.__percentage_of_assigned_bps]),
+                            (utils_labels.PERCENTAGE_ASSIGNED_SEQS, [self.__percentage_of_assigned_seqs]),
+                            (utils_labels.RI_BY_BP, [self.__rand_index_bp]),
+                            (utils_labels.RI_BY_SEQ, [self.__rand_index_seq]),
+                            (utils_labels.ARI_BY_BP, [self.__adjusted_rand_index_bp]),
+                            (utils_labels.ARI_BY_SEQ, [self.__adjusted_rand_index_seq]),
+
+                            (utils_labels.UNIFRAC_BP, [0]),
+                            (utils_labels.UNIFRAC_SEQ, [0]),
+
+                            (utils_labels.MISCLASSIFICATION_PER_BP, [1 - self.__precision_weighted_bp]),
+                            (utils_labels.MISCLASSIFICATION_PER_SEQ, [1 - self.__precision_weighted_seq])])
 
 
 class Query(ABC):
-    def __init__(self):
-        self.__sequence_id_to_length = None
-        self.__bins = []
-        self.__bin_id_to_bin = {}
-        self.__label = ""
-        self.__options = None
-        self.__bins_metrics = None
-        self.__gold_standard = None
-
-    @property
-    def sequence_id_to_length(self):
-        return self.__sequence_id_to_length
-
-    @property
-    def options(self):
-        return self.__options
-
-    @property
-    def bins(self):
-        return self.__bins
+    def __init__(self, label):
+        self.__label = label
+        self.__gold_standard_df = None
+        self.__precision_df = pd.DataFrame()
+        self.__recall_df = None
+        self.__confusion_df = None
+        self.__metrics = None
 
     @property
     def label(self):
         return self.__label
 
     @property
-    def bins_metrics(self):
-        return self.__bins_metrics
+    def gold_standard_df(self):
+        return self.__gold_standard_df
 
     @property
-    def gold_standard(self):
-        return self.__gold_standard
+    def precision_df(self):
+        return self.__precision_df
 
-    @sequence_id_to_length.setter
-    def sequence_id_to_length(self, sequence_id_to_length):
-        self.__sequence_id_to_length = sequence_id_to_length
+    @property
+    def recall_df(self):
+        return self.__recall_df
 
-    @options.setter
-    def options(self, options: 'Options'):
-        self.__options = options
+    @property
+    def confusion_df(self):
+        return self.__confusion_df
 
-    @bins.setter
-    def bins(self, bins):
-        self.__bins = bins
+    @property
+    def metrics(self):
+        return self.__metrics
 
     @label.setter
     def label(self, label):
         self.__label = label
 
-    @bins_metrics.setter
-    def bins_metrics(self, bins_metrics):
-        self.__bins_metrics = bins_metrics
+    @gold_standard_df.setter
+    def gold_standard_df(self, gold_standard_df):
+        self.__gold_standard_df = gold_standard_df
 
-    @gold_standard.setter
-    def gold_standard(self, gold_standard):
-        self.__gold_standard = gold_standard
+    @precision_df.setter
+    def precision_df(self, precision_df):
+        self.__precision_df = precision_df
 
-    def add_bin(self, bin):
-        self.__bins.append(bin)
-        self.__bin_id_to_bin[bin.id] = bin
+    @recall_df.setter
+    def recall_df(self, recall_df):
+        self.__recall_df = recall_df
 
-    def get_bin_ids(self):
-        return self.__bin_id_to_bin.keys()
+    @confusion_df.setter
+    def confusion_df(self, confusion_df):
+        self.__confusion_df = confusion_df
 
-    def get_sequence_ids(self):
-        return set.union(*(bin.sequence_ids for bin in self.__bins))
+    @metrics.setter
+    def metrics(self, metrics):
+        self.__metrics = metrics
 
-    def get_bin_by_id(self, id):
-        return self.__bin_id_to_bin[id]
-
-    def get_bins_by_id(self, ids):
-        return [self.get_bin_by_id(id) for id in ids]
-
-    def compute_true_positives(self):
-        for bin in self.bins:
-            bin.compute_true_positives(self.gold_standard)
-
-    def compute_precision_recall(self):
-        for bin in self.__bins:
-            bin.compute_precision_recall(self.__gold_standard)
-
-    def compute_unifrac(self):
-        return None, None
+    @abstractmethod
+    def compute_metrics(self):
+        pass
 
 
 class GenomeQuery(Query):
     binning_type = 'genome'
 
-    def __init__(self):
-        super().__init__()
-        self.__sequence_id_to_bin_id = {}
-        self.__genome_to_recall_bp = {}
-        self.__genome_to_recall_seq = {}
-        self.__recall_bp = .0
-        self.__recall_seq = .0
-        self.__avg_recall_bp = .0
-        self.__avg_recall_seq = .0
+    def __init__(self, df, label):
+        super().__init__(label)
+        self.__df = df
+        self.metrics = Metrics()
 
     @property
-    def sequence_id_to_bin_id(self):
-        return self.__sequence_id_to_bin_id
+    def df(self):
+        return self.__df
 
-    @property
-    def genome_to_recall_bp(self):
-        return self.__genome_to_recall_bp
+    @df.setter
+    def df(self, df):
+        self.__df = df
 
-    @property
-    def genome_to_recall_seq(self):
-        return self.__genome_to_recall_seq
+    def get_metrics_df(self):
+        metrics_dict = self.metrics.get_ordered_dict()
+        metrics_dict[utils_labels.TOOL] = self.label
+        metrics_dict[utils_labels.BINNING_TYPE] = self.binning_type
+        metrics_dict[utils_labels.RANK] = 'NA'
+        return pd.DataFrame(metrics_dict)
 
-    @property
-    def recall_bp(self):
-        return self.__recall_bp
+    def compute_metrics(self):
+        print(self.label)
+        gs_df = self.gold_standard_df
+        # gs_df.rename(columns={'BINID': 'bin_id', 'LENGTH': 'seq_length'}, inplace=True)
+        gs_df = gs_df[['SEQUENCEID', 'BINID', 'LENGTH']].rename(columns={'LENGTH': 'seq_length'})
 
-    @property
-    def recall_seq(self):
-        return self.__recall_seq
+        query_df = self.df
+        # query_df.rename(columns={'BINID': 'bin_id'}, inplace=True)
+        query_df = query_df[['SEQUENCEID', 'BINID']]
 
-    @property
-    def avg_recall_bp(self):
-        return self.__avg_recall_bp
+        query_w_length = pd.merge(query_df, gs_df[['SEQUENCEID', 'BINID', 'seq_length']].rename(columns={'BINID': 'genome_id'}).drop_duplicates('SEQUENCEID'), on='SEQUENCEID', sort=False)
 
-    @property
-    def avg_recall_seq(self):
-        return self.__avg_recall_seq
+        query_w_length_no_dups = query_w_length.drop_duplicates('SEQUENCEID')
+        gs_df_no_dups = gs_df.drop_duplicates('SEQUENCEID')
+        self.metrics.percentage_of_assigned_bps = query_w_length_no_dups['seq_length'].sum() / gs_df_no_dups['seq_length'].sum()
+        self.metrics.percentage_of_assigned_seqs = query_w_length_no_dups.shape[0] / gs_df_no_dups['SEQUENCEID'].shape[0]
 
-    @sequence_id_to_bin_id.setter
-    def sequence_id_to_bin_id(self, sequence_id_bin_id):
-        (sequence_id, bin_id) = sequence_id_bin_id
+        # confusion table possibly with the same sequences in multiple bins
+        query_w_length_mult_seqs = query_df.reset_index().merge(gs_df, on='SEQUENCEID', sort=False) #.set_index('index') #.set_index(['index', 'SEQUENCEID'])
 
-        # check if sequence is already in a bin
-        if sequence_id in self.__sequence_id_to_bin_id:
-            if isinstance(self.__sequence_id_to_bin_id[sequence_id], str):
-                self.__sequence_id_to_bin_id[sequence_id] = {self.__sequence_id_to_bin_id[sequence_id], bin_id}
-            elif isinstance(self.__sequence_id_to_bin_id[sequence_id], set):
-                self.__sequence_id_to_bin_id[sequence_id].update(bin_id)
-        else:
-            self.__sequence_id_to_bin_id[sequence_id] = bin_id
-        self.get_bin_by_id(bin_id).add_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
+        if query_w_length.shape[0] < query_w_length_mult_seqs.shape[0]:
+            query_w_length_mult_seqs.drop_duplicates(['index', 'genome_id'], inplace=True)
+            confusion_df = query_w_length_mult_seqs.groupby(['BINID', 'genome_id'], sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'genome_length', 'SEQUENCEID': 'genome_seq_counts'})
 
-    def compute_precision_recall(self):
-        super().compute_precision_recall()
-        self.compute_genome_to_recall()
+            most_abundant_genome_df = confusion_df.loc[confusion_df.groupby('BINID', sort=False)['genome_length'].idxmax()]
+            most_abundant_genome_df = most_abundant_genome_df.reset_index()[['BINID', 'genome_id']]
 
-    def compute_genome_to_recall(self):
-        true_positives_recall_bp = 0
-        true_positives_recall_seq = 0
-        gs_bp = 0
-        gs_seq = 0
-        for i, gs_bin in enumerate(self.gold_standard.bins, start=1):
-            if self.options.genome_to_unique_common:
-                if gs_bin.id in self.options.genome_to_unique_common and (not self.options.filter_keyword or self.options.genome_to_unique_common[gs_bin.id] == self.options.filter_keyword):
-                    continue
+            matching_genomes_df = pd.merge(query_w_length_mult_seqs, most_abundant_genome_df, on=['BINID', 'genome_id']).set_index('index')
+            query_w_length_mult_seqs.set_index('index', inplace=True)
+            difference_df = query_w_length_mult_seqs.drop(matching_genomes_df.index).groupby(['index'], sort=False).first()
+            query_w_length = pd.concat([matching_genomes_df, difference_df])
 
-            max_bin_assigns_bp = 0
-            max_bin_assigns_seq = 0
-            best_bin = None
-            for bin in self.bins:
-                if bin.mapping_id_to_length[gs_bin.id] > max_bin_assigns_bp:
-                    max_bin_assigns_bp = bin.mapping_id_to_length[gs_bin.id]
-                    best_bin = bin
-                if bin.mapping_id_to_num_seqs[gs_bin.id] > max_bin_assigns_seq:
-                    max_bin_assigns_seq = bin.mapping_id_to_num_seqs[gs_bin.id]
+            # query_w_length_mult_seqs.reset_index(inplace=True)
+            # query_w_length_mult_seqs = pd.merge(query_w_length_mult_seqs, most_abundant_genome_df, on=['BINID'])
+            # grouped = query_w_length_mult_seqs.groupby(['index'], sort=False, as_index=False)
+            # query_w_length = grouped.apply(lambda x: x[x['genome_id_x'] == x['genome_id_y'] if any(x['genome_id_x'] == x['genome_id_y']) else len(x) * [True]])
+            # query_w_length = query_w_length.groupby(['index'], sort=False).first().drop(columns='genome_id_y').rename(columns={'genome_id_x': 'genome_id'})
 
-            if max_bin_assigns_bp > 0:
-                best_bin.represents_genome = True
+        self.df = query_w_length
 
-            true_positives_recall_bp += max_bin_assigns_bp
-            true_positives_recall_seq += max_bin_assigns_seq
-            self.__genome_to_recall_bp[gs_bin.id] = max_bin_assigns_bp / gs_bin.length
-            self.__genome_to_recall_seq[gs_bin.id] = max_bin_assigns_seq / gs_bin.num_seqs()
+        confusion_df = query_w_length.groupby(['BINID', 'genome_id'], sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'genome_length', 'SEQUENCEID': 'genome_seq_counts'})
+        self.confusion_df = confusion_df
 
-            gs_bp += gs_bin.length
-            gs_seq += gs_bin.num_seqs()
+        self.metrics.rand_index_bp, self.metrics.adjusted_rand_index_bp = Metrics.compute_rand_index(confusion_df, 'BINID', 'genome_id', 'genome_length')
+        self.metrics.rand_index_seq, self.metrics.adjusted_rand_index_seq = Metrics.compute_rand_index(confusion_df, 'BINID', 'genome_id', 'genome_seq_counts')
 
-            self.__avg_recall_bp = self.__avg_recall_bp + (self.__genome_to_recall_bp[gs_bin.id] - self.__avg_recall_bp) / i
-            self.__avg_recall_seq = self.__avg_recall_seq + (self.__genome_to_recall_seq[gs_bin.id] - self.__avg_recall_seq) / i
+        most_abundant_genome_df = confusion_df.loc[confusion_df.groupby('BINID', sort=False)['genome_length'].idxmax()].reset_index().set_index('BINID')
 
-        self.__recall_bp = true_positives_recall_bp / gs_bp
-        self.__recall_seq = true_positives_recall_seq / gs_seq
+        precision_df = query_w_length.groupby('BINID', sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'total_length', 'SEQUENCEID': 'total_seq_counts'})
+        precision_df = pd.merge(precision_df, most_abundant_genome_df, on='BINID')
+        precision_df['precision_bp'] = precision_df['genome_length'] / precision_df['total_length']
+        precision_df['precision_seq'] = precision_df['genome_seq_counts'] / precision_df['total_seq_counts']
 
-    def get_all_mapping_ids(self):
-        return [bin.most_complete_genome for bin in self.bins]
+        self.metrics.precision_avg_bp = precision_df['precision_bp'].mean()
+        self.metrics.precision_avg_bp_sem = precision_df['precision_bp'].sem()
+        self.metrics.precision_avg_bp_var = precision_df['precision_bp'].var()
+        self.metrics.precision_avg_seq = precision_df['precision_seq'].mean()
+        self.metrics.precision_weighted_bp = precision_df['genome_length'].sum() / precision_df['total_length'].sum()
+        self.metrics.precision_weighted_seq = precision_df['genome_seq_counts'].sum() / precision_df['total_seq_counts'].sum()
 
-    def get_bins_metrics(self):
-        if self.bins_metrics:
-            return self.bins_metrics
-        self.bins_metrics = [bin.get_metrics_dict(self.gold_standard) for bin in self.bins]
-        mapped_ids = self.get_all_mapping_ids()
-        for gs_bin in self.gold_standard.bins:
-            if gs_bin.id not in mapped_ids:
-                self.bins_metrics.append({'id': None,
-                                          'rank': 'NA',
-                                          'most_abundant_genome': gs_bin.most_abundant_genome,
-                                          'most_complete_genome': gs_bin.most_complete_genome,
-                                          'precision_bp': np.nan,
-                                          'precision_seq': np.nan,
-                                          'recall_bp': .0,
-                                          'recall_seq': .0,
-                                          'predicted_size': 0,
-                                          'predicted_num_seqs': 0,
-                                          'true_positive_bps': 0,
-                                          'true_positive_seqs': 0,
-                                          'true_size': gs_bin.length,
-                                          'true_size_recall': gs_bin.length,
-                                          'true_num_seqs': gs_bin.num_seqs(),
-                                          'true_num_seqs_recall': gs_bin.num_seqs(),
-                                          'represents_genome': True})
+        genome_sizes_df = gs_df.rename(columns={'BINID': 'genome_id'}).groupby('genome_id', sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'length_gs', 'SEQUENCEID': 'seq_counts_gs'})
+        precision_df = precision_df.reset_index().join(genome_sizes_df, on='genome_id', how='left', sort=False).set_index('BINID')
+        precision_df['recall_bp'] = precision_df['genome_length'] / precision_df['length_gs']
+        precision_df['recall_seq'] = precision_df['genome_seq_counts'] / precision_df['seq_counts_gs']
+        precision_df['rank'] = 'NA'
 
-        if self.options.filter_tail_percentage and self != self.gold_standard:
-            filter_tail.filter_tail(self.bins_metrics, self.options.filter_tail_percentage)
-        if self.options.genome_to_unique_common:
-            self.bins_metrics = exclude_genomes.filter_data(self.bins_metrics, self.options.genome_to_unique_common, self.options.filter_keyword)
+        recall_df = confusion_df.loc[confusion_df.groupby('genome_id', sort=False)['genome_length'].idxmax()]
+        recall_df = recall_df.reset_index().join(genome_sizes_df, on='genome_id', how='right', sort=False).set_index('BINID')
+        recall_df.fillna({'genome_length': 0, 'genome_seq_counts': 0}, inplace=True)
+        recall_df['recall_bp'] = recall_df['genome_length'] / recall_df['length_gs']
+        recall_df['recall_seq'] = recall_df['genome_seq_counts'] / recall_df['seq_counts_gs']
 
-        # sort bins by completeness
-        self.bins_metrics = sorted(self.bins_metrics, key=lambda t: t['recall_bp'], reverse=True)
-        return self.bins_metrics
+        self.metrics.recall_avg_bp = recall_df['recall_bp'].mean()
+        self.metrics.recall_avg_bp_var = recall_df['recall_bp'].var()
+        self.metrics.recall_avg_bp_sem = recall_df['recall_bp'].sem()
+        self.metrics.recall_avg_seq = recall_df['recall_seq'].mean()
+        self.metrics.recall_avg_seq_sem = recall_df['recall_seq'].sem()
+        self.metrics.recall_weighted_bp = recall_df['genome_length'].sum() / recall_df['length_gs'].sum()
+        self.metrics.recall_weighted_seq = recall_df['genome_seq_counts'].sum() / recall_df['seq_counts_gs'].sum()
+
+        self.metrics.accuracy_bp = precision_df['genome_length'].sum() / recall_df['length_gs'].sum()
+        self.metrics.accuracy_seq = precision_df['genome_seq_counts'].sum() / recall_df['seq_counts_gs'].sum()
+
+        self.precision_df = precision_df
+        self.recall_df = recall_df
 
 
 class TaxonomicQuery(Query):
@@ -251,456 +465,85 @@ class TaxonomicQuery(Query):
     tax_id_to_tax_id = None
     binning_type = 'taxonomic'
 
-    def __init__(self):
-        super().__init__()
-        self.__rank_to_sequence_id_to_bin_id = defaultdict(dict)
-        self.__rank_to_bins = defaultdict(list)
-        self.__profile_bp = None
-        self.__profile_seq = None
+    def __init__(self, rank_to_df, label):
+        super().__init__(label)
+        self.__rank_to_df = rank_to_df
+        self.metrics = defaultdict()
+
 
     @property
-    def rank_to_sequence_id_to_bin_id(self):
-        return self.__rank_to_sequence_id_to_bin_id
-
-    @property
-    def rank_to_bins(self):
-        return self.__rank_to_bins
-
-    @rank_to_sequence_id_to_bin_id.setter
-    def rank_to_sequence_id_to_bin_id(self, rank_sequence_id_bin_id):
-        (rank, sequence_id, bin_id) = rank_sequence_id_bin_id
-        if sequence_id in self.__rank_to_sequence_id_to_bin_id[rank]:
-            logging.getLogger('amber').warning("Sequence {} cannot be in multiple bins at rank {}.".format(sequence_id, rank))
-        else:
-            self.__rank_to_sequence_id_to_bin_id[rank][sequence_id] = bin_id
-            self.get_bin_by_id(bin_id).add_sequence_id(sequence_id, self.gold_standard.sequence_id_to_length[sequence_id])
-
-    def _create_profile(self, percentage_property):
-        if not self.bins_metrics:
-            self.get_bins_metrics()
-
-        class Prediction:
-            def __init__(self):
-                pass
-        profile = []
-        for metrics in self.bins_metrics:
-            prediction = Prediction()
-            prediction.taxid = metrics['mapping_id']
-            prediction.rank = metrics['rank']
-            prediction.percentage = metrics[percentage_property]
-            prediction.taxpath = '|'.join(load_ncbi_taxinfo.get_id_path(metrics['mapping_id'], TaxonomicQuery.tax_id_to_parent, TaxonomicQuery.tax_id_to_rank))
-            prediction.taxpathsn = None
-            profile.append(prediction)
-        return profile
-
-    @property
-    def profile_bp(self):
-        if self.__profile_bp:
-            return self.__profile_bp
-        self.__profile_bp = self._create_profile('true_positive_bps')
-        return self.__profile_bp
-
-    @property
-    def profile_seq(self):
-        if self.__profile_seq:
-            return self.__profile_seq
-        self.__profile_seq = self._create_profile('true_positive_seqs')
-        return self.__profile_seq
-
-    def add_bin(self, bin):
-        self.rank_to_bins[bin.rank].append(bin)
-        super().add_bin(bin)
-
-    def get_bins_metrics(self):
-        if self.bins_metrics:
-            return self.bins_metrics
-        self.bins_metrics = [bin.get_metrics_dict(self.gold_standard) for bin in self.bins]
-        for rank in load_ncbi_taxinfo.RANKS:
-            if rank in self.gold_standard.rank_to_bins:
-                gs_rank_to_bin_ids = set([bin.id for bin in self.gold_standard.rank_to_bins[rank]])
-            else:
-                continue
-            if rank in self.rank_to_bins:
-                self_rank_to_bin_ids = set([bin.id for bin in self.rank_to_bins[rank]])
-                ids_in_gs_but_not_in_self = gs_rank_to_bin_ids - self_rank_to_bin_ids
-            else:
-                ids_in_gs_but_not_in_self = gs_rank_to_bin_ids
-            for bin_id in ids_in_gs_but_not_in_self:
-                self.bins_metrics.append({'id': None,
-                                          'name': TaxonomicQuery.tax_id_to_name[bin_id] if TaxonomicQuery.tax_id_to_name else np.nan,
-                                          'rank': rank,
-                                          'mapping_id': bin_id,
-                                          'precision_bp': np.nan,
-                                          'precision_seq': np.nan,
-                                          'recall_bp': .0,
-                                          'recall_seq': .0,
-                                          'predicted_size': 0,
-                                          'predicted_num_seqs': 0,
-                                          'true_positive_bps': 0,
-                                          'true_positive_seqs': 0,
-                                          'true_size': self.gold_standard.get_bin_by_id(bin_id).length,
-                                          'true_num_seqs': self.gold_standard.get_bin_by_id(bin_id).num_seqs()})
-
-        if self.options.filter_tail_percentage and self != self.gold_standard:
-            filter_tail.filter_tail(self.bins_metrics, self.options.filter_tail_percentage)
-
-        rank_to_index = dict(zip(load_ncbi_taxinfo.RANKS[::-1], list(range(len(load_ncbi_taxinfo.RANKS)))))
-        # sort bins by rank and completeness
-        self.bins_metrics = sorted(self.bins_metrics, key=lambda t: (rank_to_index[t['rank']], t['recall_bp']), reverse=True)
-        return self.bins_metrics
-
-    def compute_unifrac(self):
-        pf_profile_bp = pf.Profile(profile=self.profile_bp)
-        gs_pf_profile_bp = pf.Profile(profile=self.gold_standard.profile_bp)
-        pf_profile_seq = pf.Profile(profile=self.profile_seq)
-        gs_pf_profile_seq = pf.Profile(profile=self.gold_standard.profile_seq)
-        return uf.compute_unifrac(gs_pf_profile_bp, pf_profile_bp)[0], uf.compute_unifrac(gs_pf_profile_seq, pf_profile_seq)[0]
-
-
-class Bin(ABC):
-    def __init__(self, id):
-        self.__id = id
-        self.__sequence_ids = set()
-        self.__length = 0
-        self.__true_positive_bps = 0
-        self.__true_positive_seqs = 0
-        self.__precision_bp = .0
-        self.__precision_seq = .0
-        self.__recall_bp = .0
-        self.__recall_seq = .0
-        self.__mapping_id_to_length = defaultdict(int)
-        self.__mapping_id_to_num_seqs = defaultdict(int)
-
-    @property
-    def id(self):
-        return self.__id
-
-    @property
-    def sequence_ids(self):
-        return self.__sequence_ids
-
-    @property
-    def length(self):
-        return self.__length
-
-    @property
-    def true_positive_bps(self):
-        return self.__true_positive_bps
-
-    @property
-    def true_positive_seqs(self):
-        return self.__true_positive_seqs
-
-    @property
-    def precision_bp(self):
-        return self.__precision_bp
-
-    @property
-    def precision_seq(self):
-        return self.__precision_seq
-
-    @property
-    def recall_bp(self):
-        return self.__recall_bp
-
-    @property
-    def recall_seq(self):
-        return self.__recall_seq
-
-    @property
-    def mapping_id_to_length(self):
-        return self.__mapping_id_to_length
-
-    @property
-    def mapping_id_to_num_seqs(self):
-        return self.__mapping_id_to_num_seqs
-
-    @id.setter
-    def id(self, id):
-        self.__id = id
-
-    @sequence_ids.setter
-    def sequence_ids(self, sequence_ids):
-        self.__sequence_ids = sequence_ids
-
-    @length.setter
-    def length(self, length):
-        self.__length = length
-
-    @true_positive_bps.setter
-    def true_positive_bps(self, true_positive_bps):
-        self.__true_positive_bps = true_positive_bps
-
-    @true_positive_seqs.setter
-    def true_positive_seqs(self, true_positive_seqs):
-        self.__true_positive_seqs = true_positive_seqs
-
-    @precision_bp.setter
-    def precision_bp(self, precision_bp):
-        self.__precision_bp = precision_bp
-
-    @precision_seq.setter
-    def precision_seq(self, precision_seq):
-        self.__precision_seq = precision_seq
-
-    @recall_bp.setter
-    def recall_bp(self, recall_bp):
-        self.__recall_bp = recall_bp
-
-    @recall_seq.setter
-    def recall_seq(self, recall_seq):
-        self.__recall_seq = recall_seq
-
-    def num_seqs(self):
-        return len(self.__sequence_ids)
-
-    def add_sequence_id(self, sequence_id, length):
-        if sequence_id not in self.__sequence_ids:
-            self.__sequence_ids.add(sequence_id)
-            self.__length += length
-
-    @abstractmethod
-    def compute_confusion_matrix(self, gold_standard):
-        pass
-
-    @abstractmethod
-    def compute_precision_recall(self, gold_standard):
-        pass
-
-    @abstractmethod
-    def get_metrics_dict(self):
-        pass
-
-
-class GenomeBin(Bin):
-    def __init__(self, id):
-        super().__init__(id)
-        self.__most_abundant_genome = None
-        self.__most_complete_genome = None
-        self.__true_positive_bps_recall = 0
-        self.__true_positive_seqs_recall = 0
-        self.__represents_genome = False
-
-    @property
-    def most_abundant_genome(self):
-        return self.__most_abundant_genome
-
-    @property
-    def most_complete_genome(self):
-        return self.__most_complete_genome
-
-    @property
-    def true_positive_bps_recall(self):
-        return self.__true_positive_bps_recall
-
-    @property
-    def true_positive_seqs_recall(self):
-        return self.__true_positive_seqs_recall
-
-    @property
-    def represents_genome(self):
-        return self.__represents_genome
-
-    @most_abundant_genome.setter
-    def most_abundant_genome(self, most_abundant_genome):
-        self.__most_abundant_genome = most_abundant_genome
-
-    @most_complete_genome.setter
-    def most_complete_genome(self, most_complete_genome):
-        self.__most_complete_genome = most_complete_genome
-
-    @true_positive_bps_recall.setter
-    def true_positive_bps_recall(self, true_positive_bps_recall):
-        self.__true_positive_bps_recall = true_positive_bps_recall
-
-    @true_positive_seqs_recall.setter
-    def true_positive_seqs_recall(self, true_positive_seqs_recall):
-        self.__true_positive_seqs_recall = true_positive_seqs_recall
-
-    @represents_genome.setter
-    def represents_genome(self, represents_genome):
-        self.__represents_genome = represents_genome
-
-    def compute_most_abundant_genome(self):
-        self.__most_abundant_genome = max(self.mapping_id_to_length, key=self.mapping_id_to_length.get)
-
-    def compute_most_complete_genome(self, gold_standard):
-        max_genome_percentage = .0
-        best_gs_bin = gold_standard.bins[0]
-        for gs_bin in gold_standard.bins:
-            if gs_bin.id in self.mapping_id_to_length:
-                genome_percentage = self.mapping_id_to_length[gs_bin.id] / gs_bin.length
-            else:
-                genome_percentage = .0
-            if max_genome_percentage < genome_percentage:
-                max_genome_percentage = genome_percentage
-                best_gs_bin = gs_bin
-            elif max_genome_percentage == genome_percentage and gs_bin.length > best_gs_bin.length:
-                best_gs_bin = gs_bin
-        self.__most_complete_genome = best_gs_bin.id
-
-    def compute_confusion_matrix(self, gold_standard):
-        for sequence_id in self.sequence_ids:
-            genome_id = gold_standard.sequence_id_to_bin_id[sequence_id]
-            if isinstance(genome_id, str):
-                self.mapping_id_to_length[genome_id] += gold_standard.sequence_id_to_length[sequence_id]
-                self.mapping_id_to_num_seqs[genome_id] += 1
-            elif isinstance(genome_id, set):
-                for x in genome_id:
-                    self.mapping_id_to_length[x] += gold_standard.sequence_id_to_length[sequence_id]
-                    self.mapping_id_to_num_seqs[x] += 1
-
-    def compute_true_positives(self, gold_standard):
-        if len(self.mapping_id_to_length) == 0:
-            self.compute_confusion_matrix(gold_standard)
-            self.compute_most_abundant_genome()
-            self.compute_most_complete_genome(gold_standard)
-        self.true_positive_bps = self.mapping_id_to_length[self.most_abundant_genome]
-        self.true_positive_seqs = self.mapping_id_to_num_seqs[self.most_abundant_genome]
-        self.true_positive_bps_recall = self.mapping_id_to_length[self.most_complete_genome]
-        self.true_positive_seqs_recall = self.mapping_id_to_num_seqs[self.most_complete_genome]
-
-    def compute_precision_recall(self, gold_standard):
-        self.precision_bp = self.true_positive_bps / self.length
-        self.precision_seq = self.true_positive_seqs / self.num_seqs()
-        self.recall_bp = self.true_positive_bps_recall / gold_standard.get_bin_by_id(self.most_complete_genome).length
-        self.recall_seq = self.true_positive_seqs_recall / gold_standard.get_bin_by_id(self.most_complete_genome).num_seqs()
-
-    def get_metrics_dict(self, gold_standard):
-        return {'id': self.id,
-                'rank': 'NA',
-                'most_abundant_genome': self.most_abundant_genome,
-                'most_complete_genome': self.most_complete_genome,
-                'precision_bp': self.precision_bp,
-                'precision_seq': self.precision_seq,
-                'recall_bp': self.recall_bp,
-                'recall_seq': self.recall_seq,
-                'predicted_size': self.length,
-                'predicted_num_seqs': self.num_seqs(),
-                'true_positive_bps': self.true_positive_bps,
-                'true_positive_seqs': self.true_positive_seqs,
-                'true_size': gold_standard.get_bin_by_id(self.most_abundant_genome).length,
-                'true_size_recall': gold_standard.get_bin_by_id(self.most_complete_genome).length,
-                'true_num_seqs': gold_standard.get_bin_by_id(self.most_abundant_genome).num_seqs(),
-                'true_num_seqs_recall': gold_standard.get_bin_by_id(self.most_complete_genome).num_seqs(),
-                'represents_genome': self.represents_genome}
-
-
-class TaxonomicBin(Bin):
-    def __init__(self, id):
-        super().__init__(id)
-        self.__rank = None
-
-    @property
-    def rank(self):
-        return self.__rank
-
-    @rank.setter
-    def rank(self, rank):
-        self.__rank = rank
-
-    @property
-    def mapping_id(self):
-        return self.id
-
-    def compute_confusion_matrix(self, gold_standard):
-        if self.rank not in gold_standard.rank_to_sequence_id_to_bin_id:
-            return
-        for sequence_id in self.sequence_ids:
-            if sequence_id in gold_standard.rank_to_sequence_id_to_bin_id[self.rank]:
-                mapping_id = gold_standard.rank_to_sequence_id_to_bin_id[self.rank][sequence_id]
-                self.mapping_id_to_length[mapping_id] += gold_standard.sequence_id_to_length[sequence_id]
-                self.mapping_id_to_num_seqs[mapping_id] += 1
-
-    def compute_precision_recall(self, gold_standard):
-        self.precision_bp = self.true_positive_bps / self.length
-        self.precision_seq = self.true_positive_seqs / self.num_seqs()
-        if self.id in gold_standard.get_bin_ids():
-            self.recall_bp = self.true_positive_bps / gold_standard.get_bin_by_id(self.id).length
-            self.recall_seq = self.true_positive_seqs / gold_standard.get_bin_by_id(self.id).num_seqs()
-        else:
-            self.recall_bp = np.nan
-            self.recall_seq = np.nan
-
-    def compute_true_positives(self, gold_standard):
-        if len(self.mapping_id_to_length) == 0:
-            self.compute_confusion_matrix(gold_standard)
-        if self.id not in gold_standard.get_bin_ids():
-            return
-        gs_bin = gold_standard.get_bin_by_id(self.id)
-        commmon_seq_ids = self.sequence_ids & gs_bin.sequence_ids
-        for sequence_id in commmon_seq_ids:
-            self.true_positive_bps += gold_standard.sequence_id_to_length[sequence_id]
-        self.true_positive_seqs = len(commmon_seq_ids)
-
-    def get_metrics_dict(self, gold_standard):
-        if self.id in gold_standard.get_bin_ids():
-            true_size = gold_standard.get_bin_by_id(self.id).length
-            true_num_seqs = gold_standard.get_bin_by_id(self.id).num_seqs()
-        else:
-            true_size = true_num_seqs = np.nan
-        return {'id': self.id,
-                'name': gold_standard.tax_id_to_name[self.id] if gold_standard.tax_id_to_name else np.nan,
-                'rank': self.rank,
-                'mapping_id': self.id,
-                'precision_bp': self.precision_bp,
-                'precision_seq': self.precision_seq,
-                'recall_bp': self.recall_bp,
-                'recall_seq': self.recall_seq,
-                'predicted_size': self.length,
-                'predicted_num_seqs': self.num_seqs(),
-                'true_positive_bps': self.true_positive_bps,
-                'true_positive_seqs': self.true_positive_seqs,
-                'true_size': true_size,
-                'true_num_seqs': true_num_seqs}
-
-
-class Options:
-    def __init__(self, filter_tail_percentage, genome_to_unique_common, filter_keyword, min_length, rank_as_genome_binning):
-        self.__filter_tail_percentage = float(filter_tail_percentage) if filter_tail_percentage else .0
-        self.__genome_to_unique_common = genome_to_unique_common
-        self.__filter_keyword = filter_keyword
-        self.__min_length = int(min_length) if min_length else 0
-        if rank_as_genome_binning and rank_as_genome_binning not in load_ncbi_taxinfo.RANKS:
-            exit("Not a valid rank to assess taxonomic binning as genome binning (option --rank_as_genome_binning): " + rank_as_genome_binning)
-        self.__rank_as_genome_binning = rank_as_genome_binning
-
-    @property
-    def filter_tail_percentage(self):
-        return self.__filter_tail_percentage
-
-    @property
-    def genome_to_unique_common(self):
-        return self.__genome_to_unique_common
-
-    @property
-    def filter_keyword(self):
-        return self.__filter_keyword
-
-    @property
-    def min_length(self):
-        return self.__min_length
-
-    @property
-    def rank_as_genome_binning(self):
-        return self.__rank_as_genome_binning
-
-    @filter_tail_percentage.setter
-    def filter_tail_percentage(self, filter_tail_percentage):
-        self.__filter_tail_percentage = filter_tail_percentage
-
-    @genome_to_unique_common.setter
-    def genome_to_unique_common(self, genome_to_unique_common):
-        self.__genome_to_unique_common = genome_to_unique_common
-
-    @filter_keyword.setter
-    def filter_keyword(self, filter_keyword):
-        self.__filter_keyword = filter_keyword
-
-    @min_length.setter
-    def min_length(self, min_length):
-        self.__min_length = min_length
-
-    @rank_as_genome_binning.setter
-    def rank_as_genome_binning(self, rank_as_genome_binning):
-        self.__rank_as_genome_binning = rank_as_genome_binning
+    def rank_to_df(self):
+        return self.__rank_to_df
+
+    @rank_to_df.setter
+    def rank_to_df(self, rank_to_df):
+        self.__rank_to_df = rank_to_df
+
+    def get_metrics_df(self):
+        allranks_metrics_df = pd.DataFrame()
+        for rank in self.metrics:
+            metrics_dict = self.metrics[rank].get_ordered_dict()
+            metrics_dict[utils_labels.TOOL] = self.label
+            metrics_dict[utils_labels.BINNING_TYPE] = self.binning_type
+            metrics_dict[utils_labels.RANK] = rank
+            rank_metrics_df  = pd.DataFrame(metrics_dict)
+            allranks_metrics_df = pd.concat([allranks_metrics_df, rank_metrics_df], ignore_index=True, sort=True)
+        return allranks_metrics_df
+
+    def compute_metrics_for_rank(self, rank):
+        self.metrics[rank] = Metrics()
+        gs_df = self.gold_standard_df[rank].reset_index()
+
+        query_df = self.rank_to_df[rank].reset_index()[['SEQUENCEID', 'TAXID']]
+
+        query_w_length_df = pd.merge(query_df, gs_df.rename(columns={'TAXID': 'true_taxid'}).reset_index(),  on='SEQUENCEID', sort=False)
+
+        confusion_df = query_w_length_df.groupby(['TAXID', 'true_taxid'], sort=False).agg({'LENGTH': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'LENGTH': 'tax_length', 'SEQUENCEID': 'tax_seq_counts'})
+        self.metrics[rank].rand_index_bp, self.metrics[rank].adjusted_rand_index_bp = Metrics.compute_rand_index(confusion_df, 'TAXID', 'true_taxid', 'tax_length')
+        self.metrics[rank].rand_index_seq, self.metrics[rank].adjusted_rand_index_seq = Metrics.compute_rand_index(confusion_df, 'TAXID', 'true_taxid', 'tax_seq_counts')
+
+        query_w_length_df = query_w_length_df[['SEQUENCEID', 'TAXID', 'LENGTH']]
+
+        self.metrics[rank].percentage_of_assigned_bps = query_w_length_df['LENGTH'].sum() / gs_df['LENGTH'].sum()
+        self.metrics[rank].percentage_of_assigned_seqs = query_w_length_df.shape[0] / gs_df.shape[0]
+
+        true_positives_df = pd.merge(query_df, gs_df, on=['SEQUENCEID', 'TAXID'], sort=False)
+        true_positives_df = true_positives_df.groupby('TAXID', sort=False).agg({'LENGTH': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'LENGTH': 'tp_length', 'SEQUENCEID': 'tp_seq_counts'})
+
+        tp_fp_fn_df = query_w_length_df.groupby('TAXID', sort=False).agg({'LENGTH': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'LENGTH': 'total_length', 'SEQUENCEID': 'total_seq_counts'})
+        tp_fp_fn_df = pd.merge(true_positives_df, tp_fp_fn_df, on=['TAXID'], how='outer', sort=False)
+        tax_sizes_df = gs_df.groupby('TAXID', sort=False).agg({'LENGTH': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'LENGTH': 'length_gs', 'SEQUENCEID': 'seq_counts_gs'})
+        tp_fp_fn_df = tp_fp_fn_df.reset_index().join(tax_sizes_df, on='TAXID', how='outer', sort=False).set_index('TAXID')
+        tp_fp_fn_df.fillna(0, inplace=True)
+
+        tp_fp_fn_df['precision_bp'] = tp_fp_fn_df['tp_length'] / tp_fp_fn_df['total_length']
+        tp_fp_fn_df['precision_seq'] = tp_fp_fn_df['tp_seq_counts'] / tp_fp_fn_df['total_seq_counts']
+        tp_fp_fn_df['recall_bp'] = tp_fp_fn_df['tp_length'] / tp_fp_fn_df['length_gs']
+        tp_fp_fn_df['recall_seq'] = tp_fp_fn_df['tp_seq_counts'] / tp_fp_fn_df['seq_counts_gs']
+        tp_fp_fn_df['rank'] = rank
+
+        tp_length_sum = tp_fp_fn_df['tp_length'].sum()
+        tp_seq_counts_sum = tp_fp_fn_df['tp_seq_counts'].sum()
+        length_gs_sum = tp_fp_fn_df['length_gs'].sum()
+        seq_counts_gs_sum = tp_fp_fn_df['seq_counts_gs'].sum()
+
+        self.metrics[rank].precision_avg_bp = tp_fp_fn_df['precision_bp'].mean()
+        self.metrics[rank].precision_avg_seq = tp_fp_fn_df['precision_seq'].mean()
+        self.metrics[rank].precision_weighted_bp = tp_length_sum / tp_fp_fn_df['total_length'].sum()
+        self.metrics[rank].precision_weighted_seq = tp_seq_counts_sum / tp_fp_fn_df['total_seq_counts'].sum()
+
+        self.metrics[rank].recall_avg_bp = tp_fp_fn_df['recall_bp'].mean()
+        self.metrics[rank].recall_avg_seq = tp_fp_fn_df['recall_seq'].mean()
+        self.metrics[rank].recall_weighted_bp = tp_length_sum / length_gs_sum
+        self.metrics[rank].recall_weighted_seq = tp_seq_counts_sum / seq_counts_gs_sum
+
+        self.metrics[rank].accuracy_bp = tp_length_sum / length_gs_sum
+        self.metrics[rank].accuracy_seq = tp_seq_counts_sum / seq_counts_gs_sum
+
+        self.precision_df = pd.concat([self.precision_df, tp_fp_fn_df.reset_index()], ignore_index=True, sort=True)
+        self.recall_df = self.precision_df
+
+    def compute_metrics(self):
+        print(self.label)
+        for rank in self.rank_to_df:
+            self.compute_metrics_for_rank(rank)

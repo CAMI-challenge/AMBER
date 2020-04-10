@@ -611,7 +611,7 @@ def create_rankings_table(df_summary, show_rank=False):
 
 
 def get_genome_bins_columns():
-    return OrderedDict([('bin_id', 'Bin ID'),
+    return OrderedDict([('BINID', 'Bin ID'),
                         ('genome_id', 'Most abundant genome'),
                         ('precision_bp', utils_labels.PRECISION_PER_BP),
                         ('recall_bp', utils_labels.RECALL_PER_BP),
@@ -726,19 +726,27 @@ def create_plots_per_binner(df_summary_t):
 
 
 def get_tax_bins_columns():
-    return OrderedDict([('mapping_id', 'Taxon ID'),
+    return OrderedDict([('TAXID', 'Taxon ID'),
                         ('name', 'Scientific name'),
                         ('rank', 'Taxonomic rank'),
                         ('precision_bp', utils_labels.PRECISION_PER_BP),
                         ('recall_bp', utils_labels.RECALL_PER_BP),
-                        ('predicted_size', 'Predicted size (bp)'),
-                        ('true_positive_bps', 'True positives (bp)'),
-                        ('true_size', 'True size (bp)'),
-                        ('precision_seq', utils_labels.PRECISION_PER_SEQ),
-                        ('recall_seq', utils_labels.RECALL_PER_SEQ),
-                        ('predicted_num_seqs', 'Predicted size (seq)'),
-                        ('true_positive_seqs', 'True positives (seq)'),
-                        ('true_num_seqs', 'True size (seq)')])
+                        ('total_length', 'Bin size (bp)'),
+                        ('tp_length', 'True positives (bp)'),
+                        ('length_gs', 'True size (bp)')])
+    # return OrderedDict([('mapping_id', 'Taxon ID'),
+    #                     ('name', 'Scientific name'),
+    #                     ('rank', 'Taxonomic rank'),
+    #                     ('precision_bp', utils_labels.PRECISION_PER_BP),
+    #                     ('recall_bp', utils_labels.RECALL_PER_BP),
+    #                     ('predicted_size', 'Predicted size (bp)'),
+    #                     ('true_positive_bps', 'True positives (bp)'),
+    #                     ('true_size', 'True size (bp)'),
+    #                     ('precision_seq', utils_labels.PRECISION_PER_SEQ),
+    #                     ('recall_seq', utils_labels.RECALL_PER_SEQ),
+    #                     ('predicted_num_seqs', 'Predicted size (seq)'),
+    #                     ('true_positive_seqs', 'True positives (seq)'),
+    #                     ('true_num_seqs', 'True size (seq)')])
 
 
 def create_tax_ranks_panel(qbins_plots_list, qsamples_plots_list, cc_plots_dict_list, contamination_plots_list):
@@ -827,7 +835,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
     metrics_panel = Panel(child=metrics_column, title="Metrics")
 
     bins_columns = get_tax_bins_columns()
-    if pd_bins['name'].isnull().any():
+    if 'name' not in pd_bins.columns or pd_bins['name'].isnull().any():
         del bins_columns['name']
 
     metrics_bins_panel = create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_dir, 'taxonomic')

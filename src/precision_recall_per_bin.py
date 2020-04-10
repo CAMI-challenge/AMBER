@@ -22,7 +22,7 @@ import pandas as pd
 
 
 def transform_confusion_matrix2(query):
-    gs_df = query.gold_standard_df.rename(columns={'bin_id': 'genome_id'})
+    gs_df = query.gold_standard_df.rename(columns={'BINID': 'genome_id', 'LENGTH': 'seq_length'})
     precision_df = query.precision_df
     confusion_df = query.confusion_df
     genomes_df = pd.DataFrame(gs_df['genome_id'].unique(), columns=['genome_id'])
@@ -36,8 +36,8 @@ def transform_confusion_matrix2(query):
 
     unbinned_genomes_df = genomes_df[~genomes_df['genome_id'].isin(confusion_df.reset_index()['genome_id'])]
     heatmap_df = confusion_df.reset_index().append(unbinned_genomes_df, sort=False).fillna({'genome_length': 0, 'genome_seq_counts': 0})
-    heatmap_df = heatmap_df.pivot(index='bin_id', columns='genome_id', values='genome_length')
-    heatmap_df = heatmap_df.merge(precision_df['genome_length'], on='bin_id', sort=False).sort_values(by='genome_length', axis=0, ascending=False)
+    heatmap_df = heatmap_df.pivot(index='BINID', columns='genome_id', values='genome_length')
+    heatmap_df = heatmap_df.merge(precision_df['genome_length'], on='BINID', sort=False).sort_values(by='genome_length', axis=0, ascending=False)
 
     gs_df = gs_df.set_index(['SEQUENCEID', 'genome_id'])
     query_df = query.df.set_index(['SEQUENCEID', 'genome_id'])
