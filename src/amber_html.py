@@ -886,4 +886,3 @@ def create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_id
 
     with open(os.path.join(output_dir, "index.html"), 'w') as f:
         f.write(html)
-    logging.getLogger('amber').info('done')

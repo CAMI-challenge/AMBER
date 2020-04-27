@@ -14,10 +14,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import pandas as pd
+import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections import OrderedDict
 from src.utils import labels as utils_labels
+from src.utils import load_ncbi_taxinfo
 
 
 class Metrics():
@@ -287,13 +289,14 @@ class Metrics():
 
 
 class Query(ABC):
-    def __init__(self, label):
+    def __init__(self, label, options):
         self.__label = label
         self.__gold_standard_df = None
         self.__precision_df = pd.DataFrame()
         self.__recall_df = None
         self.__confusion_df = None
         self.__metrics = None
+        self.__options = options
 
     @property
     def label(self):
@@ -319,6 +322,10 @@ class Query(ABC):
     def metrics(self):
         return self.__metrics
 
+    @property
+    def options(self):
+        return self.__options
+
     @label.setter
     def label(self, label):
         self.__label = label
@@ -343,6 +350,10 @@ class Query(ABC):
     def metrics(self, metrics):
         self.__metrics = metrics
 
+    @options.setter
+    def options(self, options):
+        self.__options = options
+
     @abstractmethod
     def compute_metrics(self):
         pass
@@ -351,8 +362,8 @@ class Query(ABC):
 class GenomeQuery(Query):
     binning_type = 'genome'
 
-    def __init__(self, df, label):
-        super().__init__(label)
+    def __init__(self, df, label, options):
+        super().__init__(label, options)
         self.__df = df
         self.metrics = Metrics()
 
@@ -372,13 +383,11 @@ class GenomeQuery(Query):
         return pd.DataFrame(metrics_dict)
 
     def compute_metrics(self):
-        print(self.label)
+        logging.getLogger('amber').info('Evaluating {} (genome binning)...'.format(self.label))
         gs_df = self.gold_standard_df
-        # gs_df.rename(columns={'BINID': 'bin_id', 'LENGTH': 'seq_length'}, inplace=True)
         gs_df = gs_df[['SEQUENCEID', 'BINID', 'LENGTH']].rename(columns={'LENGTH': 'seq_length'})
 
         query_df = self.df
-        # query_df.rename(columns={'BINID': 'bin_id'}, inplace=True)
         query_df = query_df[['SEQUENCEID', 'BINID']]
 
         query_w_length = pd.merge(query_df, gs_df[['SEQUENCEID', 'BINID', 'seq_length']].rename(columns={'BINID': 'genome_id'}).drop_duplicates('SEQUENCEID'), on='SEQUENCEID', sort=False)
@@ -424,6 +433,13 @@ class GenomeQuery(Query):
         precision_df['precision_bp'] = precision_df['genome_length'] / precision_df['total_length']
         precision_df['precision_seq'] = precision_df['genome_seq_counts'] / precision_df['total_seq_counts']
 
+        if self.options.filter_tail_percentage:
+            precision_df['total_length_pct'] = precision_df['total_length'] / precision_df['total_length'].sum()
+            precision_df.sort_values(by='total_length', inplace=True)
+            precision_df['cumsum_length_pct'] = precision_df['total_length_pct'].cumsum(axis=0)
+            precision_df['precision_bp'].mask(precision_df['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100, inplace=True)
+            precision_df.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
+
         self.metrics.precision_avg_bp = precision_df['precision_bp'].mean()
         self.metrics.precision_avg_bp_sem = precision_df['precision_bp'].sem()
         self.metrics.precision_avg_bp_var = precision_df['precision_bp'].var()
@@ -465,11 +481,10 @@ class TaxonomicQuery(Query):
     tax_id_to_tax_id = None
     binning_type = 'taxonomic'
 
-    def __init__(self, rank_to_df, label):
-        super().__init__(label)
+    def __init__(self, rank_to_df, label, options):
+        super().__init__(label, options)
         self.__rank_to_df = rank_to_df
         self.metrics = defaultdict()
-
 
     @property
     def rank_to_df(self):
@@ -544,6 +559,57 @@ class TaxonomicQuery(Query):
         self.recall_df = self.precision_df
 
     def compute_metrics(self):
-        print(self.label)
+        logging.getLogger('amber').info('Evaluating {} (taxonomic binning)...'.format(self.label))
         for rank in self.rank_to_df:
             self.compute_metrics_for_rank(rank)
+
+
+class Options:
+    def __init__(self, filter_tail_percentage, genome_to_unique_common, filter_keyword, min_length, rank_as_genome_binning):
+        self.__filter_tail_percentage = float(filter_tail_percentage) if filter_tail_percentage else .0
+        self.__genome_to_unique_common = genome_to_unique_common
+        self.__filter_keyword = filter_keyword
+        self.__min_length = int(min_length) if min_length else 0
+        if rank_as_genome_binning and rank_as_genome_binning not in load_ncbi_taxinfo.RANKS:
+            exit("Not a valid rank to assess taxonomic binning as genome binning (option --rank_as_genome_binning): " + rank_as_genome_binning)
+        self.__rank_as_genome_binning = rank_as_genome_binning
+
+    @property
+    def filter_tail_percentage(self):
+        return self.__filter_tail_percentage
+
+    @property
+    def genome_to_unique_common(self):
+        return self.__genome_to_unique_common
+
+    @property
+    def filter_keyword(self):
+        return self.__filter_keyword
+
+    @property
+    def min_length(self):
+        return self.__min_length
+
+    @property
+    def rank_as_genome_binning(self):
+        return self.__rank_as_genome_binning
+
+    @filter_tail_percentage.setter
+    def filter_tail_percentage(self, filter_tail_percentage):
+        self.__filter_tail_percentage = filter_tail_percentage
+
+    @genome_to_unique_common.setter
+    def genome_to_unique_common(self, genome_to_unique_common):
+        self.__genome_to_unique_common = genome_to_unique_common
+
+    @filter_keyword.setter
+    def filter_keyword(self, filter_keyword):
+        self.__filter_keyword = filter_keyword
+
+    @min_length.setter
+    def min_length(self, min_length):
+        self.__min_length = min_length
+
+    @rank_as_genome_binning.setter
+    def rank_as_genome_binning(self, rank_as_genome_binning):
+        self.__rank_as_genome_binning = rank_as_genome_binning

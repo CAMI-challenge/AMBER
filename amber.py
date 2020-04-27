@@ -65,14 +65,14 @@ def create_output_directories(output_dir, sample_id_to_queries_list):
     for sample_id in sample_id_to_queries_list:
         for query in sample_id_to_queries_list[sample_id]:
             make_sure_path_exists(os.path.join(output_dir, query.binning_type, query.label))
-    logging.getLogger('amber').info('done')
 
 
 def get_labels(labels, bin_files):
     if labels:
         labels_list = [x.strip() for x in labels.split(',')]
         if len(set(labels_list)) != len(bin_files):
-            logging.getLogger('amber').critical('Number of different labels does not match the number of binning files. Please check parameter -l, --labels.')
+            logging.getLogger('amber').critical(
+                'Number of different labels does not match the number of binning files. Please check parameter -l, --labels.')
             exit(1)
         return labels_list
     tool_id = []
@@ -89,73 +89,46 @@ def plot_heat_maps(sample_id_to_queries_list, output_dir):
                 plots.plot_heatmap(heatmap_df, sample_id, output_dir, query.label)
 
 
-def plot_genome_binning(color_indices, sample_id_to_queries_list, df_summary, pd_bins, labels, coverages_pd, output_dir):
+def plot_genome_binning(color_indices, sample_id_to_queries_list, df_summary, pd_bins, labels, coverages_pd,
+                        output_dir):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
     if len(df_summary_g) == 0:
         return
 
     logging.getLogger('amber').info('Creating genome binning plots...')
 
-    pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
+    plots.plot_precision_vs_bin_size(pd_bins, output_dir)
 
     plot_heat_maps(sample_id_to_queries_list, output_dir)
-    return
-    exit()
 
     available_tools = list(df_summary_g[utils_labels.TOOL].unique())
     available_tools = [tool for tool in labels if tool in available_tools]
-    if color_indices:
-        color_indices = [int(i) - 1 for i in color_indices.split(',')]
 
     if not coverages_pd.empty:
-        # compute average genome coverage if coverages for multiple samples were provided
-        coverages_pd['mean_coverage'] = coverages_pd.mean(axis=1)
-        coverages_pd = coverages_pd.sort_values(by=['mean_coverage'])
-        coverages_pd['rank'] = coverages_pd['mean_coverage'].rank()
-        plots.plot_precision_recall_by_coverage(sample_id_to_queries_list, df_summary_g, pd_bins_g, coverages_pd, available_tools, output_dir)
+        plots.plot_precision_recall_by_coverage(sample_id_to_queries_list, pd_bins, coverages_pd, available_tools,
+                                                output_dir)
 
-    # plots.create_legend(df_summary_g, output_dir)
+    if color_indices:
+        color_indices = [int(i) - 1 for i in color_indices.split(',')]
+    plots.create_legend(color_indices, available_tools, output_dir)
     plots.plot_avg_precision_recall(color_indices, df_summary_g, labels, output_dir)
     plots.plot_precision_recall(color_indices, df_summary_g, labels, output_dir)
     plots.plot_adjusted_rand_index_vs_assigned_bps(color_indices, df_summary_g, labels, output_dir)
 
-    # pd_genomes_recall = plots.get_pd_genomes_recall(sample_id_to_queries_list)
-    # pd_bins_precision = pd_bins_g[[utils_labels.TOOL, 'precision_bp', 'most_abundant_genome']].copy().dropna(subset=['precision_bp']).set_index(utils_labels.TOOL)
-
-    pd_genomes_recall = pd.DataFrame()
-    pd_bins_precision = pd.DataFrame()
-    for sample_id in sample_id_to_queries_list:
-        for query in sample_id_to_queries_list[sample_id]:
-            recall_df = query.recall_df.copy()
-            recall_df[utils_labels.TOOL] = query.label
-            recall_df['sample_id'] = sample_id
-            recall_df = recall_df.reset_index().set_index(['sample_id', utils_labels.TOOL])
-            pd_genomes_recall = pd.concat([pd_genomes_recall, recall_df])
-
-            precision_df = query.precision_df.copy()
-            precision_df[utils_labels.TOOL] = query.label
-            precision_df['sample_id'] = sample_id
-            precision_df = precision_df.reset_index().set_index(['sample_id', utils_labels.TOOL])
-            pd_bins_precision = pd.concat([pd_bins_precision, precision_df])
-
-
-    plots.plot_boxplot(pd_genomes_recall, 'recall_bp', output_dir, available_tools)
-    plots.plot_boxplot(pd_bins_precision, 'precision_bp', output_dir, available_tools)
+    plots.plot_boxplot(sample_id_to_queries_list, 'recall_bp', output_dir, available_tools)
+    plots.plot_boxplot(sample_id_to_queries_list, 'precision_bp', output_dir, available_tools)
 
     plots.plot_counts(pd_bins, available_tools, output_dir, 'bin_counts', plots.get_number_of_hq_bins)
     plots.plot_counts(pd_bins, available_tools, output_dir, 'high_scoring_bins', plots.get_number_of_hq_bins_by_score)
 
-    exit()
+    plot_by_genome.plot_precision_recall_per_bin(pd_bins, output_dir)
 
-
-    plots.plot_boxplot(pd_genomes_recall, 'recall_bp', output_dir, available_tools)
-    plots.plot_boxplot(pd_bins_precision, 'precision_bp', output_dir, available_tools)
-
-    plot_by_genome.plot_precision_recall_per_bin(pd_bins_g, output_dir)
-
-    plots.plot_contamination(pd_bins_g, 'genome', 'Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', plots.create_contamination_column, output_dir)
-    plots.plot_contamination(pd_bins_g, 'genome', 'Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column, output_dir)
-    logging.getLogger('amber').info('done')
+    plots.plot_contamination(pd_bins, 'genome', 'Contamination', 'Index of bin (sorted by contamination (bp))',
+                             'Contamination (bp)', plots.create_contamination_column, output_dir)
+    plots.plot_contamination(pd_bins, 'genome', 'Completeness - contamination',
+                             'Index of bin (sorted by completeness - contamination (bp))',
+                             'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column,
+                             output_dir)
 
 
 def plot_taxonomic_binning(df_summary, pd_bins, output_dir):
@@ -180,15 +153,19 @@ def plot_taxonomic_binning(df_summary, pd_bins, output_dir):
     errors_list = [utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM]
     plots.plot_taxonomic_results(df_summary_t, metrics_list, errors_list, 'avg_precision_recall_seq', output_dir)
 
-    metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ]
+    metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ,
+                    utils_labels.RECALL_PER_SEQ]
     plots.plot_taxonomic_results(df_summary_t, metrics_list, [], 'precision_recall', output_dir)
 
     for rank in load_ncbi_taxinfo.RANKS:
         pd_bins_rank = pd_bins[pd_bins['rank'] == rank]
-        plots.plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', plots.create_contamination_column, output_dir)
-        plots.plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column, output_dir)
-
-    logging.getLogger('amber').info('done')
+        plots.plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Contamination',
+                                 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)',
+                                 plots.create_contamination_column, output_dir)
+        plots.plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Completeness - contamination',
+                                 'Index of bin (sorted by completeness - contamination (bp))',
+                                 'Completeness - contamination (bp)',
+                                 plots.create_completeness_minus_contamination_column, output_dir)
 
 
 def evaluate(queries_list, sample_id):
@@ -196,7 +173,6 @@ def evaluate(queries_list, sample_id):
     df_summary = pd.DataFrame()
 
     for query in queries_list:
-
         query.compute_metrics()
 
         precision_df = query.precision_df
@@ -239,7 +215,8 @@ def main(args=None):
 
     group_g = parser.add_argument_group('genome binning-specific arguments')
     group_g.add_argument('-x', '--min_completeness', help=argparse_parents.HELP_THRESHOLDS_COMPLETENESS, required=False)
-    group_g.add_argument('-y', '--max_contamination', help=argparse_parents.HELP_THRESHOLDS_CONTAMINATION, required=False)
+    group_g.add_argument('-y', '--max_contamination', help=argparse_parents.HELP_THRESHOLDS_CONTAMINATION,
+                         required=False)
     group_g.add_argument('-r', '--remove_genomes', help=argparse_parents.HELP_GENOMES_FILE, required=False)
     group_g.add_argument('-k', '--keyword', help=argparse_parents.HELP_KEYWORD, required=False)
     group_g.add_argument('--genome_coverage', help='genome coverages', required=False)
@@ -248,7 +225,9 @@ def main(args=None):
     group_t.add_argument('--ncbi_nodes_file', help="NCBI nodes file", required=False)
     group_t.add_argument('--ncbi_names_file', help="NCBI names file", required=False)
     group_t.add_argument('--ncbi_merged_file', help="NCBI merged file", required=False)
-    group_t.add_argument('--rank_as_genome_binning', help="Assess taxonomic binning at a rank also as genome binning. Valid ranks: superkingdom, phylum, class, order, family, genus, species, strain", required=False)
+    group_t.add_argument('--rank_as_genome_binning',
+                         help="Assess taxonomic binning at a rank also as genome binning. Valid ranks: superkingdom, phylum, class, order, family, genus, species, strain",
+                         required=False)
 
     args = parser.parse_args(args)
     output_dir = os.path.abspath(args.output_dir)
@@ -257,46 +236,48 @@ def main(args=None):
     min_completeness = None
     max_contamination = None
     if args.min_completeness:
-        min_completeness = [int(x.strip())/100.0 for x in args.min_completeness.split(',')]
+        min_completeness = [int(x.strip()) / 100.0 for x in args.min_completeness.split(',')]
     if args.max_contamination:
-        max_contamination = [int(x.strip())/100.0 for x in args.max_contamination.split(',')]
+        max_contamination = [int(x.strip()) / 100.0 for x in args.max_contamination.split(',')]
 
     labels = get_labels(args.labels, args.bin_files)
 
-    # genome_to_unique_common = load_data.load_unique_common(args.remove_genomes)
+    genome_to_unique_common = load_data.load_unique_common(args.remove_genomes)
 
-    # options = binning_classes.Options(filter_tail_percentage=args.filter,
-    #                                   genome_to_unique_common=genome_to_unique_common,
-    #                                   filter_keyword=args.keyword,
-    #                                   min_length=args.min_length,
-    #                                   rank_as_genome_binning=args.rank_as_genome_binning)
+    options = binning_classes.Options(filter_tail_percentage=args.filter,
+                                      genome_to_unique_common=genome_to_unique_common,
+                                      filter_keyword=args.keyword,
+                                      min_length=args.min_length,
+                                      rank_as_genome_binning=args.rank_as_genome_binning)
+    options_gs = binning_classes.Options(filter_tail_percentage=.0,
+                                         genome_to_unique_common=genome_to_unique_common,
+                                         filter_keyword=args.keyword,
+                                         min_length=args.min_length,
+                                         rank_as_genome_binning=args.rank_as_genome_binning)
 
     load_data.load_ncbi_info(args.ncbi_nodes_file, args.ncbi_names_file, args.ncbi_merged_file)
 
-
-
-
-    sample_id_to_queries_list, sample_ids_list = load_data.load_queries(args.gold_standard_file, args.bin_files, labels)
+    sample_id_to_queries_list, sample_ids_list = load_data.load_queries(args.gold_standard_file, args.bin_files, labels,
+                                                                        options, options_gs)
 
     df_summary, pd_bins = evaluate_samples_queries(sample_id_to_queries_list)
 
     df_summary.to_csv(os.path.join(output_dir, 'df_summary.tsv'), sep='\t')
-
     pd_bins.to_csv(os.path.join(output_dir, 'pd_bins.tsv'), sep='\t')
 
     create_output_directories(output_dir, sample_id_to_queries_list)
 
-    # if args.genome_coverage:
-    #     coverages_pd = pd.DataFrame.from_dict(load_data.open_coverages(args.genome_coverage))
-    # else:
-    #     coverages_pd = pd.DataFrame()
+    if args.genome_coverage:
+        coverages_pd = pd.DataFrame.from_dict(load_data.open_coverages(args.genome_coverage))
+    else:
+        coverages_pd = pd.DataFrame()
 
     plot_genome_binning(args.colors,
                         sample_id_to_queries_list,
                         df_summary,
-                        pd_bins,
+                        pd_bins[pd_bins['rank'] == 'NA'],
                         labels,
-                        pd.DataFrame(),
+                        coverages_pd,
                         output_dir)
 
     amber_html.create_html(load_data.get_sample_id_to_num_genomes(sample_id_to_queries_list),
@@ -307,8 +288,6 @@ def main(args=None):
                            args.output_dir,
                            args.desc)
     logger.info('AMBER finished successfully. All results have been saved to {}'.format(output_dir))
-
-
 
     # logger.info('Saving computed metrics...')
     # df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
@@ -330,8 +309,6 @@ def main(args=None):
     #     table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
     #     table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
     # logger.info('done')
-
-
 
 
 if __name__ == "__main__":

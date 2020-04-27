@@ -13,9 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from builtins import print
-
-from src.utils import load_data
 from src.utils import labels as utils_labels
 from src.utils import load_ncbi_taxinfo
 import matplotlib
@@ -25,7 +22,6 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import matplotlib.ticker as ticker
 import numpy as np
-import re
 import os, sys, inspect
 import pandas as pd
 from collections import OrderedDict
@@ -46,15 +42,36 @@ def create_colors_list():
     return colors_list
 
 
-def create_legend(df_results, output_dir):
-    colors_iter = iter(create_colors_list())
-    labels = df_results[utils_labels.TOOL].unique()
-    circles = [Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=10, markerfacecolor=next(colors_iter)) for label in labels]
+def create_legend(color_indices, available_tools, output_dir):
+    colors_list = create_colors_list()
+    if color_indices:
+        colors_list = [colors_list[i] for i in color_indices]
+
+    colors_iter = iter(colors_list)
+    circles = [Line2D([], [], markeredgewidth=0.0, linestyle="None", marker="o", markersize=10, markerfacecolor=next(colors_iter)) for label in available_tools]
 
     fig = plt.figure(figsize=(0.5, 0.5))
-    fig.legend(circles, labels, loc='center', frameon=False, ncol=5, handletextpad=0.1)
+    fig.legend(circles, available_tools, loc='center', frameon=False, ncol=5, handletextpad=0.1)
     fig.savefig(os.path.join(output_dir, 'genome', 'legend.pdf'), dpi=100, format='pdf', bbox_inches='tight')
     plt.close(fig)
+
+
+def plot_precision_vs_bin_size(pd_bins, output_dir):
+    pd_plot = pd_bins[pd_bins[utils_labels.TOOL] != utils_labels.GS]
+
+    for tool_label, pd_tool in pd_plot.groupby(utils_labels.TOOL):
+        fig, axs = plt.subplots(figsize=(5, 4.5))
+        axs.scatter(np.log(pd_tool['total_length']), pd_tool['precision_bp'], marker='o')
+
+        axs.set_xlim([None, np.log(pd_tool['total_length'].max())])
+        axs.set_ylim([0.0, 1.0])
+        axs.set_title(tool_label, fontsize=12)
+
+        plt.ylabel('Purity per bin (%)', fontsize=12)
+        plt.xlabel('Bin size [log(# bp)]', fontsize=12)
+
+        fig.savefig(os.path.join(output_dir, 'genome', tool_label, 'purity_vs_size.png'), dpi=200, format='png', bbox_inches='tight')
+        plt.close(fig)
 
 
 def plot_by_genome_coverage(pd_bins, pd_target_column, available_tools, output_dir):
@@ -126,7 +143,12 @@ def get_pd_genomes_recall(sample_id_to_queries_list):
     return pd_genomes_recall
 
 
-def plot_precision_recall_by_coverage(sample_id_to_queries_list, df_summary_g, pd_bins_g, coverages_pd, available_tools, output_dir):
+def plot_precision_recall_by_coverage(sample_id_to_queries_list, pd_bins_g, coverages_pd, available_tools, output_dir):
+    # compute average genome coverage if coverages for multiple samples were provided
+    coverages_pd['mean_coverage'] = coverages_pd.mean(axis=1)
+    coverages_pd = coverages_pd.sort_values(by=['mean_coverage'])
+    coverages_pd['rank'] = coverages_pd['mean_coverage'].rank()
+
     pd_genomes_recall = get_pd_genomes_recall(sample_id_to_queries_list)
     pd_genomes_recall['genome_index'] = pd_genomes_recall['genome_id'].map(coverages_pd['rank'].to_dict())
     pd_genomes_recall = pd_genomes_recall.groupby([utils_labels.TOOL, 'genome_id']).mean().reset_index()
@@ -148,8 +170,9 @@ def plot_precision_recall_by_coverage(sample_id_to_queries_list, df_summary_g, p
     plot_by_genome_coverage(pd_bins_precision, 'precision_bp', available_tools, output_dir)
 
 
-def plot_heatmap(df_confusion, sample_id, output_dir, label, separate_bar=False):
-    df_confusion = df_confusion.apply(np.log10, inplace=True).replace(-np.inf, 0)
+def plot_heatmap(df_confusion, sample_id, output_dir, label, separate_bar=False, log_scale=False):
+    if log_scale:
+        df_confusion = df_confusion.apply(np.log10, inplace=True).replace(-np.inf, 0)
     fig, axs = plt.subplots(figsize=(10, 8))
     fontsize = 20
 
@@ -169,13 +192,16 @@ def plot_heatmap(df_confusion, sample_id, output_dir, label, separate_bar=False)
     plt.xticks(fontsize=12)
 
     mappable = sns_plot.get_children()[0]
-    # fmt = lambda x, pos: '{:.0f}'.format(x / 1000000)
 
     cbar_ax = fig.add_axes([.915, .11, .017, .77])
     cbar = plt.colorbar(mappable, ax=axs, cax=cbar_ax, orientation='vertical')
-    # cbar = plt.colorbar(mappable, ax=axs, cax=cbar_ax, orientation='vertical', label='millions of base pairs', format=ticker.FuncFormatter(fmt))
-    cbar.set_label(fontsize=fontsize, label='log$_{10}$(# bp)')
-    # cbar.set_label(fontsize=fontsize, label='# bp')
+    if log_scale:
+        cbar.set_label(fontsize=fontsize, label='log$_{10}$(# bp)')
+    else:
+        fmt = lambda x, pos: '{:.0f}'.format(x / 1000000)
+        cbar = plt.colorbar(mappable, ax=axs, cax=cbar_ax, orientation='vertical', label='Millions of base pairs', format=ticker.FuncFormatter(fmt))
+
+    cbar.set_label(fontsize=fontsize, label='# bp')
     cbar.ax.tick_params(labelsize=fontsize)
     cbar.outline.set_edgecolor(None)
 
@@ -216,7 +242,16 @@ def plot_heatmap(df_confusion, sample_id, output_dir, label, separate_bar=False)
     plt.close(fig)
 
 
-def plot_boxplot(pd_bins, metric_name, output_dir, available_tools):
+def plot_boxplot(sample_id_to_queries_list, metric_name, output_dir, available_tools):
+    pd_bins = pd.DataFrame()
+    for sample_id in sample_id_to_queries_list:
+        for query in sample_id_to_queries_list[sample_id]:
+            metric_df = getattr(query, metric_name.replace('_bp', '_df')).copy()
+            metric_df[utils_labels.TOOL] = query.label
+            metric_df['sample_id'] = sample_id
+            metric_df = metric_df.reset_index().set_index(['sample_id', utils_labels.TOOL])
+            pd_bins = pd.concat([pd_bins, metric_df])
+
     metric_all = []
 
     for tool in available_tools:
@@ -247,10 +282,12 @@ def plot_boxplot(pd_bins, metric_name, output_dir, available_tools):
         box.set(facecolor=next(colors_iter), linewidth=0.1)
     plt.ylim(plt.ylim()[::-1])
 
-    if metric_name == 'precision_bp' or metric_name == 'precision_bp':
+    if metric_name == 'precision_bp':
         axs.set_xlabel('Purity per bin (%)', fontsize=13)
+        metric_name = 'purity_bp'
     else:
         axs.set_xlabel('Completeness per genome (%)', fontsize=13)
+        metric_name = 'completeness_bp'
 
     fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '.pdf'), dpi=100, format='pdf', bbox_inches='tight')
     fig.savefig(os.path.join(output_dir, 'genome', 'boxplot_' + metric_name + '.png'), dpi=200, format='png', bbox_inches='tight')
