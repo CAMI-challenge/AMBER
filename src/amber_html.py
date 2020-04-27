@@ -844,3 +844,4 @@ def create_html(df_summary, pd_bins, labels, sample_ids_list, options, desc_text
 
     with open(os.path.join(options.output_dir, "index.html"), 'w') as f:
         f.write(html)
+    logging.getLogger('amber').info('done')
