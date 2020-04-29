@@ -61,7 +61,7 @@ def make_sure_path_exists(path):
 
 
 def create_output_directories(output_dir, sample_id_to_queries_list):
-    logging.getLogger('amber').info('Creating output directories...')
+    logging.getLogger('amber').info('Creating output directories')
     for sample_id in sample_id_to_queries_list:
         for query in sample_id_to_queries_list[sample_id]:
             make_sure_path_exists(os.path.join(output_dir, query.binning_type, query.label))
@@ -95,7 +95,7 @@ def plot_genome_binning(color_indices, sample_id_to_queries_list, df_summary, pd
     if len(df_summary_g) == 0:
         return
 
-    logging.getLogger('amber').info('Creating genome binning plots...')
+    logging.getLogger('amber').info('Creating genome binning plots')
 
     plots.plot_precision_vs_bin_size(pd_bins, output_dir)
 
@@ -138,7 +138,7 @@ def plot_taxonomic_binning(df_summary, pd_bins, output_dir):
 
     df_summary_t.to_csv(os.path.join(output_dir, 'df_summary_t.tsv'), sep='\t')
 
-    logging.getLogger('amber').info('Creating taxonomic binning plots...')
+    logging.getLogger('amber').info('Creating taxonomic binning plots')
 
     for rank, pd_group in df_summary_t.groupby('rank'):
         plots.plot_avg_precision_recall(pd_group, output_dir, rank)
@@ -173,17 +173,16 @@ def evaluate(queries_list, sample_id):
     df_summary = pd.DataFrame()
 
     for query in queries_list:
-        query.compute_metrics()
-
-        precision_df = query.precision_df
+        if not query.compute_metrics():
+            continue
 
         query_metrics_df = query.get_metrics_df()
         query_metrics_df[utils_labels.SAMPLE] = sample_id
 
         df_summary = pd.concat([df_summary, query_metrics_df], ignore_index=True, sort=True)
 
-        precision_df[utils_labels.TOOL] = query.label
-        pd_bins_all = pd.concat([pd_bins_all, precision_df.reset_index()], ignore_index=True, sort=True)
+        query.precision_df[utils_labels.TOOL] = query.label
+        pd_bins_all = pd.concat([pd_bins_all, query.precision_df.reset_index()], ignore_index=True, sort=True)
 
     pd_bins_all['sample_id'] = sample_id
 
@@ -242,7 +241,7 @@ def main(args=None):
 
     labels = get_labels(args.labels, args.bin_files)
 
-    genome_to_unique_common = load_data.load_unique_common(args.remove_genomes)
+    genome_to_unique_common = load_data.load_unique_common(args.remove_genomes, args.keyword)
 
     options = binning_classes.Options(filter_tail_percentage=args.filter,
                                       genome_to_unique_common=genome_to_unique_common,

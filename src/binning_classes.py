@@ -383,7 +383,9 @@ class GenomeQuery(Query):
         return pd.DataFrame(metrics_dict)
 
     def compute_metrics(self):
-        logging.getLogger('amber').info('Evaluating {} (genome binning)...'.format(self.label))
+        if self.label == utils_labels.GS and self.options.only_taxonomic_queries:
+            return False
+        logging.getLogger('amber').info('Evaluating {} (genome binning)'.format(self.label))
         gs_df = self.gold_standard_df
         gs_df = gs_df[['SEQUENCEID', 'BINID', 'LENGTH']].rename(columns={'LENGTH': 'seq_length'})
 
@@ -438,7 +440,10 @@ class GenomeQuery(Query):
             precision_df.sort_values(by='total_length', inplace=True)
             precision_df['cumsum_length_pct'] = precision_df['total_length_pct'].cumsum(axis=0)
             precision_df['precision_bp'].mask(precision_df['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100, inplace=True)
+            precision_df['precision_seq'].mask(precision_df['precision_bp'].isna(), inplace=True)
             precision_df.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
+        if self.options.genome_to_unique_common:
+            precision_df = precision_df[~precision_df['genome_id'].isin(self.options.genome_to_unique_common)]
 
         self.metrics.precision_avg_bp = precision_df['precision_bp'].mean()
         self.metrics.precision_avg_bp_sem = precision_df['precision_bp'].sem()
@@ -459,6 +464,9 @@ class GenomeQuery(Query):
         recall_df['recall_bp'] = recall_df['genome_length'] / recall_df['length_gs']
         recall_df['recall_seq'] = recall_df['genome_seq_counts'] / recall_df['seq_counts_gs']
 
+        if self.options.genome_to_unique_common:
+            recall_df = recall_df[~recall_df['genome_id'].isin(self.options.genome_to_unique_common)]
+
         self.metrics.recall_avg_bp = recall_df['recall_bp'].mean()
         self.metrics.recall_avg_bp_var = recall_df['recall_bp'].var()
         self.metrics.recall_avg_bp_sem = recall_df['recall_bp'].sem()
@@ -470,8 +478,9 @@ class GenomeQuery(Query):
         self.metrics.accuracy_bp = precision_df['genome_length'].sum() / recall_df['length_gs'].sum()
         self.metrics.accuracy_seq = precision_df['genome_seq_counts'].sum() / recall_df['seq_counts_gs'].sum()
 
-        self.precision_df = precision_df
+        self.precision_df = precision_df.sort_values(by=['recall_bp'], axis=0, ascending=False)
         self.recall_df = recall_df
+        return True
 
 
 class TaxonomicQuery(Query):
@@ -511,7 +520,7 @@ class TaxonomicQuery(Query):
 
         query_df = self.rank_to_df[rank].reset_index()[['SEQUENCEID', 'TAXID']]
 
-        query_w_length_df = pd.merge(query_df, gs_df.rename(columns={'TAXID': 'true_taxid'}).reset_index(),  on='SEQUENCEID', sort=False)
+        query_w_length_df = pd.merge(query_df, gs_df.rename(columns={'TAXID': 'true_taxid'}).reset_index(), on='SEQUENCEID', sort=False)
 
         confusion_df = query_w_length_df.groupby(['TAXID', 'true_taxid'], sort=False).agg({'LENGTH': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'LENGTH': 'tax_length', 'SEQUENCEID': 'tax_seq_counts'})
         self.metrics[rank].rand_index_bp, self.metrics[rank].adjusted_rand_index_bp = Metrics.compute_rand_index(confusion_df, 'TAXID', 'true_taxid', 'tax_length')
@@ -528,14 +537,21 @@ class TaxonomicQuery(Query):
         tp_fp_fn_df = query_w_length_df.groupby('TAXID', sort=False).agg({'LENGTH': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'LENGTH': 'total_length', 'SEQUENCEID': 'total_seq_counts'})
         tp_fp_fn_df = pd.merge(true_positives_df, tp_fp_fn_df, on=['TAXID'], how='outer', sort=False)
         tax_sizes_df = gs_df.groupby('TAXID', sort=False).agg({'LENGTH': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'LENGTH': 'length_gs', 'SEQUENCEID': 'seq_counts_gs'})
-        tp_fp_fn_df = tp_fp_fn_df.reset_index().join(tax_sizes_df, on='TAXID', how='outer', sort=False).set_index('TAXID')
-        tp_fp_fn_df.fillna(0, inplace=True)
+        tp_fp_fn_df = tp_fp_fn_df.reset_index().join(tax_sizes_df, on='TAXID', how='outer', sort=False).set_index('TAXID').fillna(0).astype('int64')
 
         tp_fp_fn_df['precision_bp'] = tp_fp_fn_df['tp_length'] / tp_fp_fn_df['total_length']
         tp_fp_fn_df['precision_seq'] = tp_fp_fn_df['tp_seq_counts'] / tp_fp_fn_df['total_seq_counts']
         tp_fp_fn_df['recall_bp'] = tp_fp_fn_df['tp_length'] / tp_fp_fn_df['length_gs']
         tp_fp_fn_df['recall_seq'] = tp_fp_fn_df['tp_seq_counts'] / tp_fp_fn_df['seq_counts_gs']
         tp_fp_fn_df['rank'] = rank
+
+        if self.options.filter_tail_percentage:
+            tp_fp_fn_df['total_length_pct'] = tp_fp_fn_df['total_length'] / tp_fp_fn_df['total_length'].sum()
+            tp_fp_fn_df.sort_values(by='total_length', inplace=True)
+            tp_fp_fn_df['cumsum_length_pct'] = tp_fp_fn_df['total_length_pct'].cumsum(axis=0)
+            tp_fp_fn_df['precision_bp'].mask(tp_fp_fn_df['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100, inplace=True)
+            tp_fp_fn_df['precision_seq'].mask(tp_fp_fn_df['precision_bp'].isna(), inplace=True)
+            tp_fp_fn_df.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
 
         tp_length_sum = tp_fp_fn_df['tp_length'].sum()
         tp_seq_counts_sum = tp_fp_fn_df['tp_seq_counts'].sum()
@@ -555,13 +571,20 @@ class TaxonomicQuery(Query):
         self.metrics[rank].accuracy_bp = tp_length_sum / length_gs_sum
         self.metrics[rank].accuracy_seq = tp_seq_counts_sum / seq_counts_gs_sum
 
-        self.precision_df = pd.concat([self.precision_df, tp_fp_fn_df.reset_index()], ignore_index=True, sort=True)
+        self.precision_df = pd.concat([self.precision_df, tp_fp_fn_df.reset_index().sort_values(
+            by='recall_bp', axis=0, ascending=False)], ignore_index=True, sort=True)
         self.recall_df = self.precision_df
 
+        if self.tax_id_to_name:
+            self.recall_df['name'] = self.recall_df['TAXID'].map(self.tax_id_to_name)
+
     def compute_metrics(self):
-        logging.getLogger('amber').info('Evaluating {} (taxonomic binning)...'.format(self.label))
+        if self.label == utils_labels.GS and self.options.only_genome_queries:
+            return False
+        logging.getLogger('amber').info('Evaluating {} (taxonomic binning)'.format(self.label))
         for rank in self.rank_to_df:
             self.compute_metrics_for_rank(rank)
+        return True
 
 
 class Options:
@@ -573,6 +596,8 @@ class Options:
         if rank_as_genome_binning and rank_as_genome_binning not in load_ncbi_taxinfo.RANKS:
             exit("Not a valid rank to assess taxonomic binning as genome binning (option --rank_as_genome_binning): " + rank_as_genome_binning)
         self.__rank_as_genome_binning = rank_as_genome_binning
+        self.__only_genome_queries = True
+        self.__only_taxonomic_queries = True
 
     @property
     def filter_tail_percentage(self):
@@ -594,6 +619,14 @@ class Options:
     def rank_as_genome_binning(self):
         return self.__rank_as_genome_binning
 
+    @property
+    def only_genome_queries(self):
+        return self.__only_genome_queries
+
+    @property
+    def only_taxonomic_queries(self):
+        return self.__only_taxonomic_queries
+
     @filter_tail_percentage.setter
     def filter_tail_percentage(self, filter_tail_percentage):
         self.__filter_tail_percentage = filter_tail_percentage
@@ -613,3 +646,11 @@ class Options:
     @rank_as_genome_binning.setter
     def rank_as_genome_binning(self, rank_as_genome_binning):
         self.__rank_as_genome_binning = rank_as_genome_binning
+
+    @only_genome_queries.setter
+    def only_genome_queries(self, only_genome_queries):
+        self.__only_genome_queries = only_genome_queries
+
+    @only_taxonomic_queries.setter
+    def only_taxonomic_queries(self, only_taxonomic_queries):
+        self.__only_taxonomic_queries = only_taxonomic_queries

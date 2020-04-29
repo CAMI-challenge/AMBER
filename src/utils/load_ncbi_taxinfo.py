@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import logging
+
 RANKS = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain']
 DICT_RANK_TO_INDEX = dict(zip(RANKS, list(range(len(RANKS)))))
 RANKS_LOW2HIGH = list(reversed(RANKS))
@@ -26,7 +28,7 @@ def load_merged(names_file_path):
                 continue
             line = line.split('|')
             line = list(map(str.strip, line))
-            tax_id_to_tax_id[line[0]] = line[1]
+            tax_id_to_tax_id[int(line[0])] = int(line[1])
     return tax_id_to_tax_id
 
 
@@ -38,7 +40,7 @@ def load_names(tax_id_to_rank, names_file_path):
                 continue
             line = line.split('|')
             line = list(map(str.strip, line))
-            tax_id = line[0]
+            tax_id = int(line[0])
 
             if line[3] == "scientific name":
                 tax_id_to_name[tax_id] = line[1]
@@ -85,10 +87,13 @@ def load_tax_info(ncbi_nodes_file):
     return tax_id_to_parent, tax_id_to_rank
 
 
-def get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank):
+def get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank, tax_id_to_tax_id):
     if tax_id not in tax_id_to_rank:
-        # TODO report this in a log file
-        return []
+        if tax_id_to_tax_id and tax_id in tax_id_to_tax_id:
+            tax_id = tax_id_to_tax_id[tax_id]
+        else:
+            logging.getLogger('amber').warning("Invalid NCBI taxonomic ID: {}".format(tax_id))
+            return []
 
     while tax_id_to_rank[tax_id] not in RANKS:
         tax_id = tax_id_to_parent[tax_id]

@@ -34,7 +34,7 @@ except ImportError:
 
 
 def open_coverages(file_path):
-    logging.getLogger('amber').info('Loading coverage file...')
+    logging.getLogger('amber').info('Loading coverage file')
     sample_id_to_coverages = {}
     with open(file_path) as read_handler:
         try:
@@ -53,20 +53,31 @@ def open_coverages(file_path):
     return sample_id_to_coverages
 
 
-def load_unique_common(unique_common_file_path):
+def load_unique_common(unique_common_file_path, args_keyword):
     if not unique_common_file_path:
         return None
-    logging.getLogger('amber').info('Loading list of genomes to be removed...')
-    genome_to_unique_common = {}
-    with open(unique_common_file_path) as read_handler:
-        for line in read_handler:
-            genome_to_unique_common[line.split("\t")[0]] = line.split("\t")[1].strip('\n')
-    return genome_to_unique_common
+    logging.getLogger('amber').info('Loading list of genomes to be removed')
+    with open(unique_common_file_path) as f:
+        line = f.readline()
+        line_split = line.split('\t')
+        f.seek(0)
+        if len(line_split) == 1:
+            return [line.strip('\n') for line in f]
+        elif len(line_split) > 1:
+            genome_to_unique_common = {}
+            for line in f:
+                line_split = line.split('\t')
+                genome_to_unique_common[line_split[0]] = line_split[1].strip('\n')
+            if args_keyword:
+                return [genome_id for genome_id, keyword in genome_to_unique_common.items() if keyword == args_keyword]
+            else:
+                return list(genome_to_unique_common.keys())
+    return None
 
 
 def load_ncbi_info(ncbi_nodes_file, ncbi_names_file, ncbi_merged_file):
     if ncbi_nodes_file:
-        logging.getLogger('amber').info('Loading NCBI files...')
+        logging.getLogger('amber').info('Loading NCBI files')
         binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank = load_ncbi_taxinfo.load_tax_info(ncbi_nodes_file)
         if ncbi_names_file:
             binning_classes.TaxonomicQuery.tax_id_to_name = load_ncbi_taxinfo.load_names(binning_classes.TaxonomicQuery.tax_id_to_rank, ncbi_names_file)
@@ -158,14 +169,15 @@ def get_rank_to_df(query_df, is_gs=False):
         if row[1] != tax_id:
             tax_id = row[1]
             tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, binning_classes.TaxonomicQuery.tax_id_to_parent,
-                                                        binning_classes.TaxonomicQuery.tax_id_to_rank)
+                                                        binning_classes.TaxonomicQuery.tax_id_to_rank,
+                                                        binning_classes.TaxonomicQuery.tax_id_to_tax_id)
             if not tax_id_path:
                 continue
-        for tax_id in tax_id_path:
-            if not tax_id:  # tax_id may be empty
+        for tax_id2 in tax_id_path:
+            if not tax_id2:  # tax_id may be empty
                 continue
-            rank = binning_classes.TaxonomicQuery.tax_id_to_rank[tax_id]
-            rank_to_sequence_id_to_bin_id[rank][row[0]] = tax_id
+            rank = binning_classes.TaxonomicQuery.tax_id_to_rank[tax_id2]
+            rank_to_sequence_id_to_bin_id[rank][row[0]] = tax_id2
     rank_to_df = dict()
     if is_gs:
         if 'LENGTH' not in query_df.columns:
@@ -181,7 +193,7 @@ def get_rank_to_df(query_df, is_gs=False):
 
 
 def load_queries(gold_standard_file, query_files, labels, options, options_gs):
-    logging.getLogger('amber').info('Loading binnings...')
+    logging.getLogger('amber').info('Loading {}'.format(utils_labels.GS))
     sample_id_to_gs_df = open_query(gold_standard_file)
     sample_id_to_gs_rank_to_df = defaultdict()
     sample_id_to_queries_list = defaultdict(list)
@@ -200,7 +212,7 @@ def load_queries(gold_standard_file, query_files, labels, options, options_gs):
             sample_id_to_queries_list[sample_id].append(t_query_gs)
 
     for query_file, label in zip(query_files, labels):
-        logging.getLogger('amber').info('Loading {}...'.format(label))
+        logging.getLogger('amber').info('Loading {}'.format(label))
         sample_id_to_query_df = open_query(query_file)
         for sample_id in sample_id_to_query_df:
             if sample_id not in sample_id_to_gs_df:
@@ -219,9 +231,12 @@ def load_queries(gold_standard_file, query_files, labels, options, options_gs):
                 g_query = binning_classes.GenomeQuery(query_df, label, options)
                 g_query.gold_standard_df = gs_df
                 sample_id_to_queries_list[sample_id].append(g_query)
+                options.only_taxonomic_queries = options_gs.only_taxonomic_queries = False
             if 'TAXID' in query_df.columns and binning_classes.TaxonomicQuery.tax_id_to_rank:
                 t_query = binning_classes.TaxonomicQuery(get_rank_to_df(query_df), label, options)
                 t_query.gold_standard_df = sample_id_to_gs_rank_to_df[sample_id]
                 sample_id_to_queries_list[sample_id].append(t_query)
+                options.only_taxonomic_queries = options_gs.only_genome_queries = False
+
     return sample_id_to_queries_list, list(sample_id_to_gs_df.keys())
 

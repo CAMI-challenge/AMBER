@@ -247,7 +247,7 @@ def create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_
                 continue
             pd_tool_sample = pd_tool_sample_groupby.get_group(sample_id)
             pd_tool_sample = pd_tool_sample[list(bins_columns.keys())].rename(columns=dict(bins_columns))
-            tool_sample_html = pd_tool_sample.head(500).style.set_table_styles(styles).hide_index().render()
+            tool_sample_html = pd_tool_sample.head(500).style.set_table_styles(styles).set_precision(3).hide_index().render()
             tool_sample_html += '<div style="padding-top: 20px; padding-bottom: 20px;">{}</div>'.format('Complete table available in: ' + os.path.join(output_dir, binning_type, tool, 'metrics_per_bin.tsv'))
             tool_to_sample_to_html[tool].append(tool_sample_html)
     tool_to_sample_to_html['all_samples'] = sample_ids_list
@@ -616,24 +616,13 @@ def get_genome_bins_columns():
                         ('precision_bp', utils_labels.PRECISION_PER_BP),
                         ('recall_bp', utils_labels.RECALL_PER_BP),
                         ('total_length', 'Bin size (bp)'),
-                        ('length_gs', 'Size of most abundant genome (bp)'),
+                        ('genome_length', 'True positives (bp)'),
+                        ('length_gs', 'True size of most abundant genome (bp)'),
                         ('precision_seq', utils_labels.PRECISION_PER_SEQ),
                         ('recall_seq', utils_labels.RECALL_PER_SEQ),
-                        ('genome_seq_counts', 'Bin size (seq)'),
-                        ('seq_counts_gs', 'Size of most abundant genome (seq)')])
-    # return OrderedDict([('id', 'Bin ID'),
-    #                     ('most_abundant_genome', 'Most abundant genome'),
-    #                     ('most_complete_genome', 'Most complete genome'),
-    #                     ('precision_bp', utils_labels.PRECISION_PER_BP),
-    #                     ('recall_bp', utils_labels.RECALL_PER_BP),
-    #                     ('predicted_size', 'Bin size (bp)'),
-    #                     ('true_size', 'Size of most abundant genome (bp)'),
-    #                     ('true_size_recall', 'Size of most complete genome (bp)'),
-    #                     ('precision_seq', utils_labels.PRECISION_PER_SEQ),
-    #                     ('recall_seq', utils_labels.RECALL_PER_SEQ),
-    #                     ('predicted_num_seqs', 'Bin size (seq)'),
-    #                     ('true_num_seqs', 'Size of most abundant genome (seq)'),
-    #                     ('true_num_seqs_recall', 'Size of most complete genome (seq)')])
+                        ('total_seq_counts', 'Bin size (seq)'),
+                        ('genome_seq_counts', 'True positives (seq)'),
+                        ('seq_counts_gs', 'True size of most abundant genome (seq)')])
 
 
 def create_genome_binning_plots_panel(pd_bins, pd_mean):
@@ -733,20 +722,12 @@ def get_tax_bins_columns():
                         ('recall_bp', utils_labels.RECALL_PER_BP),
                         ('total_length', 'Bin size (bp)'),
                         ('tp_length', 'True positives (bp)'),
-                        ('length_gs', 'True size (bp)')])
-    # return OrderedDict([('mapping_id', 'Taxon ID'),
-    #                     ('name', 'Scientific name'),
-    #                     ('rank', 'Taxonomic rank'),
-    #                     ('precision_bp', utils_labels.PRECISION_PER_BP),
-    #                     ('recall_bp', utils_labels.RECALL_PER_BP),
-    #                     ('predicted_size', 'Predicted size (bp)'),
-    #                     ('true_positive_bps', 'True positives (bp)'),
-    #                     ('true_size', 'True size (bp)'),
-    #                     ('precision_seq', utils_labels.PRECISION_PER_SEQ),
-    #                     ('recall_seq', utils_labels.RECALL_PER_SEQ),
-    #                     ('predicted_num_seqs', 'Predicted size (seq)'),
-    #                     ('true_positive_seqs', 'True positives (seq)'),
-    #                     ('true_num_seqs', 'True size (seq)')])
+                        ('length_gs', 'True size (bp)'),
+                        ('precision_seq', utils_labels.PRECISION_PER_SEQ),
+                        ('recall_seq', utils_labels.RECALL_PER_SEQ),
+                        ('total_seq_counts', 'Bin size (seq)'),
+                        ('tp_seq_counts', 'True positives (seq)'),
+                        ('seq_counts_gs', 'True size (seq)')])
 
 
 def create_tax_ranks_panel(qbins_plots_list, qsamples_plots_list, cc_plots_dict_list, contamination_plots_list):
@@ -853,7 +834,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
 
 
 def create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir, desc_text):
-    logging.getLogger('amber').info('Creating HTML page...')
+    logging.getLogger('amber').info('Creating HTML page')
     create_heatmap_bar(output_dir)
     tabs_list = []
 
