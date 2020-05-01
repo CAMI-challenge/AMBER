@@ -16,7 +16,6 @@
 import os
 from collections import OrderedDict
 from collections import defaultdict
-import pandas as pd
 import datetime
 import numpy as np
 import math
@@ -25,6 +24,7 @@ import logging
 from jinja2 import Template
 from statistics import median
 from src import plots
+from src import binning_classes
 from src.utils import labels as utils_labels
 from src.utils import load_ncbi_taxinfo
 
@@ -299,39 +299,11 @@ def get_contamination_completeness_thresholds(df):
     return completeness_thr, contamination_thr
 
 
-def create_contamination_completeness_table(sample_id_to_num_genomes, df):
-    contamination_completeness_cols = [c for c in df.columns if c.startswith('>')]
-    completeness_thr, contamination_thr = get_contamination_completeness_thresholds(df[contamination_completeness_cols])
-
-    contamination_completenes_row_arr = []
-    for sample_id, pd_sample in df.groupby(utils_labels.SAMPLE):
-        cols = OrderedDict()
-        cols[utils_labels.SAMPLE] = sample_id
-        cols['Tool'] = 'Gold standard'
-        for completeness_item in completeness_thr:
-            cols[completeness_item] = sample_id_to_num_genomes[sample_id]
-        contamination_completenes_row_arr.append(cols)
-
-        for index, row in pd_sample.iterrows():
-            for contamination_item in contamination_thr:
-                cols = OrderedDict()
-                cols[utils_labels.SAMPLE] = sample_id
-                contamination_val = format(float(re.match("\d+\.\d+", contamination_item[1:]).group()) * 100, '.0f')
-                cols['Tool'] = '{} <{}% contamination'.format(row[utils_labels.TOOL], contamination_val)
-                for completeness_item in completeness_thr:
-                    cols[completeness_item] = row['{}{}'.format(completeness_item, contamination_item)]
-                contamination_completenes_row_arr.append(cols)
-
-    df = pd.DataFrame(contamination_completenes_row_arr)
+def create_contamination_completeness_table(pd_bins, min_completeness, max_contamination):
+    df = binning_classes.GenomeQuery.calc_num_recovered_genomes(pd_bins, min_completeness, max_contamination)
 
     def create_table_column(field):
-        if field == "Tool":
-            return TableColumn(title=field, field=field, width=600)
-        if field == utils_labels.SAMPLE:
-            return TableColumn(title=field, field=field, width=200)
-        else:
-            completeness_val = format(float(re.match("\d+\.\d+", field[1:]).group()) * 100, '.0f')
-            return TableColumn(title='>{}% completeness'.format(completeness_val), field=field)
+        return TableColumn(title=field, field=field, width=600)
 
     dt = DataTable(source=ColumnDataSource(df),
                    columns=list(map(lambda x: create_table_column(x), df.columns.values)),
@@ -638,7 +610,7 @@ def create_genome_binning_plots_panel(pd_bins, pd_mean):
     return Panel(child=column([click_div, purity_completeness_plot, purity_recall_bp_plot, all_samples_div, all_bins_plot, completeness_contamination_plot, contamination_plot], sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block']), title='Plots')
 
 
-def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir):
+def create_genome_binning_html(df_summary, pd_bins, labels, sample_ids_list, options):
     if pd_bins.empty:
         return None
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
@@ -677,9 +649,9 @@ def create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins, la
     plots_panel = create_genome_binning_plots_panel(pd_bins, pd_mean)
 
     bins_columns = get_genome_bins_columns()
-    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_dir, 'genome')
+    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, options.output_dir, 'genome')
 
-    cc_table = create_contamination_completeness_table(sample_id_to_num_genomes, df_summary_g)
+    cc_table = create_contamination_completeness_table(pd_bins, options.min_completeness, options.max_contamination)
     cc_panel = Panel(child=row(cc_table), title="#Recovered genomes")
 
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
@@ -742,7 +714,7 @@ def create_tax_ranks_panel(qbins_plots_list, qsamples_plots_list, cc_plots_dict_
     return Panel(child=tax_ranks_tabs, title="Plots per taxonomic rank")
 
 
-def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, output_dir):
+def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, options):
     if pd_bins.empty:
         return None
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
@@ -819,7 +791,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
     if 'name' not in pd_bins.columns or pd_bins['name'].isnull().any():
         del bins_columns['name']
 
-    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_dir, 'taxonomic')
+    metrics_bins_panel = create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, options.output_dir, 'taxonomic')
 
     rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
                                         row(create_rankings_table(pd_mean.reset_index().set_index([utils_labels.SAMPLE, utils_labels.TOOL]), True))]), title="Rankings")
@@ -833,16 +805,16 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
     return tabs
 
 
-def create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_ids_list, output_dir, desc_text):
+def create_html(df_summary, pd_bins, labels, sample_ids_list, options, desc_text):
     logging.getLogger('amber').info('Creating HTML page')
-    create_heatmap_bar(output_dir)
+    create_heatmap_bar(options.output_dir)
     tabs_list = []
 
-    metrics_row_g = create_genome_binning_html(sample_id_to_num_genomes, df_summary, pd_bins[pd_bins['rank'] == 'NA'], labels, sample_ids_list, output_dir)
+    metrics_row_g = create_genome_binning_html(df_summary, pd_bins[pd_bins['rank'] == 'NA'], labels, sample_ids_list, options)
     if metrics_row_g:
         tabs_list.append(Panel(child=metrics_row_g, title="Genome binning"))
 
-    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins[pd_bins['rank'] != 'NA'], labels, sample_ids_list, output_dir)
+    metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins[pd_bins['rank'] != 'NA'], labels, sample_ids_list, options)
     if metrics_row_t:
         tabs_list.append(Panel(child=metrics_row_t, title="Taxonomic binning"))
 
@@ -865,5 +837,5 @@ def create_html(sample_id_to_num_genomes, df_summary, pd_bins, labels, sample_id
             script=script,
             div=div)
 
-    with open(os.path.join(output_dir, "index.html"), 'w') as f:
+    with open(os.path.join(options.output_dir, "index.html"), 'w') as f:
         f.write(html)

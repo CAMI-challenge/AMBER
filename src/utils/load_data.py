@@ -132,21 +132,21 @@ def load_binnings(samples_metadata, file_path_query):
     for metadata in samples_metadata:
         nrows = metadata[1] - metadata[0] + 1
 
-        df = sample_id_to_query_df[metadata[2]['SAMPLEID']] = pd.read_csv(file_path_query, sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None)
+        df = pd.read_csv(file_path_query, sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None)
         df.rename(columns=metadata[3], inplace=True)
         df.rename(columns={'_LENGTH': 'LENGTH'}, inplace=True)
+        sample_id_to_query_df[metadata[2]['SAMPLEID']] = df
     return sample_id_to_query_df
 
 
 def open_query(file_path_query):
-    with open(file_path_query) as f:
-        try:
-            samples_metadata = read_metadata(file_path_query)
-            sample_id_to_query_df = load_binnings(samples_metadata, file_path_query)
-        except BaseException as e:
-            traceback.print_exc()
-            logging.getLogger('amber').critical("File {} is malformed. {}".format(file_path_query, e))
-            exit(1)
+    try:
+        samples_metadata = read_metadata(file_path_query)
+        sample_id_to_query_df = load_binnings(samples_metadata, file_path_query)
+    except BaseException as e:
+        traceback.print_exc()
+        logging.getLogger('amber').critical("File {} is malformed. {}".format(file_path_query, e))
+        exit(1)
     return sample_id_to_query_df
 
 
@@ -192,24 +192,43 @@ def get_rank_to_df(query_df, is_gs=False):
     return rank_to_df
 
 
+def filter_by_length(sample_id_to_df, min_length):
+    sample_id_to_df_filtered = OrderedDict()
+    for sample_id in sample_id_to_df:
+        df = sample_id_to_df[sample_id]
+        sample_id_to_df_filtered[sample_id] = df[df['LENGTH'] >= min_length]
+    return sample_id_to_df_filtered
+
+
 def load_queries(gold_standard_file, query_files, labels, options, options_gs):
     logging.getLogger('amber').info('Loading {}'.format(utils_labels.GS))
     sample_id_to_gs_df = open_query(gold_standard_file)
+    if options.min_length:
+        sample_id_to_gs_df_filtered = filter_by_length(sample_id_to_gs_df, options.min_length)
     sample_id_to_gs_rank_to_df = defaultdict()
     sample_id_to_queries_list = defaultdict(list)
+    sample_id_to_g_gs = defaultdict(list)
+    sample_id_to_t_gs = defaultdict(list)
 
     for sample_id in sample_id_to_gs_df:
-        gs_df = sample_id_to_gs_df[sample_id]
+        gs_df = sample_id_to_gs_df_filtered[sample_id] if options.min_length else sample_id_to_gs_df[sample_id]
+        if gs_df.empty:
+            logging.getLogger('amber').critical("Gold standard for sample {} is empty. Exiting.".format(sample_id))
+            exit(1)
         if 'BINID' in gs_df.columns:
             g_query_gs = binning_classes.GenomeQuery(gs_df, utils_labels.GS, options_gs)
+            g_query_gs.gold_standard = g_query_gs
             g_query_gs.gold_standard_df = gs_df
             sample_id_to_queries_list[sample_id].append(g_query_gs)
+            sample_id_to_g_gs[sample_id] = g_query_gs
         if 'TAXID' in gs_df.columns and binning_classes.TaxonomicQuery.tax_id_to_rank:
             gs_rank_to_df = get_rank_to_df(gs_df, is_gs=True)
             sample_id_to_gs_rank_to_df[sample_id] = gs_rank_to_df
             t_query_gs = binning_classes.TaxonomicQuery(gs_rank_to_df, utils_labels.GS, options_gs)
+            t_query_gs.gold_standard = t_query_gs
             t_query_gs.gold_standard_df = gs_rank_to_df
             sample_id_to_queries_list[sample_id].append(t_query_gs)
+            sample_id_to_t_gs[sample_id] = t_query_gs
 
     for query_file, label in zip(query_files, labels):
         logging.getLogger('amber').info('Loading {}'.format(label))
@@ -222,18 +241,25 @@ def load_queries(gold_standard_file, query_files, labels, options, options_gs):
             gs_df = sample_id_to_gs_df[sample_id]
             query_df = sample_id_to_query_df[sample_id]
             condition = query_df['SEQUENCEID'].isin(gs_df['SEQUENCEID'])
-
             if ~condition.all():
                 logging.getLogger('amber').warning("{} sequences in {} not found in the gold standard.".format(query_df[~condition]['SEQUENCEID'].nunique(), label))
                 query_df = query_df[condition]
 
+            if options.min_length:
+                gs_df = sample_id_to_gs_df_filtered[sample_id]
+                condition = query_df['SEQUENCEID'].isin(gs_df['SEQUENCEID'])
+                if ~condition.all():
+                    query_df = query_df[condition]
+
             if 'BINID' in query_df.columns:
                 g_query = binning_classes.GenomeQuery(query_df, label, options)
+                g_query.gold_standard = sample_id_to_g_gs[sample_id]
                 g_query.gold_standard_df = gs_df
                 sample_id_to_queries_list[sample_id].append(g_query)
                 options.only_taxonomic_queries = options_gs.only_taxonomic_queries = False
             if 'TAXID' in query_df.columns and binning_classes.TaxonomicQuery.tax_id_to_rank:
                 t_query = binning_classes.TaxonomicQuery(get_rank_to_df(query_df), label, options)
+                t_query.gold_standard = sample_id_to_t_gs[sample_id]
                 t_query.gold_standard_df = sample_id_to_gs_rank_to_df[sample_id]
                 sample_id_to_queries_list[sample_id].append(t_query)
                 options.only_taxonomic_queries = options_gs.only_genome_queries = False

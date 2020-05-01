@@ -5,7 +5,6 @@ import numpy as np
 import argparse
 import copy
 import sys
-import os
 
 
 def compute_unifrac(pf1, pf2):
@@ -13,8 +12,8 @@ def compute_unifrac(pf1, pf2):
     P2 = copy.deepcopy(pf2)
     (Tint, lint, nodes_in_order, nodes_to_index, P, Q) = P1.make_unifrac_input_and_normalize(P2)
     (weighted, _) = EMDU.EMDUnifrac_weighted(Tint, lint, nodes_in_order, P, Q)
-    (unweighted, _) = EMDU.EMDUnifrac_unweighted(Tint, lint, nodes_in_order, P, Q)
-    return weighted, unweighted
+    # (unweighted, _) = EMDU.EMDUnifrac_unweighted(Tint, lint, nodes_in_order, P, Q)
+    return weighted #, unweighted
 
 
 def weighted_unifrac(pf1, pf2):

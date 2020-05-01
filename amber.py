@@ -232,13 +232,6 @@ def main(args=None):
     output_dir = os.path.abspath(args.output_dir)
     logger = get_logger(output_dir, args.silent)
 
-    min_completeness = None
-    max_contamination = None
-    if args.min_completeness:
-        min_completeness = [int(x.strip()) / 100.0 for x in args.min_completeness.split(',')]
-    if args.max_contamination:
-        max_contamination = [int(x.strip()) / 100.0 for x in args.max_contamination.split(',')]
-
     labels = get_labels(args.labels, args.bin_files)
 
     genome_to_unique_common = load_data.load_unique_common(args.remove_genomes, args.keyword)
@@ -247,12 +240,16 @@ def main(args=None):
                                       genome_to_unique_common=genome_to_unique_common,
                                       filter_keyword=args.keyword,
                                       min_length=args.min_length,
-                                      rank_as_genome_binning=args.rank_as_genome_binning)
+                                      rank_as_genome_binning=args.rank_as_genome_binning,
+                                      output_dir=output_dir,
+                                      min_completeness=args.min_completeness,
+                                      max_contamination=args.max_contamination)
     options_gs = binning_classes.Options(filter_tail_percentage=.0,
                                          genome_to_unique_common=genome_to_unique_common,
                                          filter_keyword=args.keyword,
                                          min_length=args.min_length,
-                                         rank_as_genome_binning=args.rank_as_genome_binning)
+                                         rank_as_genome_binning=args.rank_as_genome_binning,
+                                         output_dir=output_dir)
 
     load_data.load_ncbi_info(args.ncbi_nodes_file, args.ncbi_names_file, args.ncbi_merged_file)
 
@@ -271,20 +268,19 @@ def main(args=None):
     else:
         coverages_pd = pd.DataFrame()
 
-    plot_genome_binning(args.colors,
-                        sample_id_to_queries_list,
-                        df_summary,
-                        pd_bins[pd_bins['rank'] == 'NA'],
-                        labels,
-                        coverages_pd,
-                        output_dir)
+    # plot_genome_binning(args.colors,
+    #                     sample_id_to_queries_list,
+    #                     df_summary,
+    #                     pd_bins[pd_bins['rank'] == 'NA'],
+    #                     labels,
+    #                     coverages_pd,
+    #                     output_dir)
 
-    amber_html.create_html(load_data.get_sample_id_to_num_genomes(sample_id_to_queries_list),
-                           df_summary,
+    amber_html.create_html(df_summary,
                            pd_bins,
                            [utils_labels.GS] + labels,
                            sample_ids_list,
-                           args.output_dir,
+                           options,
                            args.desc)
     logger.info('AMBER finished successfully. All results have been saved to {}'.format(output_dir))
 

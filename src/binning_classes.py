@@ -15,11 +15,14 @@
 
 import pandas as pd
 import logging
+import itertools
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections import OrderedDict
 from src.utils import labels as utils_labels
 from src.utils import load_ncbi_taxinfo
+from src.utils import ProfilingTools as pf
+from src import unifrac_distance as uf
 
 
 class Metrics():
@@ -48,6 +51,8 @@ class Metrics():
         self.__recall_weighted_seq = .0
         self.__f1_score_bp = .0
         self.__f1_score_seq = .0
+        self.__unifrac_bp = None
+        self.__unifrac_seq = None
 
     @property
     def percentage_of_assigned_bps(self):
@@ -137,6 +142,14 @@ class Metrics():
     def recall_weighted_seq(self):
         return self.__recall_weighted_seq
 
+    @property
+    def unifrac_bp(self):
+        return self.__unifrac_bp
+
+    @property
+    def unifrac_seq(self):
+        return self.__unifrac_seq
+
     @percentage_of_assigned_bps.setter
     def percentage_of_assigned_bps(self, percentage_of_assigned_bps):
         self.__percentage_of_assigned_bps = percentage_of_assigned_bps
@@ -225,6 +238,14 @@ class Metrics():
     def recall_weighted_seq(self, recall_weighted_seq):
         self.__recall_weighted_seq = recall_weighted_seq
 
+    @unifrac_bp.setter
+    def unifrac_bp(self, unifrac_bp):
+        self.__unifrac_bp = unifrac_bp
+
+    @unifrac_seq.setter
+    def unifrac_seq(self, unifrac_seq):
+        self.__unifrac_seq = unifrac_seq
+
     @staticmethod
     def compute_rand_index(confusion_df, col_name, gs_col_name, field):
         def choose2(n):
@@ -281,8 +302,8 @@ class Metrics():
                             (utils_labels.ARI_BY_BP, [self.__adjusted_rand_index_bp]),
                             (utils_labels.ARI_BY_SEQ, [self.__adjusted_rand_index_seq]),
 
-                            (utils_labels.UNIFRAC_BP, [0]),
-                            (utils_labels.UNIFRAC_SEQ, [0]),
+                            (utils_labels.UNIFRAC_BP, self.__unifrac_bp),
+                            (utils_labels.UNIFRAC_SEQ, self.__unifrac_seq),
 
                             (utils_labels.MISCLASSIFICATION_PER_BP, [1 - self.__precision_weighted_bp]),
                             (utils_labels.MISCLASSIFICATION_PER_SEQ, [1 - self.__precision_weighted_seq])])
@@ -291,6 +312,7 @@ class Metrics():
 class Query(ABC):
     def __init__(self, label, options):
         self.__label = label
+        self.__gold_standard = None
         self.__gold_standard_df = None
         self.__precision_df = pd.DataFrame()
         self.__recall_df = None
@@ -301,6 +323,10 @@ class Query(ABC):
     @property
     def label(self):
         return self.__label
+
+    @property
+    def gold_standard(self):
+        return self.__gold_standard
 
     @property
     def gold_standard_df(self):
@@ -330,6 +356,10 @@ class Query(ABC):
     def label(self, label):
         self.__label = label
 
+    @gold_standard.setter
+    def gold_standard(self, gold_standard):
+        self.__gold_standard = gold_standard
+
     @gold_standard_df.setter
     def gold_standard_df(self, gold_standard_df):
         self.__gold_standard_df = gold_standard_df
@@ -357,6 +387,9 @@ class Query(ABC):
     @abstractmethod
     def compute_metrics(self):
         pass
+
+    def compute_unifrac(self):
+        return None, None
 
 
 class GenomeQuery(Query):
@@ -482,6 +515,18 @@ class GenomeQuery(Query):
         self.recall_df = recall_df
         return True
 
+    @staticmethod
+    def calc_num_recovered_genomes(pd_bins, min_completeness, max_contamination):
+        counts_list = []
+        for (sample_id, tool), pd_group in pd_bins.groupby(['sample_id', utils_labels.TOOL]):
+            for x in itertools.product(min_completeness, max_contamination):
+                count = pd_group[(pd_group['recall_bp'] > x[0]) & (pd_group['precision_bp'] > (1 - x[1]))].shape[0]
+                counts_list.append((sample_id, tool, '> ' + str(x[0]) + '% completeness', '< ' + str(x[1]) + '%', count))
+
+        pd_counts = pd.DataFrame(counts_list, columns=[utils_labels.SAMPLE, utils_labels.TOOL, 'Completeness', 'Contamination', 'count'])
+        pd_counts = pd.pivot_table(pd_counts, values='count', index=[utils_labels.SAMPLE, utils_labels.TOOL, 'Contamination'], columns=['Completeness']).reset_index()
+        return pd_counts
+
 
 class TaxonomicQuery(Query):
     tax_id_to_parent = None
@@ -494,14 +539,54 @@ class TaxonomicQuery(Query):
         super().__init__(label, options)
         self.__rank_to_df = rank_to_df
         self.metrics = defaultdict()
+        self.__profile = None
 
     @property
     def rank_to_df(self):
         return self.__rank_to_df
 
+    @property
+    def profile(self):
+        if self.__profile:
+            return self.__profile
+        self.__profile = self._create_profile()
+        return self.__profile
+
     @rank_to_df.setter
     def rank_to_df(self, rank_to_df):
         self.__rank_to_df = rank_to_df
+
+    def _create_profile(self):
+        class Prediction:
+            def __init__(self):
+                pass
+        profile_bp = []
+        profile_seq = []
+        for index, row in self.recall_df.iterrows():
+            prediction_bp = Prediction()
+            prediction_bp.taxid = str(row['TAXID'])
+            prediction_bp.rank = row['rank']
+            prediction_bp.percentage = row['tp_length']
+            taxpath = load_ncbi_taxinfo.get_id_path(row['TAXID'], TaxonomicQuery.tax_id_to_parent, TaxonomicQuery.tax_id_to_rank, None)
+            prediction_bp.taxpath = '|'.join(map(str, taxpath))
+            prediction_bp.taxpathsn = None
+            profile_bp.append(prediction_bp)
+
+            prediction_seq = Prediction()
+            prediction_seq.taxid = prediction_bp.taxid
+            prediction_seq.rank = prediction_bp.rank
+            prediction_seq.percentage = row['tp_seq_counts']
+            prediction_seq.taxpath = prediction_bp.taxpath
+            prediction_seq.taxpathsn = None
+            profile_seq.append(prediction_seq)
+        return profile_bp, profile_seq
+
+    def compute_unifrac(self):
+        pf_profile_bp = pf.Profile(profile=self.profile[0])
+        gs_pf_profile_bp = pf.Profile(profile=self.gold_standard.profile[0])
+        pf_profile_seq = pf.Profile(profile=self.profile[1])
+        gs_pf_profile_seq = pf.Profile(profile=self.gold_standard.profile[1])
+        return uf.compute_unifrac(gs_pf_profile_bp, pf_profile_bp), uf.compute_unifrac(gs_pf_profile_seq, pf_profile_seq)
 
     def get_metrics_df(self):
         allranks_metrics_df = pd.DataFrame()
@@ -584,11 +669,17 @@ class TaxonomicQuery(Query):
         logging.getLogger('amber').info('Evaluating {} (taxonomic binning)'.format(self.label))
         for rank in self.rank_to_df:
             self.compute_metrics_for_rank(rank)
+
+        unifrac_bp, unifrac_seq = self.compute_unifrac()
+        for rank in self.metrics:
+            self.metrics[rank].unifrac_bp = unifrac_bp
+            self.metrics[rank].unifrac_seq = unifrac_seq
         return True
 
 
 class Options:
-    def __init__(self, filter_tail_percentage, genome_to_unique_common, filter_keyword, min_length, rank_as_genome_binning):
+    def __init__(self, filter_tail_percentage, genome_to_unique_common, filter_keyword, min_length,
+                 rank_as_genome_binning, output_dir, min_completeness=None, max_contamination=None):
         self.__filter_tail_percentage = float(filter_tail_percentage) if filter_tail_percentage else .0
         self.__genome_to_unique_common = genome_to_unique_common
         self.__filter_keyword = filter_keyword
@@ -598,6 +689,15 @@ class Options:
         self.__rank_as_genome_binning = rank_as_genome_binning
         self.__only_genome_queries = True
         self.__only_taxonomic_queries = True
+        self.__output_dir = output_dir
+        if min_completeness:
+            self.__min_completeness = [int(x.strip()) / 100.0 for x in min_completeness.split(',')]
+        else:
+            self.__min_completeness = [.5, .7, .9]
+        if max_contamination:
+            self.__max_contamination = [int(x.strip()) / 100.0 for x in max_contamination.split(',')]
+        else:
+            self.__max_contamination = [.1, .05]
 
     @property
     def filter_tail_percentage(self):
@@ -627,6 +727,18 @@ class Options:
     def only_taxonomic_queries(self):
         return self.__only_taxonomic_queries
 
+    @property
+    def output_dir(self):
+        return self.__output_dir
+
+    @property
+    def min_completeness(self):
+        return self.__min_completeness
+
+    @property
+    def max_contamination(self):
+        return self.__max_contamination
+
     @filter_tail_percentage.setter
     def filter_tail_percentage(self, filter_tail_percentage):
         self.__filter_tail_percentage = filter_tail_percentage
@@ -654,3 +766,15 @@ class Options:
     @only_taxonomic_queries.setter
     def only_taxonomic_queries(self, only_taxonomic_queries):
         self.__only_taxonomic_queries = only_taxonomic_queries
+
+    @output_dir.setter
+    def output_dir(self, output_dir):
+        self.__output_dir = output_dir
+
+    @min_completeness.setter
+    def min_completeness(self, min_completeness):
+        self.__min_completeness = min_completeness
+
+    @max_contamination.setter
+    def max_contamination(self, max_contamination):
+        self.__max_contamination = max_contamination
