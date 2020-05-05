@@ -593,8 +593,8 @@ class GenomeQuery(Query):
         axs.set_title(self.label, fontsize=12)
         plt.ylabel('Purity per bin (%)', fontsize=12)
         plt.xlabel('Bin size [log(# bp)]', fontsize=12)
-        fig.savefig(os.path.join(self.options.output_dir, 'genome', self.label, 'purity_vs_bin_size_' + self.sample_id + '.png'), dpi=200, format='png',
-                    bbox_inches='tight')
+        fig.savefig(os.path.join(self.options.output_dir, 'genome', self.label, 'purity_vs_bin_size_' + self.sample_id + '.png'), dpi=200, format='png', bbox_inches='tight')
+        fig.savefig(os.path.join(self.options.output_dir, 'genome', self.label, 'purity_vs_bin_size_' + self.sample_id + '.pdf'), dpi=200, format='pdf', bbox_inches='tight')
         plt.close(fig)
 
     def plot_recall_vs_genome_size(self):
@@ -611,8 +611,8 @@ class GenomeQuery(Query):
         axs.set_title(self.label, fontsize=12)
         plt.ylabel('Completeness per genome (%)', fontsize=12)
         plt.xlabel('Genome size [log(# bp)]', fontsize=12)
-        fig.savefig(os.path.join(self.options.output_dir, 'genome', self.label, 'completeness_vs_genome_size_' + self.sample_id + '.png'), dpi=200, format='png',
-                    bbox_inches='tight')
+        fig.savefig(os.path.join(self.options.output_dir, 'genome', self.label, 'completeness_vs_genome_size_' + self.sample_id + '.png'), dpi=200, format='png', bbox_inches='tight')
+        fig.savefig(os.path.join(self.options.output_dir, 'genome', self.label, 'completeness_vs_genome_size_' + self.sample_id + '.pdf'), dpi=200, format='pdf', bbox_inches='tight')
         plt.close(fig)
 
     def plot_heat_maps(self):

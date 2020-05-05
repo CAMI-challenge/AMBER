@@ -437,7 +437,7 @@ def plot_adjusted_rand_index_vs_assigned_bps(colors, summary_per_query, labels, 
                  'p',
                  'ari_vs_assigned_bps',
                  'Adjusted Rand index',
-                 'Percentage of assigned base pairs')
+                 'Percentage of binned base pairs')
 
 
 def plot_taxonomic_results(df_summary_t, metrics_list, errors_list, file_name, output_dir):
@@ -605,6 +605,6 @@ def plot_counts(pd_bins, tools, output_dir, output_file, get_bin_counts_function
 
     # plt.subplots_adjust(hspace=0.6, wspace=0.2)
 
-    fig.savefig(os.path.join(output_dir, output_file + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
-    fig.savefig(os.path.join(output_dir, output_file + '.png'), dpi=200, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, 'genome', output_file + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    fig.savefig(os.path.join(output_dir, 'genome', output_file + '.png'), dpi=200, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close(fig)

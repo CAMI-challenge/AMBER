@@ -123,19 +123,22 @@ def plot_genome_binning(color_indices, sample_id_to_queries_list, df_summary, pd
                              output_dir)
 
 
-def plot_taxonomic_binning(df_summary, pd_bins, output_dir):
+def plot_taxonomic_binning(color_indices, df_summary, pd_bins, labels, output_dir):
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
     if len(df_summary_t) == 0:
         return
 
-    df_summary_t.to_csv(os.path.join(output_dir, 'df_summary_t.tsv'), sep='\t')
-
     logging.getLogger('amber').info('Creating taxonomic binning plots')
 
+    available_tools = list(df_summary_t[utils_labels.TOOL].unique())
+    available_tools = [tool for tool in labels if tool in available_tools]
+
+    if color_indices:
+        color_indices = [int(i) - 1 for i in color_indices.split(',')]
     for rank, pd_group in df_summary_t.groupby('rank'):
-        plots.plot_avg_precision_recall(pd_group, output_dir, rank)
-        plots.plot_precision_recall(pd_group, output_dir, rank)
-        plots.plot_adjusted_rand_index_vs_assigned_bps(pd_group, output_dir, rank)
+        plots.plot_avg_precision_recall(color_indices, pd_group, available_tools, output_dir, rank)
+        plots.plot_precision_recall(color_indices, pd_group, available_tools, output_dir, rank)
+        plots.plot_adjusted_rand_index_vs_assigned_bps(color_indices, pd_group, available_tools, output_dir, rank)
 
     metrics_list = [utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP]
     errors_list = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM]
@@ -285,6 +288,7 @@ def main(args=None):
                         labels,
                         coverages_pd,
                         output_dir)
+    plot_taxonomic_binning(args.colors, df_summary, pd_bins, labels, output_dir)
 
     amber_html.create_html(df_summary,
                            pd_bins,
