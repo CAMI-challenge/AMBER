@@ -16,6 +16,11 @@
 import pandas as pd
 import logging
 import itertools
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('Agg')
+import os
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections import OrderedDict
@@ -23,6 +28,8 @@ from src.utils import labels as utils_labels
 from src.utils import load_ncbi_taxinfo
 from src.utils import ProfilingTools as pf
 from src import unifrac_distance as uf
+from src import precision_recall_per_bin
+from src import plots
 
 
 class Metrics():
@@ -43,9 +50,11 @@ class Metrics():
         self.__precision_weighted_bp = .0
         self.__precision_weighted_seq = .0
         self.__recall_avg_bp = .0
+        self.__recall_avg_bp_cami1 = .0
         self.__recall_avg_bp_var = .0
         self.__recall_avg_bp_sem = .0
         self.__recall_avg_seq = .0
+        self.__recall_avg_seq_cami1 = .0
         self.__recall_avg_seq_sem = .0
         self.__recall_weighted_bp = .0
         self.__recall_weighted_seq = .0
@@ -119,6 +128,10 @@ class Metrics():
         return self.__recall_avg_bp
 
     @property
+    def recall_avg_bp_cami1(self):
+        return self.__recall_avg_bp_cami1
+
+    @property
     def recall_avg_bp_var(self):
         return self.__recall_avg_bp_var
 
@@ -129,6 +142,10 @@ class Metrics():
     @property
     def recall_avg_seq(self):
         return self.__recall_avg_seq
+
+    @property
+    def recall_avg_seq_cami1(self):
+        return self.__recall_avg_seq_cami1
 
     @property
     def recall_avg_seq_sem(self):
@@ -214,6 +231,10 @@ class Metrics():
     def recall_avg_bp(self, recall_avg_bp):
         self.__recall_avg_bp = recall_avg_bp
 
+    @recall_avg_bp_cami1.setter
+    def recall_avg_bp_cami1(self, recall_avg_bp_cami1):
+        self.__recall_avg_bp_cami1 = recall_avg_bp_cami1
+
     @recall_avg_bp_var.setter
     def recall_avg_bp_var(self, recall_avg_bp_var):
         self.__recall_avg_bp_var = recall_avg_bp_var
@@ -225,6 +246,10 @@ class Metrics():
     @recall_avg_seq.setter
     def recall_avg_seq(self, recall_avg_seq):
         self.__recall_avg_seq = recall_avg_seq
+
+    @recall_avg_seq_cami1.setter
+    def recall_avg_seq_cami1(self, recall_avg_seq_cami1):
+        self.__recall_avg_seq_cami1 = recall_avg_seq_cami1
 
     @recall_avg_seq_sem.setter
     def recall_avg_seq_sem(self, recall_avg_seq_sem):
@@ -275,6 +300,7 @@ class Metrics():
 
                             ('avg_precision_bp_var', [self.__precision_avg_bp_var]),
                             (utils_labels.AVG_RECALL_BP, [self.__recall_avg_bp]),
+                            (utils_labels.AVG_RECALL_BP_CAMI1, [self.__recall_avg_bp_cami1]),
                             (utils_labels.AVG_RECALL_BP_SEM, [self.__recall_avg_bp_sem]),
                             ('avg_recall_bp_var', [self.__recall_avg_bp_var]),
                             (utils_labels.F1_SCORE_BP, [2 * self.__precision_avg_bp * self.__recall_avg_bp / (self.__precision_avg_bp + self.__recall_avg_bp)]),
@@ -282,6 +308,7 @@ class Metrics():
                             (utils_labels.AVG_PRECISION_SEQ, [self.__precision_avg_seq]),
                             (utils_labels.AVG_PRECISION_SEQ_SEM, [self.__precision_avg_seq_sem]),
                             (utils_labels.AVG_RECALL_SEQ, [self.__recall_avg_seq]),
+                            (utils_labels.AVG_RECALL_SEQ_CAMI1, [self.__recall_avg_seq_cami1]),
                             (utils_labels.AVG_RECALL_SEQ_SEM, [self.__recall_avg_seq_sem]),
                             (utils_labels.F1_SCORE_SEQ, [2 * self.__precision_avg_seq * self.__recall_avg_seq / (self.__precision_avg_seq + self.__recall_avg_seq)]),
 
@@ -310,8 +337,9 @@ class Metrics():
 
 
 class Query(ABC):
-    def __init__(self, label, options):
+    def __init__(self, label, sample_id, options):
         self.__label = label
+        self.__sample_id = sample_id
         self.__gold_standard = None
         self.__gold_standard_df = None
         self.__precision_df = pd.DataFrame()
@@ -323,6 +351,10 @@ class Query(ABC):
     @property
     def label(self):
         return self.__label
+
+    @property
+    def sample_id(self):
+        return self.__sample_id
 
     @property
     def gold_standard(self):
@@ -355,6 +387,10 @@ class Query(ABC):
     @label.setter
     def label(self, label):
         self.__label = label
+
+    @sample_id.setter
+    def sample_id(self, sample_id):
+        self.__sample_id = sample_id
 
     @gold_standard.setter
     def gold_standard(self, gold_standard):
@@ -395,8 +431,8 @@ class Query(ABC):
 class GenomeQuery(Query):
     binning_type = 'genome'
 
-    def __init__(self, df, label, options):
-        super().__init__(label, options)
+    def __init__(self, df, label, sample_id, options):
+        super().__init__(label, sample_id, options)
         self.__df = df
         self.metrics = Metrics()
 
@@ -497,6 +533,8 @@ class GenomeQuery(Query):
         recall_df['recall_bp'] = recall_df['genome_length'] / recall_df['length_gs']
         recall_df['recall_seq'] = recall_df['genome_seq_counts'] / recall_df['seq_counts_gs']
 
+        recall_df = recall_df.join(precision_df['total_length'], how='left', sort=False)
+
         if self.options.genome_to_unique_common:
             recall_df = recall_df[~recall_df['genome_id'].isin(self.options.genome_to_unique_common)]
 
@@ -507,6 +545,20 @@ class GenomeQuery(Query):
         self.metrics.recall_avg_seq_sem = recall_df['recall_seq'].sem()
         self.metrics.recall_weighted_bp = recall_df['genome_length'].sum() / recall_df['length_gs'].sum()
         self.metrics.recall_weighted_seq = recall_df['genome_seq_counts'].sum() / recall_df['seq_counts_gs'].sum()
+
+        # Compute recall as in CAMI 1
+        unmapped_genomes = set(gs_df['BINID'].unique()) - set(precision_df['genome_id'].unique())
+        if self.options.genome_to_unique_common:
+            unmapped_genomes -= set(self.options.genome_to_unique_common)
+        num_unmapped_genomes = len(unmapped_genomes)
+        recall_avg_bp_cami1 = precision_df['recall_bp'].mean()
+        recall_avg_seq_cami1 = precision_df['recall_seq'].mean()
+        if num_unmapped_genomes:
+            self.metrics.recall_avg_bp_cami1 = recall_avg_bp_cami1 * precision_df.shape[0] / (num_unmapped_genomes + precision_df.shape[0])
+            self.metrics.recall_avg_seq_cami1 = recall_avg_seq_cami1 * precision_df.shape[0] / (num_unmapped_genomes + precision_df.shape[0])
+        else:
+            self.metrics.recall_avg_bp_cami1 = recall_avg_bp_cami1
+            self.metrics.recall_avg_seq_cami1 = recall_avg_seq_cami1
 
         self.metrics.accuracy_bp = precision_df['genome_length'].sum() / recall_df['length_gs'].sum()
         self.metrics.accuracy_seq = precision_df['genome_seq_counts'].sum() / recall_df['seq_counts_gs'].sum()
@@ -527,6 +579,51 @@ class GenomeQuery(Query):
         pd_counts = pd.pivot_table(pd_counts, values='count', index=[utils_labels.SAMPLE, utils_labels.TOOL, 'Contamination'], columns=['Completeness']).reset_index()
         return pd_counts
 
+    def plot_precision_vs_bin_size(self):
+        fig, axs = plt.subplots(figsize=(5, 4.5))
+        df_sorted = self.precision_df[['total_length', 'precision_bp']].sort_values(by=['total_length'])
+
+        axs.scatter(np.log(df_sorted['total_length']), df_sorted['precision_bp'], marker='o')
+        window = int(df_sorted.shape[0] / 50) if df_sorted.shape[0] > 100 else int(df_sorted.shape[0] / 10)
+        rolling_mean = df_sorted['precision_bp'].rolling(window=window, min_periods=int(window/2)).mean()
+        axs.plot(np.log(df_sorted['total_length']), rolling_mean, color='orange')
+
+        axs.set_xlim([None, np.log(df_sorted['total_length'].max())])
+        axs.set_ylim([0.0, 1.0])
+        axs.set_title(self.label, fontsize=12)
+        plt.ylabel('Purity per bin (%)', fontsize=12)
+        plt.xlabel('Bin size [log(# bp)]', fontsize=12)
+        fig.savefig(os.path.join(self.options.output_dir, 'genome', self.label, 'purity_vs_bin_size_' + self.sample_id + '.png'), dpi=200, format='png',
+                    bbox_inches='tight')
+        plt.close(fig)
+
+    def plot_recall_vs_genome_size(self):
+        fig, axs = plt.subplots(figsize=(5, 4.5))
+        df_sorted = self.recall_df[['total_length', 'recall_bp']].sort_values(by=['total_length'])
+
+        axs.scatter(np.log(df_sorted['total_length']), df_sorted['recall_bp'], marker='o')
+        window = int(df_sorted.shape[0] / 50) if df_sorted.shape[0] > 100 else int(df_sorted.shape[0] / 10)
+        rolling_mean = df_sorted['recall_bp'].rolling(window=window, min_periods=int(window / 2)).mean()
+        axs.plot(np.log(df_sorted['total_length']), rolling_mean, color='orange')
+
+        axs.set_xlim([None, np.log(self.recall_df['total_length'].max())])
+        axs.set_ylim([0.0, 1.0])
+        axs.set_title(self.label, fontsize=12)
+        plt.ylabel('Completeness per genome (%)', fontsize=12)
+        plt.xlabel('Genome size [log(# bp)]', fontsize=12)
+        fig.savefig(os.path.join(self.options.output_dir, 'genome', self.label, 'completeness_vs_genome_size_' + self.sample_id + '.png'), dpi=200, format='png',
+                    bbox_inches='tight')
+        plt.close(fig)
+
+    def plot_heat_maps(self):
+        heatmap_df = precision_recall_per_bin.transform_confusion_matrix2(self)
+        plots.plot_heatmap(heatmap_df, self.sample_id, self.options.output_dir, self.label)
+
+    def plot(self):
+        self.plot_precision_vs_bin_size()
+        self.plot_recall_vs_genome_size()
+        self.plot_heat_maps()
+
 
 class TaxonomicQuery(Query):
     tax_id_to_parent = None
@@ -535,8 +632,8 @@ class TaxonomicQuery(Query):
     tax_id_to_tax_id = None
     binning_type = 'taxonomic'
 
-    def __init__(self, rank_to_df, label, options):
-        super().__init__(label, options)
+    def __init__(self, rank_to_df, label, sample_id, options):
+        super().__init__(label, sample_id, options)
         self.__rank_to_df = rank_to_df
         self.metrics = defaultdict()
         self.__profile = None

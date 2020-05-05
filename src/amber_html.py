@@ -320,17 +320,20 @@ def create_heatmap_div():
     return  heatmap_legend_div
 
 
-def create_table_html(df_summary, include_unifrac=False):
+def create_table_html(df_summary, include_unifrac=False, include_cami1=False):
     metrics1 = [utils_labels.AVG_PRECISION_BP,
                 utils_labels.AVG_PRECISION_SEQ,
                 utils_labels.AVG_RECALL_BP,
-                utils_labels.AVG_RECALL_SEQ,
-                utils_labels.F1_SCORE_BP,
-                utils_labels.F1_SCORE_SEQ,
-                utils_labels.AVG_PRECISION_BP_SEM,
-                utils_labels.AVG_PRECISION_SEQ_SEM,
-                utils_labels.AVG_RECALL_BP_SEM,
-                utils_labels.AVG_RECALL_SEQ_SEM]
+                utils_labels.AVG_RECALL_SEQ]
+    if include_cami1:
+        metrics1 += [utils_labels.AVG_RECALL_BP_CAMI1,
+                     utils_labels.AVG_RECALL_SEQ_CAMI1]
+    metrics1 += [utils_labels.F1_SCORE_BP,
+                 utils_labels.F1_SCORE_SEQ,
+                 utils_labels.AVG_PRECISION_BP_SEM,
+                 utils_labels.AVG_PRECISION_SEQ_SEM,
+                 utils_labels.AVG_RECALL_BP_SEM,
+                 utils_labels.AVG_RECALL_SEQ_SEM]
     metrics2 = [utils_labels.ACCURACY_PER_BP,
                 utils_labels.ACCURACY_PER_SEQ,
                 utils_labels.MISCLASSIFICATION_PER_BP,
@@ -387,8 +390,10 @@ def create_table_html(df_summary, include_unifrac=False):
                        (utils_labels.AVG_PRECISION_SEQ, utils_labels.TOOLTIP_AVG_PRECISION_SEQ),
                        (utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.TOOLTIP_AVG_PRECISION_SEQ_SEM),
                        (utils_labels.AVG_RECALL_BP, utils_labels.TOOLTIP_AVG_RECALL_BP),
+                       (utils_labels.AVG_RECALL_BP_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_BP_CAMI1),
                        (utils_labels.AVG_RECALL_BP_SEM, utils_labels.TOOLTIP_AVG_RECALL_BP_SEM),
                        (utils_labels.AVG_RECALL_SEQ, utils_labels.TOOLTIP_AVG_RECALL_SEQ),
+                       (utils_labels.AVG_RECALL_SEQ_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_SEQ_CAMI1),
                        (utils_labels.F1_SCORE_BP, utils_labels.TOOLTIP_F1_SCORE_BP),
                        (utils_labels.F1_SCORE_SEQ, utils_labels.TOOLTIP_F1_SCORE_SEQ),
                        (utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.TOOLTIP_AVG_RECALL_SEQ_SEM),
@@ -625,10 +630,10 @@ def create_genome_binning_html(df_summary, pd_bins, labels, sample_ids_list, opt
 
     pd_mean = df_summary_g.groupby(utils_labels.TOOL).mean().reindex(available_tools)
     pd_mean[utils_labels.SAMPLE] = AVG_OVER_SAMPLES
-    sample_to_html[AVG_OVER_SAMPLES] = [create_table_html(pd_mean.T)]
+    sample_to_html[AVG_OVER_SAMPLES] = [create_table_html(pd_mean.T, include_cami1=True)]
 
     for sample_id, pd_sample in df_summary_g.groupby(utils_labels.SAMPLE):
-        sample_to_html[sample_id] = [create_table_html(pd_sample.set_index(utils_labels.TOOL).T)]
+        sample_to_html[sample_id] = [create_table_html(pd_sample.set_index(utils_labels.TOOL).T, include_cami1=True)]
 
     sample_ids_list_combo = [AVG_OVER_SAMPLES] + available_samples
 

@@ -70,7 +70,7 @@ def plot_precision_vs_bin_size(pd_bins, output_dir):
         plt.ylabel('Purity per bin (%)', fontsize=12)
         plt.xlabel('Bin size [log(# bp)]', fontsize=12)
 
-        fig.savefig(os.path.join(output_dir, 'genome', tool_label, 'purity_vs_size.png'), dpi=200, format='png', bbox_inches='tight')
+        fig.savefig(os.path.join(output_dir, 'genome', tool_label, 'purity_vs_bin_size.png'), dpi=200, format='png', bbox_inches='tight')
         plt.close(fig)
 
 

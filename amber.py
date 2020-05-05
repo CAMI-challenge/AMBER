@@ -25,7 +25,6 @@ import logging
 from version import __version__
 from src import plot_by_genome
 from src import plots
-from src import precision_recall_per_bin
 from src import amber_html
 matplotlib.use('Agg')
 import pandas as pd
@@ -81,14 +80,6 @@ def get_labels(labels, bin_files):
     return tool_id
 
 
-def plot_heat_maps(sample_id_to_queries_list, output_dir):
-    for sample_id in sample_id_to_queries_list:
-        for query in sample_id_to_queries_list[sample_id]:
-            if isinstance(query, binning_classes.GenomeQuery):
-                heatmap_df = precision_recall_per_bin.transform_confusion_matrix2(query)
-                plots.plot_heatmap(heatmap_df, sample_id, output_dir, query.label)
-
-
 def plot_genome_binning(color_indices, sample_id_to_queries_list, df_summary, pd_bins, labels, coverages_pd,
                         output_dir):
     df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
@@ -97,9 +88,10 @@ def plot_genome_binning(color_indices, sample_id_to_queries_list, df_summary, pd
 
     logging.getLogger('amber').info('Creating genome binning plots')
 
-    plots.plot_precision_vs_bin_size(pd_bins, output_dir)
-
-    plot_heat_maps(sample_id_to_queries_list, output_dir)
+    for sample_id in sample_id_to_queries_list:
+        for query in sample_id_to_queries_list[sample_id]:
+            if isinstance(query, binning_classes.GenomeQuery):
+                query.plot()
 
     available_tools = list(df_summary_g[utils_labels.TOOL].unique())
     available_tools = [tool for tool in labels if tool in available_tools]
@@ -200,6 +192,25 @@ def evaluate_samples_queries(sample_id_to_queries_list):
     return df_summary_all, pd_bins_all
 
 
+def save_metrics(df_summary, pd_bins, output_dir, stdout):
+    logging.getLogger('amber').info('Saving computed metrics...')
+    df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
+    pd_bins.to_csv(os.path.join(output_dir, 'bins.tsv'), index=False, sep='\t')
+    if stdout:
+        summary_columns = [utils_labels.TOOL] + [col for col in df_summary if col != utils_labels.TOOL]
+        print(df_summary[summary_columns].to_string(index=False))
+    for tool, pd_group in pd_bins[pd_bins['rank'] == 'NA'].groupby(utils_labels.TOOL):
+        bins_columns = amber_html.get_genome_bins_columns()
+        table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
+        table.to_csv(os.path.join(output_dir, 'genome', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
+    for tool, pd_group in pd_bins[pd_bins['rank'] != 'NA'].groupby(utils_labels.TOOL):
+        bins_columns = amber_html.get_tax_bins_columns()
+        if pd_group['name'].isnull().any():
+            del bins_columns['name']
+        table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
+        table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
+
+
 def main(args=None):
     parser = argparse.ArgumentParser(description="AMBER: Assessment of Metagenome BinnERs",
                                      parents=[argparse_parents.PARSER_MULTI2], prog='AMBER')
@@ -256,25 +267,24 @@ def main(args=None):
     sample_id_to_queries_list, sample_ids_list = load_data.load_queries(args.gold_standard_file, args.bin_files, labels,
                                                                         options, options_gs)
 
+    create_output_directories(output_dir, sample_id_to_queries_list)
+
     df_summary, pd_bins = evaluate_samples_queries(sample_id_to_queries_list)
 
-    df_summary.to_csv(os.path.join(output_dir, 'df_summary.tsv'), sep='\t')
-    pd_bins.to_csv(os.path.join(output_dir, 'pd_bins.tsv'), sep='\t')
-
-    create_output_directories(output_dir, sample_id_to_queries_list)
+    save_metrics(df_summary, pd_bins, output_dir, args.stdout)
 
     if args.genome_coverage:
         coverages_pd = pd.DataFrame.from_dict(load_data.open_coverages(args.genome_coverage))
     else:
         coverages_pd = pd.DataFrame()
 
-    # plot_genome_binning(args.colors,
-    #                     sample_id_to_queries_list,
-    #                     df_summary,
-    #                     pd_bins[pd_bins['rank'] == 'NA'],
-    #                     labels,
-    #                     coverages_pd,
-    #                     output_dir)
+    plot_genome_binning(args.colors,
+                        sample_id_to_queries_list,
+                        df_summary,
+                        pd_bins[pd_bins['rank'] == 'NA'],
+                        labels,
+                        coverages_pd,
+                        output_dir)
 
     amber_html.create_html(df_summary,
                            pd_bins,
@@ -283,27 +293,6 @@ def main(args=None):
                            options,
                            args.desc)
     logger.info('AMBER finished successfully. All results have been saved to {}'.format(output_dir))
-
-    # logger.info('Saving computed metrics...')
-    # df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
-    # if args.stdout:
-    #     summary_columns = [utils_labels.TOOL] + [col for col in df_summary if col != utils_labels.TOOL]
-    #     print(df_summary[summary_columns].to_string(index=False))
-    # pd_bins_g = pd_bins[pd_bins['rank'] == 'NA']
-    #
-    # for tool, pd_group in pd_bins_g.groupby(utils_labels.TOOL):
-    #     bins_columns = amber_html.get_genome_bins_columns()
-    #     table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
-    #     table.to_csv(os.path.join(output_dir, 'genome', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
-    #
-    # pd_bins_t = pd_bins[pd_bins['rank'] != 'NA']
-    # for tool, pd_group in pd_bins_t.groupby(utils_labels.TOOL):
-    #     bins_columns = amber_html.get_tax_bins_columns()
-    #     if pd_group['name'].isnull().any():
-    #         del bins_columns['name']
-    #     table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
-    #     table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
-    # logger.info('done')
 
 
 if __name__ == "__main__":

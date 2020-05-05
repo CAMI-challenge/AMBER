@@ -216,7 +216,7 @@ def load_queries(gold_standard_file, query_files, labels, options, options_gs):
             logging.getLogger('amber').critical("Gold standard for sample {} is empty. Exiting.".format(sample_id))
             exit(1)
         if 'BINID' in gs_df.columns:
-            g_query_gs = binning_classes.GenomeQuery(gs_df, utils_labels.GS, options_gs)
+            g_query_gs = binning_classes.GenomeQuery(gs_df, utils_labels.GS, sample_id, options_gs)
             g_query_gs.gold_standard = g_query_gs
             g_query_gs.gold_standard_df = gs_df
             sample_id_to_queries_list[sample_id].append(g_query_gs)
@@ -224,7 +224,7 @@ def load_queries(gold_standard_file, query_files, labels, options, options_gs):
         if 'TAXID' in gs_df.columns and binning_classes.TaxonomicQuery.tax_id_to_rank:
             gs_rank_to_df = get_rank_to_df(gs_df, is_gs=True)
             sample_id_to_gs_rank_to_df[sample_id] = gs_rank_to_df
-            t_query_gs = binning_classes.TaxonomicQuery(gs_rank_to_df, utils_labels.GS, options_gs)
+            t_query_gs = binning_classes.TaxonomicQuery(gs_rank_to_df, utils_labels.GS, sample_id, options_gs)
             t_query_gs.gold_standard = t_query_gs
             t_query_gs.gold_standard_df = gs_rank_to_df
             sample_id_to_queries_list[sample_id].append(t_query_gs)
@@ -252,13 +252,13 @@ def load_queries(gold_standard_file, query_files, labels, options, options_gs):
                     query_df = query_df[condition]
 
             if 'BINID' in query_df.columns:
-                g_query = binning_classes.GenomeQuery(query_df, label, options)
+                g_query = binning_classes.GenomeQuery(query_df, label, sample_id, options)
                 g_query.gold_standard = sample_id_to_g_gs[sample_id]
                 g_query.gold_standard_df = gs_df
                 sample_id_to_queries_list[sample_id].append(g_query)
                 options.only_taxonomic_queries = options_gs.only_taxonomic_queries = False
             if 'TAXID' in query_df.columns and binning_classes.TaxonomicQuery.tax_id_to_rank:
-                t_query = binning_classes.TaxonomicQuery(get_rank_to_df(query_df), label, options)
+                t_query = binning_classes.TaxonomicQuery(get_rank_to_df(query_df), label, sample_id, options)
                 t_query.gold_standard = sample_id_to_t_gs[sample_id]
                 t_query.gold_standard_df = sample_id_to_gs_rank_to_df[sample_id]
                 sample_id_to_queries_list[sample_id].append(t_query)
