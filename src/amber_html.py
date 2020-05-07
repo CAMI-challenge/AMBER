@@ -320,7 +320,73 @@ def create_heatmap_div():
     return  heatmap_legend_div
 
 
-def create_table_html(df_summary, include_unifrac=False, include_cami1=False):
+def get_labels_genome():
+    return ([(utils_labels.ACCURACY_PER_BP, utils_labels.TOOLTIP_ACCURACY_PER_BP),
+             (utils_labels.ACCURACY_PER_SEQ, utils_labels.TOOLTIP_ACCURACY_PER_SEQ),
+             (utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_BP),
+             (utils_labels.MISCLASSIFICATION_PER_SEQ, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_SEQ),
+             (utils_labels.PRECISION_PER_BP, utils_labels.TOOLTIP_PRECISION_PER_BP),
+             (utils_labels.PRECISION_PER_SEQ, utils_labels.TOOLTIP_PRECISION_PER_SEQ),
+             (utils_labels.RECALL_PER_BP, utils_labels.TOOLTIP_RECALL_PER_BP),
+             (utils_labels.RECALL_PER_SEQ, utils_labels.TOOLTIP_RECALL_PER_SEQ),
+             (utils_labels.F1_SCORE_PER_BP, utils_labels.TOOLTIP_F1_SCORE_PER_BP),
+             (utils_labels.F1_SCORE_PER_SEQ, utils_labels.TOOLTIP_F1_SCORE_PER_SEQ),
+             (utils_labels.RI_BY_BP, utils_labels.TOOLTIP_RI_BY_BP),
+             (utils_labels.RI_BY_SEQ, utils_labels.TOOLTIP_RI_BY_SEQ),
+             (utils_labels.ARI_BY_BP, utils_labels.TOOLTIP_ARI_BY_BP),
+             (utils_labels.ARI_BY_SEQ, utils_labels.TOOLTIP_ARI_BY_SEQ),
+             (utils_labels.AVG_PRECISION_BP, utils_labels.TOOLTIP_AVG_PRECISION_BP),
+             (utils_labels.AVG_PRECISION_BP_SEM, utils_labels.TOOLTIP_AVG_PRECISION_BP_SEM),
+             (utils_labels.AVG_PRECISION_SEQ, utils_labels.TOOLTIP_AVG_PRECISION_SEQ),
+             (utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.TOOLTIP_AVG_PRECISION_SEQ_SEM),
+             (utils_labels.AVG_RECALL_BP, utils_labels.TOOLTIP_AVG_RECALL_BP),
+             (utils_labels.AVG_RECALL_BP_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_BP_CAMI1),
+             (utils_labels.AVG_RECALL_BP_SEM, utils_labels.TOOLTIP_AVG_RECALL_BP_SEM),
+             (utils_labels.AVG_RECALL_SEQ, utils_labels.TOOLTIP_AVG_RECALL_SEQ),
+             (utils_labels.AVG_RECALL_SEQ_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_SEQ_CAMI1),
+             (utils_labels.F1_SCORE_BP, utils_labels.TOOLTIP_F1_SCORE_BP),
+             (utils_labels.F1_SCORE_SEQ, utils_labels.TOOLTIP_F1_SCORE_SEQ),
+             (utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.TOOLTIP_AVG_RECALL_SEQ_SEM),
+             (utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_BPS),
+             (utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_SEQS),
+             (utils_labels.UNIFRAC_BP, utils_labels.TOOLTIP_UNIFRAC_BP),
+             (utils_labels.UNIFRAC_SEQ, utils_labels.TOOLTIP_UNIFRAC_SEQ)])
+
+
+def get_labels_taxonomic():
+    return ([(utils_labels.ACCURACY_PER_BP, utils_labels.TOOLTIP_ACCURACY_PER_BP_TAX),
+             (utils_labels.ACCURACY_PER_SEQ, utils_labels.TOOLTIP_ACCURACY_PER_SEQ_TAX),
+             (utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_BP),
+             (utils_labels.MISCLASSIFICATION_PER_SEQ, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_SEQ),
+             (utils_labels.PRECISION_PER_BP, utils_labels.TOOLTIP_PRECISION_PER_BP_TAX),
+             (utils_labels.PRECISION_PER_SEQ, utils_labels.TOOLTIP_PRECISION_PER_SEQ_TAX),
+             (utils_labels.RECALL_PER_BP, utils_labels.TOOLTIP_RECALL_PER_BP_TAX),
+             (utils_labels.RECALL_PER_SEQ, utils_labels.TOOLTIP_RECALL_PER_SEQ_TAX),
+             (utils_labels.F1_SCORE_PER_BP, utils_labels.TOOLTIP_F1_SCORE_PER_BP),
+             (utils_labels.F1_SCORE_PER_SEQ, utils_labels.TOOLTIP_F1_SCORE_PER_SEQ),
+             (utils_labels.RI_BY_BP, utils_labels.TOOLTIP_RI_BY_BP_TAX),
+             (utils_labels.RI_BY_SEQ, utils_labels.TOOLTIP_RI_BY_SEQ_TAX),
+             (utils_labels.ARI_BY_BP, utils_labels.TOOLTIP_ARI_BY_BP),
+             (utils_labels.ARI_BY_SEQ, utils_labels.TOOLTIP_ARI_BY_SEQ),
+             (utils_labels.AVG_PRECISION_BP, utils_labels.TOOLTIP_AVG_PRECISION_BP_TAX),
+             (utils_labels.AVG_PRECISION_BP_SEM, utils_labels.TOOLTIP_AVG_PRECISION_BP_SEM),
+             (utils_labels.AVG_PRECISION_SEQ, utils_labels.TOOLTIP_AVG_PRECISION_SEQ_TAX),
+             (utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.TOOLTIP_AVG_PRECISION_SEQ_SEM),
+             (utils_labels.AVG_RECALL_BP, utils_labels.TOOLTIP_AVG_RECALL_BP_TAX),
+             (utils_labels.AVG_RECALL_BP_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_BP_CAMI1),
+             (utils_labels.AVG_RECALL_BP_SEM, utils_labels.TOOLTIP_AVG_RECALL_BP_SEM),
+             (utils_labels.AVG_RECALL_SEQ, utils_labels.TOOLTIP_AVG_RECALL_SEQ_TAX),
+             (utils_labels.AVG_RECALL_SEQ_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_SEQ_CAMI1),
+             (utils_labels.F1_SCORE_BP, utils_labels.TOOLTIP_F1_SCORE_BP),
+             (utils_labels.F1_SCORE_SEQ, utils_labels.TOOLTIP_F1_SCORE_SEQ),
+             (utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.TOOLTIP_AVG_RECALL_SEQ_SEM),
+             (utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_BPS),
+             (utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_SEQS),
+             (utils_labels.UNIFRAC_BP, utils_labels.TOOLTIP_UNIFRAC_BP),
+             (utils_labels.UNIFRAC_SEQ, utils_labels.TOOLTIP_UNIFRAC_SEQ)])
+
+
+def create_table_html(df_summary, is_taxonomic=False, include_cami1=False):
     metrics1 = [utils_labels.AVG_PRECISION_BP,
                 utils_labels.AVG_PRECISION_SEQ,
                 utils_labels.AVG_RECALL_BP,
@@ -350,7 +416,7 @@ def create_table_html(df_summary, include_unifrac=False, include_cami1=False):
                 utils_labels.ARI_BY_SEQ,
                 utils_labels.PERCENTAGE_ASSIGNED_BPS,
                 utils_labels.PERCENTAGE_ASSIGNED_SEQS]
-    if include_unifrac:
+    if is_taxonomic:
         metrics2.append(utils_labels.UNIFRAC_BP)
         metrics2.append(utils_labels.UNIFRAC_SEQ)
     all_metrics = [metrics1, metrics2]
@@ -371,36 +437,7 @@ def create_table_html(df_summary, include_unifrac=False, include_cami1=False):
             d_dict[tuple[0]] = '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(tuple[0], tuple[0], tuple[1])
         return d_dict
 
-    d = get_html_dict([(utils_labels.ACCURACY_PER_BP, utils_labels.TOOLTIP_ACCURACY_PER_BP),
-                       (utils_labels.ACCURACY_PER_SEQ, utils_labels.TOOLTIP_ACCURACY_PER_SEQ),
-                       (utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_BP),
-                       (utils_labels.MISCLASSIFICATION_PER_SEQ, utils_labels.TOOLTIP_MISCLASSIFICATION_PER_SEQ),
-                       (utils_labels.PRECISION_PER_BP, utils_labels.TOOLTIP_PRECISION_PER_BP),
-                       (utils_labels.PRECISION_PER_SEQ, utils_labels.TOOLTIP_PRECISION_PER_SEQ),
-                       (utils_labels.RECALL_PER_BP, utils_labels.TOOLTIP_RECALL_PER_BP),
-                       (utils_labels.RECALL_PER_SEQ, utils_labels.TOOLTIP_RECALL_PER_SEQ),
-                       (utils_labels.F1_SCORE_PER_BP, utils_labels.TOOLTIP_F1_SCORE_PER_BP),
-                       (utils_labels.F1_SCORE_PER_SEQ, utils_labels.TOOLTIP_F1_SCORE_PER_SEQ),
-                       (utils_labels.RI_BY_BP, utils_labels.TOOLTIP_RI_BY_BP),
-                       (utils_labels.RI_BY_SEQ, utils_labels.TOOLTIP_RI_BY_SEQ),
-                       (utils_labels.ARI_BY_BP, utils_labels.TOOLTIP_ARI_BY_BP),
-                       (utils_labels.ARI_BY_SEQ, utils_labels.TOOLTIP_ARI_BY_SEQ),
-                       (utils_labels.AVG_PRECISION_BP, utils_labels.TOOLTIP_AVG_PRECISION_BP),
-                       (utils_labels.AVG_PRECISION_BP_SEM, utils_labels.TOOLTIP_AVG_PRECISION_BP_SEM),
-                       (utils_labels.AVG_PRECISION_SEQ, utils_labels.TOOLTIP_AVG_PRECISION_SEQ),
-                       (utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.TOOLTIP_AVG_PRECISION_SEQ_SEM),
-                       (utils_labels.AVG_RECALL_BP, utils_labels.TOOLTIP_AVG_RECALL_BP),
-                       (utils_labels.AVG_RECALL_BP_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_BP_CAMI1),
-                       (utils_labels.AVG_RECALL_BP_SEM, utils_labels.TOOLTIP_AVG_RECALL_BP_SEM),
-                       (utils_labels.AVG_RECALL_SEQ, utils_labels.TOOLTIP_AVG_RECALL_SEQ),
-                       (utils_labels.AVG_RECALL_SEQ_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_SEQ_CAMI1),
-                       (utils_labels.F1_SCORE_BP, utils_labels.TOOLTIP_F1_SCORE_BP),
-                       (utils_labels.F1_SCORE_SEQ, utils_labels.TOOLTIP_F1_SCORE_SEQ),
-                       (utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.TOOLTIP_AVG_RECALL_SEQ_SEM),
-                       (utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_BPS),
-                       (utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_SEQS),
-                       (utils_labels.UNIFRAC_BP, utils_labels.TOOLTIP_UNIFRAC_BP),
-                       (utils_labels.UNIFRAC_SEQ, utils_labels.TOOLTIP_UNIFRAC_SEQ)])
+    d = get_html_dict(get_labels_taxonomic() if is_taxonomic else get_labels_genome())
 
     pattern = re.compile('|'.join(map(re.escape, d)))
 
@@ -748,7 +785,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
         cc_plots_dict[rank] = column(completeness_minus_contamination_plot, css_classes=['bk-width-auto', 'bk-float-left'])
         contamination_plots_dict[rank] = column(contamination_plot, css_classes=['bk-width-auto', 'bk-float-left'])
 
-        rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank.T, include_unifrac=True))
+        rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank.T, is_taxonomic=True))
 
     qbins_plots_list = [v for k, v in qbins_plots_dict.items() if v]
     qsamples_plots_list = [v for k, v in qsamples_plots_dict.items() if v]
@@ -765,7 +802,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
                 continue
             pd_rank_sample = pd_rank_groupby_sample.get_group(sample_id)
             pd_rank_sample = pd_rank_sample.set_index(utils_labels.TOOL).T
-            rank_to_sample_to_html[rank].append(create_table_html(pd_rank_sample, include_unifrac=True))
+            rank_to_sample_to_html[rank].append(create_table_html(pd_rank_sample, is_taxonomic=True))
 
     if not rank_to_sample_to_html:
         return None
@@ -844,4 +881,3 @@ def create_html(df_summary, pd_bins, labels, sample_ids_list, options, desc_text
 
     with open(os.path.join(options.output_dir, "index.html"), 'w') as f:
         f.write(html)
-    logging.getLogger('amber').info('done')

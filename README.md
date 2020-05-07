@@ -308,3 +308,7 @@ Please cite AMBER as:
 
 The metrics implemented in AMBER were used and described in the CAMI manuscript, thus you may also cite:
 * Sczyrba, Hofmann, Belmann, et al. (2017). **Critical Assessment of Metagenome Interpretation—a benchmark of metagenomics software.** *Nature Methods*, 14, 11:1063–1071. doi:[10.1038/nmeth.4458](https://doi.org/10.1038/nmeth.4458)
+
+# License
+
+AMBER 2 is licensed under GPL v3.
