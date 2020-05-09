@@ -13,11 +13,11 @@ AMBER is an evaluation package for the comparative assessment of genome reconstr
 **Metrics computed per sample**
 
 * Accuracy
-* Misclassification rate
+* Misclassification rate (contamination)
 * Purity
 * Completeness
 * (Adjusted) Rand index
-* Percentage of assigned base pairs and sequences
+* Percentage of binned base pairs and sequences
 * Number of genomes recovered within levels of completeness and contamination
 * UniFrac (for taxonomic binning)
 

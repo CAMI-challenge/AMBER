@@ -247,6 +247,8 @@ def create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_
                 continue
             pd_tool_sample = pd_tool_sample_groupby.get_group(sample_id)
             pd_tool_sample = pd_tool_sample[list(bins_columns.keys())].rename(columns=dict(bins_columns))
+            if binning_type == 'taxonomic':
+                pd_tool_sample['Taxon ID'] = pd_tool_sample['Taxon ID'].astype('Int64')
             tool_sample_html = pd_tool_sample.head(500).style.set_table_styles(styles).set_precision(3).hide_index().render()
             tool_sample_html += '<div style="padding-top: 20px; padding-bottom: 20px;">{}</div>'.format('Complete table available in: ' + os.path.join(output_dir, binning_type, tool, 'metrics_per_bin.tsv'))
             tool_to_sample_to_html[tool].append(tool_sample_html)
@@ -282,21 +284,6 @@ def create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_
     table_column = row(column(row(select_tool, select_sample, css_classes=['bk-width-auto', 'bk-combo-box']), table_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width') # column(table_div, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-width-auto-main'])
     metrics_bins_panel = Panel(child=table_column, title="Metrics per bin")
     return metrics_bins_panel
-
-
-def get_contamination_completeness_thresholds(df):
-    contamination_completeness_cols = [c for c in df.columns]
-    completeness_thr = []
-    contamination_thr = []
-    for col in contamination_completeness_cols:
-        values = col.split('<')
-        completeness_item = values[0]
-        contamination_item = '<' + values[1]
-        if completeness_item not in completeness_thr:
-            completeness_thr.append(completeness_item)
-        if contamination_item not in contamination_thr:
-            contamination_thr.append(contamination_item)
-    return completeness_thr, contamination_thr
 
 
 def create_contamination_completeness_table(pd_bins, min_completeness, max_contamination):
@@ -630,12 +617,12 @@ def get_genome_bins_columns():
                         ('precision_bp', utils_labels.PRECISION_PER_BP),
                         ('recall_bp', utils_labels.RECALL_PER_BP),
                         ('total_length', 'Bin size (bp)'),
-                        ('genome_length', 'True positives (bp)'),
+                        ('tp_length', 'True positives (bp)'),
                         ('length_gs', 'True size of most abundant genome (bp)'),
                         ('precision_seq', utils_labels.PRECISION_PER_SEQ),
                         ('recall_seq', utils_labels.RECALL_PER_SEQ),
                         ('total_seq_counts', 'Bin size (seq)'),
-                        ('genome_seq_counts', 'True positives (seq)'),
+                        ('tp_seq_counts', 'True positives (seq)'),
                         ('seq_counts_gs', 'True size of most abundant genome (seq)')])
 
 

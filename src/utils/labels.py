@@ -111,10 +111,10 @@ TOOLTIP_ARI_BY_SEQ = "Rand index (seq) ajusted by the expected Rand index of a r
 TOOLTIP_PERCENTAGE_ASSIGNED_BPS = "Fraction of base pairs from the complete sample that have been assigned to predicted bins. It ranges from 0 (worst) to 1 (best)."
 TOOLTIP_PERCENTAGE_ASSIGNED_SEQS = "Fraction of sequences from the complete sample that have been assigned to predicted bins. It ranges from 0 (worst) to 1 (best)."
 
-TOOLTIP_ACCURACY_PER_BP = "Sum of base pairs coming from the most abundant genome in each predicted genome bin divided by the sum of base pairs in the complete data set. It ranges from 0 (worst) to 1 (best)."
+TOOLTIP_ACCURACY_PER_BP = "Sum of base pairs coming from the most abundant genome in each predicted genome bin divided by the sum of base pairs in the complete sample. It ranges from 0 (worst) to 1 (best)."
 TOOLTIP_ACCURACY_PER_BP_TAX = "Equivalent to completeness (bp), i.e. sum of true positive base pairs in the predicted bins divided by the sum of sequences in all underlying taxa. It ranges from 0 (worst) to 1 (best)."
 
-TOOLTIP_ACCURACY_PER_SEQ = "Sum of sequences coming from the most abundant genome in each predicted genome bin divided by the sum of sequences in the complete data set. It ranges from 0 (worst) to 1 (best)."
+TOOLTIP_ACCURACY_PER_SEQ = "Sum of sequences coming from the most abundant genome in each predicted genome bin divided by the sum of sequences in the complete sample. It ranges from 0 (worst) to 1 (best)."
 TOOLTIP_ACCURACY_PER_SEQ_TAX = "Equivalent to completeness (seq), i.e. sum of true positive sequences in the predicted bins divided by the sum of sequences in all underlying taxa. It ranges from 0 (worst) to 1 (best)."
 
 TOOLTIP_MISCLASSIFICATION_PER_BP = "1 - purity (bp)"

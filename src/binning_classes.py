@@ -501,8 +501,9 @@ class GenomeQuery(Query):
 
         precision_df = query_w_length.groupby('BINID', sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'total_length', 'SEQUENCEID': 'total_seq_counts'})
         precision_df = pd.merge(precision_df, most_abundant_genome_df, on='BINID')
-        precision_df['precision_bp'] = precision_df['genome_length'] / precision_df['total_length']
-        precision_df['precision_seq'] = precision_df['genome_seq_counts'] / precision_df['total_seq_counts']
+        precision_df.rename(columns={'genome_length': 'tp_length', 'genome_seq_counts': 'tp_seq_counts'}, inplace=True)
+        precision_df['precision_bp'] = precision_df['tp_length'] / precision_df['total_length']
+        precision_df['precision_seq'] = precision_df['tp_seq_counts'] / precision_df['total_seq_counts']
 
         if self.options.filter_tail_percentage:
             precision_df['total_length_pct'] = precision_df['total_length'] / precision_df['total_length'].sum()
@@ -518,13 +519,14 @@ class GenomeQuery(Query):
         self.metrics.precision_avg_bp_sem = precision_df['precision_bp'].sem()
         self.metrics.precision_avg_bp_var = precision_df['precision_bp'].var()
         self.metrics.precision_avg_seq = precision_df['precision_seq'].mean()
-        self.metrics.precision_weighted_bp = precision_df['genome_length'].sum() / precision_df['total_length'].sum()
-        self.metrics.precision_weighted_seq = precision_df['genome_seq_counts'].sum() / precision_df['total_seq_counts'].sum()
+        self.metrics.precision_avg_seq_sem = precision_df['precision_seq'].sem()
+        self.metrics.precision_weighted_bp = precision_df['tp_length'].sum() / precision_df['total_length'].sum()
+        self.metrics.precision_weighted_seq = precision_df['tp_seq_counts'].sum() / precision_df['total_seq_counts'].sum()
 
         genome_sizes_df = gs_df.rename(columns={'BINID': 'genome_id'}).groupby('genome_id', sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'length_gs', 'SEQUENCEID': 'seq_counts_gs'})
         precision_df = precision_df.reset_index().join(genome_sizes_df, on='genome_id', how='left', sort=False).set_index('BINID')
-        precision_df['recall_bp'] = precision_df['genome_length'] / precision_df['length_gs']
-        precision_df['recall_seq'] = precision_df['genome_seq_counts'] / precision_df['seq_counts_gs']
+        precision_df['recall_bp'] = precision_df['tp_length'] / precision_df['length_gs']
+        precision_df['recall_seq'] = precision_df['tp_seq_counts'] / precision_df['seq_counts_gs']
         precision_df['rank'] = 'NA'
 
         recall_df = confusion_df.loc[confusion_df.groupby('genome_id', sort=False)['genome_length'].idxmax()]
@@ -560,8 +562,8 @@ class GenomeQuery(Query):
             self.metrics.recall_avg_bp_cami1 = recall_avg_bp_cami1
             self.metrics.recall_avg_seq_cami1 = recall_avg_seq_cami1
 
-        self.metrics.accuracy_bp = precision_df['genome_length'].sum() / recall_df['length_gs'].sum()
-        self.metrics.accuracy_seq = precision_df['genome_seq_counts'].sum() / recall_df['seq_counts_gs'].sum()
+        self.metrics.accuracy_bp = precision_df['tp_length'].sum() / recall_df['length_gs'].sum()
+        self.metrics.accuracy_seq = precision_df['tp_seq_counts'].sum() / recall_df['seq_counts_gs'].sum()
 
         self.precision_df = precision_df.sort_values(by=['recall_bp'], axis=0, ascending=False)
         self.recall_df = recall_df
@@ -616,8 +618,10 @@ class GenomeQuery(Query):
         plt.close(fig)
 
     def plot_heat_maps(self):
+        if self.label == utils_labels.GS:
+            return
         heatmap_df = precision_recall_per_bin.transform_confusion_matrix2(self)
-        plots.plot_heatmap(heatmap_df, self.sample_id, self.options.output_dir, self.label)
+        plots.plot_heatmap(heatmap_df, self.sample_id, self.options.output_dir, self.label, log_scale=True)
 
     def plot(self):
         self.plot_precision_vs_bin_size()
@@ -741,12 +745,16 @@ class TaxonomicQuery(Query):
         seq_counts_gs_sum = tp_fp_fn_df['seq_counts_gs'].sum()
 
         self.metrics[rank].precision_avg_bp = tp_fp_fn_df['precision_bp'].mean()
+        self.metrics[rank].precision_avg_bp_sem = tp_fp_fn_df['precision_bp'].sem()
         self.metrics[rank].precision_avg_seq = tp_fp_fn_df['precision_seq'].mean()
+        self.metrics[rank].precision_avg_seq_sem = tp_fp_fn_df['precision_seq'].sem()
         self.metrics[rank].precision_weighted_bp = tp_length_sum / tp_fp_fn_df['total_length'].sum()
         self.metrics[rank].precision_weighted_seq = tp_seq_counts_sum / tp_fp_fn_df['total_seq_counts'].sum()
 
         self.metrics[rank].recall_avg_bp = tp_fp_fn_df['recall_bp'].mean()
+        self.metrics[rank].recall_avg_bp_sem = tp_fp_fn_df['recall_bp'].sem()
         self.metrics[rank].recall_avg_seq = tp_fp_fn_df['recall_seq'].mean()
+        self.metrics[rank].recall_avg_seq_sem = tp_fp_fn_df['recall_seq'].sem()
         self.metrics[rank].recall_weighted_bp = tp_length_sum / length_gs_sum
         self.metrics[rank].recall_weighted_seq = tp_seq_counts_sum / seq_counts_gs_sum
 

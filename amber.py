@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
@@ -16,16 +16,18 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
+import errno
+import logging
 import os
 import sys
-import errno
 
 import matplotlib
-import logging
-from version import __version__
+
+from src import amber_html
 from src import plot_by_genome
 from src import plots
-from src import amber_html
+from version import __version__
+
 matplotlib.use('Agg')
 import pandas as pd
 from src.utils import load_data
@@ -197,8 +199,8 @@ def evaluate_samples_queries(sample_id_to_queries_list):
 
 def save_metrics(df_summary, pd_bins, output_dir, stdout):
     logging.getLogger('amber').info('Saving computed metrics...')
-    df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False, float_format='%.3f')
-    pd_bins.to_csv(os.path.join(output_dir, 'bins.tsv'), index=False, sep='\t')
+    df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False)
+    # pd_bins.to_csv(os.path.join(output_dir, 'bins.tsv'), index=False, sep='\t')
     if stdout:
         summary_columns = [utils_labels.TOOL] + [col for col in df_summary if col != utils_labels.TOOL]
         print(df_summary[summary_columns].to_string(index=False))
@@ -238,9 +240,9 @@ def main(args=None):
     group_t.add_argument('--ncbi_nodes_file', help="NCBI nodes file", required=False)
     group_t.add_argument('--ncbi_names_file', help="NCBI names file", required=False)
     group_t.add_argument('--ncbi_merged_file', help="NCBI merged file", required=False)
-    group_t.add_argument('--rank_as_genome_binning',
-                         help="Assess taxonomic binning at a rank also as genome binning. Valid ranks: superkingdom, phylum, class, order, family, genus, species, strain",
-                         required=False)
+    # group_t.add_argument('--rank_as_genome_binning',
+    #                      help="Assess taxonomic binning at a rank also as genome binning. Valid ranks: superkingdom, phylum, class, order, family, genus, species, strain",
+    #                      required=False)
 
     args = parser.parse_args(args)
     output_dir = os.path.abspath(args.output_dir)
@@ -254,7 +256,7 @@ def main(args=None):
                                       genome_to_unique_common=genome_to_unique_common,
                                       filter_keyword=args.keyword,
                                       min_length=args.min_length,
-                                      rank_as_genome_binning=args.rank_as_genome_binning,
+                                      rank_as_genome_binning=None, #args.rank_as_genome_binning,
                                       output_dir=output_dir,
                                       min_completeness=args.min_completeness,
                                       max_contamination=args.max_contamination)
@@ -262,7 +264,7 @@ def main(args=None):
                                          genome_to_unique_common=genome_to_unique_common,
                                          filter_keyword=args.keyword,
                                          min_length=args.min_length,
-                                         rank_as_genome_binning=args.rank_as_genome_binning,
+                                         rank_as_genome_binning=None, #args.rank_as_genome_binning,
                                          output_dir=output_dir)
 
     load_data.load_ncbi_info(args.ncbi_nodes_file, args.ncbi_names_file, args.ncbi_merged_file)
@@ -270,16 +272,13 @@ def main(args=None):
     sample_id_to_queries_list, sample_ids_list = load_data.load_queries(args.gold_standard_file, args.bin_files, labels,
                                                                         options, options_gs)
 
+    coverages_pd = load_data.open_coverages(args.genome_coverage)
+
     create_output_directories(output_dir, sample_id_to_queries_list)
 
     df_summary, pd_bins = evaluate_samples_queries(sample_id_to_queries_list)
 
     save_metrics(df_summary, pd_bins, output_dir, args.stdout)
-
-    if args.genome_coverage:
-        coverages_pd = pd.DataFrame.from_dict(load_data.open_coverages(args.genome_coverage))
-    else:
-        coverages_pd = pd.DataFrame()
 
     plot_genome_binning(args.colors,
                         sample_id_to_queries_list,

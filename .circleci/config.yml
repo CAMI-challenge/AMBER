@@ -9,9 +9,6 @@
 version: 2
 jobs:
   build:
-    branches:
-      ignore:
-      - dev
     working_directory: ~/CAMI-challenge/AMBER
     parallelism: 1
     shell: /bin/bash --login

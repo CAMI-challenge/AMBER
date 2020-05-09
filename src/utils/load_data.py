@@ -34,23 +34,24 @@ except ImportError:
 
 
 def open_coverages(file_path):
+    if not file_path:
+        return pd.DataFrame()
     logging.getLogger('amber').info('Loading coverage file')
-    sample_id_to_coverages = {}
-    with open(file_path) as read_handler:
-        try:
-            sample_id_prev = 0
-            # for sample_id, (genome_id, coverage) in read_metadata(read_handler, file_path, get_column_indices_genome_coverage, read_row_genome_coverage, False):
-            for sample_id, (genome_id, coverage) in read_metadata(file_path):
-                if sample_id != sample_id_prev:
-                    genome_id_to_coverage = {}
-                    sample_id_to_coverages[sample_id] = genome_id_to_coverage
-                sample_id_prev = sample_id
-                genome_id_to_coverage[genome_id] = coverage
-        except BaseException as e:
-            traceback.print_exc()
-            logging.getLogger('amber').critical("File {} is malformed. {}".format(file_path, e))
-            exit(1)
-    return sample_id_to_coverages
+    coverages_pd = pd.DataFrame()
+    try:
+        samples_metadata = read_metadata(file_path)
+        for metadata in samples_metadata:
+            nrows = metadata[1] - metadata[0] + 1
+            df = pd.read_csv(file_path, sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None)
+            df.rename(columns=metadata[3], inplace=True)
+            df = df[['GENOMEID', 'COVERAGE']]
+            df['SAMPLEID'] = metadata[2]['SAMPLEID']
+            coverages_pd = pd.concat([coverages_pd, df], ignore_index=True)
+    except BaseException as e:
+        traceback.print_exc()
+        logging.getLogger('amber').critical("File {} not found or malformed. {}".format(file_path, e))
+        exit(1)
+    return coverages_pd
 
 
 def load_unique_common(unique_common_file_path, args_keyword):
@@ -145,7 +146,7 @@ def open_query(file_path_query):
         sample_id_to_query_df = load_binnings(samples_metadata, file_path_query)
     except BaseException as e:
         traceback.print_exc()
-        logging.getLogger('amber').critical("File {} is malformed. {}".format(file_path_query, e))
+        logging.getLogger('amber').critical("File {} not found or malformed. {}".format(file_path_query, e))
         exit(1)
     return sample_id_to_query_df
 

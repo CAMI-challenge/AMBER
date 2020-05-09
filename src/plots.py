@@ -15,6 +15,7 @@
 
 from src.utils import labels as utils_labels
 from src.utils import load_ncbi_taxinfo
+from src import binning_classes
 import matplotlib
 matplotlib.use('Agg')
 import seaborn as sns
@@ -117,56 +118,36 @@ def plot_by_genome_coverage(pd_bins, pd_target_column, available_tools, output_d
     plt.close(fig)
 
 
-# def get_genome_recall_all_samples_df(sample_id_to_queries_list):
-#     pd_query_all = pd.DataFrame()
-#     for sample_id in sample_id_to_queries_list:
-#         for query in sample_id_to_queries_list[sample_id]:
-#             pd_query = pd.DataFrame.from_dict(query.genome_to_recall_bp, orient='index', columns=['recall_bp'])
-#             pd_query.index.name = 'genome_id'
-#             pd_query['sample_id'] = sample_id
-#             pd_query[utils_labels.TOOL] = query.label
-#             pd_query = pd_query.reset_index().set_index(['sample_id', utils_labels.TOOL])
-#             pd_query_all = pd.concat([pd_query_all, pd_query])
-#     return pd_query_all
-
-
 def get_pd_genomes_recall(sample_id_to_queries_list):
     pd_genomes_recall = pd.DataFrame()
     for sample_id in sample_id_to_queries_list:
         for query in sample_id_to_queries_list[sample_id]:
-            pd_query = pd.DataFrame.from_dict(query.genome_to_recall_bp, orient='index', columns=['recall_bp'])
-            pd_query.index.name = 'genome_id'
-            pd_query['sample_id'] = sample_id
-            pd_query[utils_labels.TOOL] = query.label
-            pd_query = pd_query.reset_index().set_index(['sample_id', utils_labels.TOOL])
-            pd_genomes_recall = pd.concat([pd_genomes_recall, pd_query])
+            if not isinstance(query, binning_classes.GenomeQuery):
+                continue
+            recall_df = query.recall_df[['genome_id', 'recall_bp']].copy()
+            recall_df[utils_labels.TOOL] = query.label
+            recall_df['sample_id'] = sample_id
+            recall_df = recall_df.reset_index().set_index(['sample_id', utils_labels.TOOL])
+            pd_genomes_recall = pd.concat([pd_genomes_recall, recall_df])
     return pd_genomes_recall
 
 
 def plot_precision_recall_by_coverage(sample_id_to_queries_list, pd_bins_g, coverages_pd, available_tools, output_dir):
     # compute average genome coverage if coverages for multiple samples were provided
-    coverages_pd['mean_coverage'] = coverages_pd.mean(axis=1)
-    coverages_pd = coverages_pd.sort_values(by=['mean_coverage'])
-    coverages_pd['rank'] = coverages_pd['mean_coverage'].rank()
+    coverages_pd = coverages_pd.groupby(['GENOMEID']).mean()
+    coverages_pd.rename(columns={'GENOMEID': 'genome_id'})
+    coverages_pd = coverages_pd.sort_values(by=['COVERAGE'])
+    coverages_pd['rank'] = coverages_pd['COVERAGE'].rank()
 
     pd_genomes_recall = get_pd_genomes_recall(sample_id_to_queries_list)
     pd_genomes_recall['genome_index'] = pd_genomes_recall['genome_id'].map(coverages_pd['rank'].to_dict())
     pd_genomes_recall = pd_genomes_recall.groupby([utils_labels.TOOL, 'genome_id']).mean().reset_index()
-
-    pd_genomes_recall['genome_coverage'] = np.log10(pd_genomes_recall['genome_id'].map(coverages_pd['mean_coverage'].to_dict()))
-
-    # print(pd_genomes_recall)
-    # pd_genomes_recall['genome_coverage_log10'] = np.log10(pd_genomes_recall['genome_id'].map(coverages_pd['mean_coverage'].to_dict()))
-    # pd_genomes_recall['genome_coverage'] = pd_genomes_recall['genome_id'].map(coverages_pd['mean_coverage'].to_dict())
-    # print(pd_genomes_recall)
-    # pd_genomes_recall.to_csv('/home/fmeyer/tutorial/amber_mouse_gut/coverages_recall_pd.tsv', sep='\t')
-    # exit()
-
+    pd_genomes_recall['genome_coverage'] = np.log10(pd_genomes_recall['genome_id'].map(coverages_pd['COVERAGE'].to_dict()))
     plot_by_genome_coverage(pd_genomes_recall, 'recall_bp', available_tools, output_dir)
 
-    pd_bins_precision = pd_bins_g[[utils_labels.TOOL, 'precision_bp', 'most_abundant_genome']].copy().dropna(subset=['precision_bp'])
-    pd_bins_precision['genome_index'] = pd_bins_precision['most_abundant_genome'].map(coverages_pd['rank'].to_dict())
-    pd_bins_precision['genome_coverage'] = np.log10(pd_bins_precision['most_abundant_genome'].map(coverages_pd['mean_coverage'].to_dict()))
+    pd_bins_precision = pd_bins_g[[utils_labels.TOOL, 'precision_bp', 'genome_id']].copy().dropna(subset=['precision_bp'])
+    pd_bins_precision['genome_index'] = pd_bins_precision['genome_id'].map(coverages_pd['rank'].to_dict())
+    pd_bins_precision['genome_coverage'] = np.log10(pd_bins_precision['genome_id'].map(coverages_pd['COVERAGE'].to_dict()))
     plot_by_genome_coverage(pd_bins_precision, 'precision_bp', available_tools, output_dir)
 
 
@@ -199,9 +180,9 @@ def plot_heatmap(df_confusion, sample_id, output_dir, label, separate_bar=False,
         cbar.set_label(fontsize=fontsize, label='log$_{10}$(# bp)')
     else:
         fmt = lambda x, pos: '{:.0f}'.format(x / 1000000)
-        cbar = plt.colorbar(mappable, ax=axs, cax=cbar_ax, orientation='vertical', label='Millions of base pairs', format=ticker.FuncFormatter(fmt))
+        cbar = plt.colorbar(mappable, ax=axs, cax=cbar_ax, orientation='vertical', format=ticker.FuncFormatter(fmt))
+        cbar.set_label(fontsize=fontsize, label='Millions of base pairs')
 
-    cbar.set_label(fontsize=fontsize, label='# bp')
     cbar.ax.tick_params(labelsize=fontsize)
     cbar.outline.set_edgecolor(None)
 
