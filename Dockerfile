@@ -1,4 +1,4 @@
-FROM python:3.7-stretch
+FROM python:3.7-slim
 
 ADD image /usr/local
 ADD *.py /usr/local/bin/
