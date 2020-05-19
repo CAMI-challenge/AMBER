@@ -1,0 +1,37 @@
+wget https://zenodo.org/record/3632511/files/cami2_mouse_gut_gsa_pooled.binning?download=1
+wget https://zenodo.org/record/3667475/files/cami2_mouse_gut_average_genome_coverage.tsv?download=1
+wget https://zenodo.org/record/3629588/files/cami2_mouse_gut_maxbin2.2.7.binning?download=1
+wget https://zenodo.org/record/3629590/files/cami2_mouse_gut_metabat2.12.1.binning?download=1
+wget https://zenodo.org/record/3629592/files/cami2_mouse_gut_concoct1.0.0.binning?download=1
+wget https://zenodo.org/record/3629594/files/cami2_mouse_gut_dastool1.1.2.binning?download=1
+wget https://zenodo.org/record/3629598/files/cami2_mouse_gut_diamond0.9.24.binning?download=1
+wget https://zenodo.org/record/3629600/files/cami2_mouse_gut_kraken2.0.8beta.binning?download=1
+wget https://zenodo.org/record/3629602/files/cami2_mouse_gut_ppsp1.4.binning?download=1
+wget https://zenodo.org/record/3629604/files/cami2_mouse_gut_cat4.6.binning?download=1
+wget https://zenodo.org/record/3629606/files/cami2_mouse_gut_megan6.15.2.binning?download=1
+wget https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1/CAMI_DATABASES/taxdump_cami2_toy.tar.gz
+
+
+tar xvf taxdump_cami2_toy.tar.gz
+
+
+cd AMBER
+
+./amber.py -g cami2_mouse_gut_gsa_pooled.binning \
+-d "CAMI 2 toy Mouse Gut dataset" \
+cami2_mouse_gut_maxbin2.2.7.binning \
+cami2_mouse_gut_metabat2.12.1.binning \
+cami2_mouse_gut_concoct1.0.0.binning \
+cami2_mouse_gut_dastool1.1.2.binning \
+cami2_mouse_gut_diamond0.9.24.binning \
+cami2_mouse_gut_kraken2.0.8beta.binning \
+cami2_mouse_gut_ppsp1.4.binning \
+cami2_mouse_gut_cat4.6.binning \
+cami2_mouse_gut_megan6.15.2.binning \
+--ncbi_nodes_file nodes.dmp \
+--ncbi_names_file names.dmp \
+--ncbi_merged_file merged.dmp \
+--genome_coverage cami2_mouse_gut_average_genome_coverage.tsv \
+-l "MaxBin 2.2.7, MetaBAT 2.12.1, CONCOCT 1.0.0, DAS Tool 1.1.2, DIAMOND
+0.9.24, Kraken 2.0.8 beta, PhyloPythiaS+ 1.4, CAT 4.6, MEGAN 6.15.2" \
+-o output_dir
