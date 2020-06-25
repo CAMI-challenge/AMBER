@@ -22,9 +22,10 @@ AMBER is an evaluation package for the comparative assessment of genome reconstr
 * UniFrac (for taxonomic binning)
 
 
-**Example page produced by AMBER**
+**Example pages produced by AMBER**
 
-*https://cami-challenge.github.io/AMBER/cami_i_hc/*
+* *https://cami-challenge.github.io/AMBER/cami_i_hc/*
+* *https://cami-challenge.github.io/AMBER/cami_ii_mouse_gut/*
 
 # Installation
 
