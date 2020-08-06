@@ -24,8 +24,9 @@ AMBER is an evaluation package for the comparative assessment of genome reconstr
 
 **Example pages produced by AMBER**
 
-* *https://cami-challenge.github.io/AMBER/cami_i_hc/*
-* *https://cami-challenge.github.io/AMBER/cami_ii_mouse_gut/*
+* [CAMI I high complexity challenge dataset](https://cami-challenge.github.io/AMBER/cami_i_hc/)
+* [CAMI II mouse gut toy dataset](https://cami-challenge.github.io/AMBER/cami_ii_mouse_gut/)
+* [CAMI II mouse gut toy dataset (using option --filter 1)](https://cami-challenge.github.io/AMBER/cami_ii_mouse_gut_filter1/)
 
 # Installation
 
