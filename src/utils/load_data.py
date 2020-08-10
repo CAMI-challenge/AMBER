@@ -163,7 +163,7 @@ def get_sample_id_to_num_genomes(sample_id_to_queries_list):
 
 
 def get_rank_to_df(query_df, is_gs=False):
-    query_df.sort_values(by=['TAXID'], inplace=True)
+    query_df = query_df.sort_values(by=['TAXID'])
     rank_to_sequence_id_to_bin_id = defaultdict(dict)
     tax_id = None
     for row in zip(query_df.SEQUENCEID, query_df.TAXID):
@@ -217,9 +217,10 @@ def load_queries(gold_standard_file, query_files, labels, options, options_gs):
             logging.getLogger('amber').critical("Gold standard for sample {} is empty. Exiting.".format(sample_id))
             exit(1)
         if 'BINID' in gs_df.columns:
-            g_query_gs = binning_classes.GenomeQuery(gs_df, utils_labels.GS, sample_id, options_gs)
+            gs_df_g = gs_df.drop_duplicates(['SEQUENCEID', 'BINID'])
+            g_query_gs = binning_classes.GenomeQuery(gs_df_g, utils_labels.GS, sample_id, options_gs)
             g_query_gs.gold_standard = g_query_gs
-            g_query_gs.gold_standard_df = gs_df
+            g_query_gs.gold_standard_df = gs_df_g
             sample_id_to_queries_list[sample_id].append(g_query_gs)
             sample_id_to_g_gs[sample_id] = g_query_gs
         if 'TAXID' in gs_df.columns and binning_classes.TaxonomicQuery.tax_id_to_rank:
@@ -253,7 +254,7 @@ def load_queries(gold_standard_file, query_files, labels, options, options_gs):
                     query_df = query_df[condition]
 
             if 'BINID' in query_df.columns:
-                g_query = binning_classes.GenomeQuery(query_df, label, sample_id, options)
+                g_query = binning_classes.GenomeQuery(query_df.drop_duplicates(['SEQUENCEID', 'BINID']), label, sample_id, options)
                 g_query.gold_standard = sample_id_to_g_gs[sample_id]
                 g_query.gold_standard_df = gs_df
                 sample_id_to_queries_list[sample_id].append(g_query)

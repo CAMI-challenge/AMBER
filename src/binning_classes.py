@@ -454,14 +454,14 @@ class GenomeQuery(Query):
     def compute_metrics(self):
         if self.label == utils_labels.GS and self.options.only_taxonomic_queries:
             return False
-        logging.getLogger('amber').info('Evaluating {} (genome binning)'.format(self.label))
+        logging.getLogger('amber').info('Evaluating {} (sample {}, genome binning)'.format(self.label, self.sample_id))
         gs_df = self.gold_standard_df
-        gs_df = gs_df[['SEQUENCEID', 'BINID', 'LENGTH']].rename(columns={'LENGTH': 'seq_length'})
+        gs_df = gs_df[['SEQUENCEID', 'BINID', 'LENGTH']].rename(columns={'LENGTH': 'seq_length', 'BINID': 'genome_id'})
 
         query_df = self.df
         query_df = query_df[['SEQUENCEID', 'BINID']]
 
-        query_w_length = pd.merge(query_df, gs_df[['SEQUENCEID', 'BINID', 'seq_length']].rename(columns={'BINID': 'genome_id'}).drop_duplicates('SEQUENCEID'), on='SEQUENCEID', sort=False)
+        query_w_length = pd.merge(query_df, gs_df.drop_duplicates('SEQUENCEID'), on='SEQUENCEID', sort=False)
 
         query_w_length_no_dups = query_w_length.drop_duplicates('SEQUENCEID')
         gs_df_no_dups = gs_df.drop_duplicates('SEQUENCEID')
@@ -469,7 +469,7 @@ class GenomeQuery(Query):
         self.metrics.percentage_of_assigned_seqs = query_w_length_no_dups.shape[0] / gs_df_no_dups['SEQUENCEID'].shape[0]
 
         # confusion table possibly with the same sequences in multiple bins
-        query_w_length_mult_seqs = query_df.reset_index().merge(gs_df, on='SEQUENCEID', sort=False) #.set_index('index') #.set_index(['index', 'SEQUENCEID'])
+        query_w_length_mult_seqs = query_df.reset_index().merge(gs_df, on='SEQUENCEID', sort=False)
 
         if query_w_length.shape[0] < query_w_length_mult_seqs.shape[0]:
             query_w_length_mult_seqs.drop_duplicates(['index', 'genome_id'], inplace=True)
@@ -482,6 +482,13 @@ class GenomeQuery(Query):
             query_w_length_mult_seqs.set_index('index', inplace=True)
             difference_df = query_w_length_mult_seqs.drop(matching_genomes_df.index).groupby(['index'], sort=False).first()
             query_w_length = pd.concat([matching_genomes_df, difference_df])
+
+            # Modify gs such that multiple binnings of the same sequence are not required
+            matching_genomes_df = pd.merge(gs_df, query_w_length[['SEQUENCEID', 'genome_id']], on=['SEQUENCEID', 'genome_id'])
+            matching_genomes_df = matching_genomes_df[['SEQUENCEID', 'genome_id', 'seq_length']].drop_duplicates(['SEQUENCEID', 'genome_id'])
+            condition = gs_df_no_dups['SEQUENCEID'].isin(matching_genomes_df['SEQUENCEID'])
+            difference_df = gs_df_no_dups[~condition]
+            gs_df = pd.concat([difference_df, matching_genomes_df])
 
             # query_w_length_mult_seqs.reset_index(inplace=True)
             # query_w_length_mult_seqs = pd.merge(query_w_length_mult_seqs, most_abundant_genome_df, on=['BINID'])
@@ -523,7 +530,7 @@ class GenomeQuery(Query):
         self.metrics.precision_weighted_bp = precision_df['tp_length'].sum() / precision_df['total_length'].sum()
         self.metrics.precision_weighted_seq = precision_df['tp_seq_counts'].sum() / precision_df['total_seq_counts'].sum()
 
-        genome_sizes_df = gs_df.rename(columns={'BINID': 'genome_id'}).groupby('genome_id', sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'length_gs', 'SEQUENCEID': 'seq_counts_gs'})
+        genome_sizes_df = gs_df.groupby('genome_id', sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'length_gs', 'SEQUENCEID': 'seq_counts_gs'})
         precision_df = precision_df.reset_index().join(genome_sizes_df, on='genome_id', how='left', sort=False).set_index('BINID')
         precision_df['recall_bp'] = precision_df['tp_length'] / precision_df['length_gs']
         precision_df['recall_seq'] = precision_df['tp_seq_counts'] / precision_df['seq_counts_gs']
@@ -549,7 +556,7 @@ class GenomeQuery(Query):
         self.metrics.recall_weighted_seq = recall_df['genome_seq_counts'].sum() / recall_df['seq_counts_gs'].sum()
 
         # Compute recall as in CAMI 1
-        unmapped_genomes = set(gs_df['BINID'].unique()) - set(precision_df['genome_id'].unique())
+        unmapped_genomes = set(gs_df['genome_id'].unique()) - set(precision_df['genome_id'].unique())
         if self.options.genome_to_unique_common:
             unmapped_genomes -= set(self.options.genome_to_unique_common)
         num_unmapped_genomes = len(unmapped_genomes)
@@ -575,7 +582,7 @@ class GenomeQuery(Query):
         for (sample_id, tool), pd_group in pd_bins.groupby(['sample_id', utils_labels.TOOL]):
             for x in itertools.product(min_completeness, max_contamination):
                 count = pd_group[(pd_group['recall_bp'] > x[0]) & (pd_group['precision_bp'] > (1 - x[1]))].shape[0]
-                counts_list.append((sample_id, tool, '> ' + str(x[0]) + '% completeness', '< ' + str(x[1]) + '%', count))
+                counts_list.append((sample_id, tool, '> ' + str(int(x[0] * 100)) + '% completeness', '< ' + str(int(x[1] * 100)) + '%', count))
 
         pd_counts = pd.DataFrame(counts_list, columns=[utils_labels.SAMPLE, utils_labels.TOOL, 'Completeness', 'Contamination', 'count'])
         pd_counts = pd.pivot_table(pd_counts, values='count', index=[utils_labels.SAMPLE, utils_labels.TOOL, 'Contamination'], columns=['Completeness']).reset_index()
@@ -641,6 +648,7 @@ class TaxonomicQuery(Query):
         self.__rank_to_df = rank_to_df
         self.metrics = defaultdict()
         self.__profile = None
+        self.__tp_fp_fn_df = pd.DataFrame()
 
     @property
     def rank_to_df(self):
@@ -696,11 +704,13 @@ class TaxonomicQuery(Query):
             metrics_dict[utils_labels.TOOL] = self.label
             metrics_dict[utils_labels.BINNING_TYPE] = self.binning_type
             metrics_dict[utils_labels.RANK] = rank
-            rank_metrics_df  = pd.DataFrame(metrics_dict)
+            rank_metrics_df = pd.DataFrame(metrics_dict)
             allranks_metrics_df = pd.concat([allranks_metrics_df, rank_metrics_df], ignore_index=True, sort=True)
         return allranks_metrics_df
 
-    def compute_metrics_for_rank(self, rank):
+    def compute_tp_fp_fn(self, rank):
+        if rank not in self.gold_standard_df:
+            return
         self.metrics[rank] = Metrics()
         gs_df = self.gold_standard_df[rank].reset_index()
 
@@ -730,15 +740,12 @@ class TaxonomicQuery(Query):
         tp_fp_fn_df['recall_bp'] = tp_fp_fn_df['tp_length'] / tp_fp_fn_df['length_gs']
         tp_fp_fn_df['recall_seq'] = tp_fp_fn_df['tp_seq_counts'] / tp_fp_fn_df['seq_counts_gs']
         tp_fp_fn_df['rank'] = rank
+        self.__tp_fp_fn_df = pd.concat([self.__tp_fp_fn_df, tp_fp_fn_df])
 
-        if self.options.filter_tail_percentage:
-            tp_fp_fn_df['total_length_pct'] = tp_fp_fn_df['total_length'] / tp_fp_fn_df['total_length'].sum()
-            tp_fp_fn_df.sort_values(by='total_length', inplace=True)
-            tp_fp_fn_df['cumsum_length_pct'] = tp_fp_fn_df['total_length_pct'].cumsum(axis=0)
-            tp_fp_fn_df['precision_bp'].mask(tp_fp_fn_df['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100, inplace=True)
-            tp_fp_fn_df['precision_seq'].mask(tp_fp_fn_df['precision_bp'].isna(), inplace=True)
-            tp_fp_fn_df.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
-
+    def compute_metrics_per_rank(self, rank):
+        if rank not in self.gold_standard_df:
+            return
+        tp_fp_fn_df = self.__tp_fp_fn_df[self.__tp_fp_fn_df['rank'] == rank]
         tp_length_sum = tp_fp_fn_df['tp_length'].sum()
         tp_seq_counts_sum = tp_fp_fn_df['tp_seq_counts'].sum()
         length_gs_sum = tp_fp_fn_df['length_gs'].sum()
@@ -768,13 +775,24 @@ class TaxonomicQuery(Query):
         if self.tax_id_to_name:
             self.recall_df['name'] = self.recall_df['TAXID'].map(self.tax_id_to_name)
 
+    def __filter_tail(self):
+        self.__tp_fp_fn_df['total_length_pct'] = self.__tp_fp_fn_df['total_length'] / self.__tp_fp_fn_df['total_length'].sum()
+        self.__tp_fp_fn_df.sort_values(by='total_length', inplace=True)
+        self.__tp_fp_fn_df['cumsum_length_pct'] = self.__tp_fp_fn_df['total_length_pct'].cumsum(axis=0)
+        self.__tp_fp_fn_df['precision_bp'].mask(self.__tp_fp_fn_df['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100, inplace=True)
+        self.__tp_fp_fn_df['precision_seq'].mask(self.__tp_fp_fn_df['precision_bp'].isna(), inplace=True)
+        self.__tp_fp_fn_df.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
+
     def compute_metrics(self):
         if self.label == utils_labels.GS and self.options.only_genome_queries:
             return False
-        logging.getLogger('amber').info('Evaluating {} (taxonomic binning)'.format(self.label))
+        logging.getLogger('amber').info('Evaluating {} (sample {}, taxonomic binning)'.format(self.label, self.sample_id))
         for rank in self.rank_to_df:
-            self.compute_metrics_for_rank(rank)
-
+            self.compute_tp_fp_fn(rank)
+        if self.options.filter_tail_percentage:
+            self.__filter_tail()
+        for rank in self.rank_to_df:
+            self.compute_metrics_per_rank(rank)
         unifrac_bp, unifrac_seq = self.compute_unifrac()
         for rank in self.metrics:
             self.metrics[rank].unifrac_bp = unifrac_bp

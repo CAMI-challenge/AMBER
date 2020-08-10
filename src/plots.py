@@ -374,7 +374,7 @@ def plot_avg_precision_recall(colors, df_results, labels, output_dir, rank=None)
                  output_dir,
                  rank,
                  'e',
-                 'avg_purity_recall_bp',
+                 'avg_purity_completeness_bp',
                  'Average purity per bin (%)',
                  'Average completeness per genome (%)')
     plot_summary(colors,

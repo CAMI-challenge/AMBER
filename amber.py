@@ -198,7 +198,7 @@ def evaluate_samples_queries(sample_id_to_queries_list):
 
 
 def save_metrics(df_summary, pd_bins, output_dir, stdout):
-    logging.getLogger('amber').info('Saving computed metrics...')
+    logging.getLogger('amber').info('Saving computed metrics')
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False)
     # pd_bins.to_csv(os.path.join(output_dir, 'bins.tsv'), index=False, sep='\t')
     if stdout:
@@ -210,7 +210,7 @@ def save_metrics(df_summary, pd_bins, output_dir, stdout):
         table.to_csv(os.path.join(output_dir, 'genome', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
     for tool, pd_group in pd_bins[pd_bins['rank'] != 'NA'].groupby(utils_labels.TOOL):
         bins_columns = amber_html.get_tax_bins_columns()
-        if pd_group['name'].isnull().any():
+        if 'name' not in pd_bins.columns or pd_group['name'].isnull().any():
             del bins_columns['name']
         table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)

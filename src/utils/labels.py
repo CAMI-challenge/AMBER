@@ -25,11 +25,11 @@ AVG_PRECISION_BP_SEM = "Std error of average purity (bp)"
 AVG_PRECISION_SEQ = "Average purity (seq)"
 AVG_PRECISION_SEQ_SEM = "Std error of average purity (seq)"
 
-AVG_RECALL_BP = "Average completeness (bp) "
+AVG_RECALL_BP = "Average completeness (bp)"
 AVG_RECALL_BP_CAMI1 = "CAMI 1 average completeness (bp)"
 AVG_RECALL_BP_SEM = "Std error of average completeness (bp)"
 
-AVG_RECALL_SEQ = "Average completeness (seq) "
+AVG_RECALL_SEQ = "Average completeness (seq)"
 AVG_RECALL_SEQ_CAMI1 = "CAMI 1 average completeness (seq)"
 AVG_RECALL_SEQ_SEM = "Std error of average completeness (seq)"
 
@@ -86,14 +86,14 @@ TOOLTIP_AVG_RECALL_SEQ_SEM = "Standard error of the mean of average completeness
 TOOLTIP_PRECISION_PER_BP = "Sum of base pairs coming from the most abundant genome in each predicted genome bin divided by the sum of base pairs in all predicted bins. It ranges from 0 (worst) to 1 (best)."
 TOOLTIP_PRECISION_PER_BP_TAX = "Sum of true positive base pairs in the predicted bins divided by the sum of base pairs in all predicted bins. It ranges from 0 (worst) to 1 (best)."
 
-TOOLTIP_PRECISION_PER_SEQ = "Sum of sequences coming from the most abundant genome (in base pairs) in each predicted genome bin divided by the sum of sequences in all predicted bins. It ranges from 0 (worst) to 1 (best)."
-TOOLTIP_PRECISION_PER_SEQ_TAX = "Sum of true positive sequences in the predicted bins divided by the sum of sequences in all predicted bins. It ranges from 0 (worst) to 1 (best)."
+TOOLTIP_PRECISION_PER_SEQ = "Sum of #sequences coming from the most abundant genome (in base pairs) in each predicted genome bin divided by the sum of #sequences in all predicted bins. It ranges from 0 (worst) to 1 (best)."
+TOOLTIP_PRECISION_PER_SEQ_TAX = "Sum of true positive sequences in the predicted bins divided by the sum of #sequences in all predicted bins. It ranges from 0 (worst) to 1 (best)."
 
 TOOLTIP_RECALL_PER_BP = "Sum of base pairs of each genome, each of which have been put together in one predicted genome bin, divided by the sum of base pairs of all underlying genomes. For each genome, the bin that includes most of the base pairs from that genome is considered. It ranges from 0 (worst) to 1 (best)."
 TOOLTIP_RECALL_PER_BP_TAX = "Sum of true positive base pairs in the predicted bins divided by the sum of base pairs in all underlying taxa. It ranges from 0 (worst) to 1 (best)."
 
-TOOLTIP_RECALL_PER_SEQ = "Sum of sequences of each genome, each of which have been put together in one predicted genome bin, divided by the sum of sequences of all underlying genomes. For each genome, the bin that includes most of the base pairs from that genome is considered. It ranges from 0 (worst) to 1 (best)."
-TOOLTIP_RECALL_PER_SEQ_TAX = "Sum of true positive sequences in the predicted bins divided by the sum of sequences in all underlying taxa. It ranges from 0 (worst) to 1 (best)."
+TOOLTIP_RECALL_PER_SEQ = "Sum of #sequences of each genome, each of which have been put together in one predicted genome bin, divided by the sum of #sequences of all underlying genomes. For each genome, the bin that includes most of the base pairs from that genome is considered. It ranges from 0 (worst) to 1 (best)."
+TOOLTIP_RECALL_PER_SEQ_TAX = "Sum of true positive sequences in the predicted bins divided by the sum of #sequences in all underlying taxa. It ranges from 0 (worst) to 1 (best)."
 
 TOOLTIP_F1_SCORE_BP = "Two times the product of average purity (bp) and average completeness (bp) divided by their sum. It ranges from 0 (worst) to 1 (best)."
 TOOLTIP_F1_SCORE_SEQ = "Two times the product of average purity (seq) and average completeness (seq) divided by their sum. It ranges from 0 (worst) to 1 (best)."
@@ -112,10 +112,10 @@ TOOLTIP_PERCENTAGE_ASSIGNED_BPS = "Fraction of base pairs from the complete samp
 TOOLTIP_PERCENTAGE_ASSIGNED_SEQS = "Fraction of sequences from the complete sample that have been assigned to predicted bins. It ranges from 0 (worst) to 1 (best)."
 
 TOOLTIP_ACCURACY_PER_BP = "Sum of base pairs coming from the most abundant genome in each predicted genome bin divided by the sum of base pairs in the complete sample. It ranges from 0 (worst) to 1 (best)."
-TOOLTIP_ACCURACY_PER_BP_TAX = "Equivalent to completeness (bp), i.e. sum of true positive base pairs in the predicted bins divided by the sum of sequences in all underlying taxa. It ranges from 0 (worst) to 1 (best)."
+TOOLTIP_ACCURACY_PER_BP_TAX = "Equivalent to completeness (bp), i.e. sum of true positive base pairs in the predicted bins divided by the sum of base pairs in all underlying taxa. It ranges from 0 (worst) to 1 (best)."
 
-TOOLTIP_ACCURACY_PER_SEQ = "Sum of sequences coming from the most abundant genome in each predicted genome bin divided by the sum of sequences in the complete sample. It ranges from 0 (worst) to 1 (best)."
-TOOLTIP_ACCURACY_PER_SEQ_TAX = "Equivalent to completeness (seq), i.e. sum of true positive sequences in the predicted bins divided by the sum of sequences in all underlying taxa. It ranges from 0 (worst) to 1 (best)."
+TOOLTIP_ACCURACY_PER_SEQ = "Sum of #sequences coming from the most abundant genome in each predicted genome bin divided by the sum of #sequences in the complete sample. It ranges from 0 (worst) to 1 (best)."
+TOOLTIP_ACCURACY_PER_SEQ_TAX = "Equivalent to completeness (seq), i.e. sum of true positive sequences in the predicted bins divided by the sum of #sequences in all underlying taxa. It ranges from 0 (worst) to 1 (best)."
 
 TOOLTIP_MISCLASSIFICATION_PER_BP = "1 - purity (bp)"
 TOOLTIP_MISCLASSIFICATION_PER_SEQ = "1 - purity (seq)"

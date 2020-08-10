@@ -18,6 +18,7 @@ from collections import OrderedDict
 from collections import defaultdict
 import datetime
 import numpy as np
+import pandas as pd
 import math
 import re
 import logging
@@ -746,7 +747,8 @@ def create_tax_ranks_panel(qbins_plots_list, qsamples_plots_list, cc_plots_dict_
 def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, options):
     if pd_bins.empty:
         return None
-    df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
+    df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic'].copy()
+    df_summary_t[[utils_labels.UNIFRAC_BP, utils_labels.UNIFRAC_SEQ]] = df_summary_t[[utils_labels.UNIFRAC_BP, utils_labels.UNIFRAC_SEQ]].apply(pd.to_numeric)
 
     rank_to_sample_to_html = defaultdict(list)
     qbins_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
@@ -754,7 +756,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
     cc_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
     contamination_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
 
-    pd_mean = df_summary_t.groupby([utils_labels.RANK, utils_labels.TOOL, utils_labels.UNIFRAC_BP, utils_labels.UNIFRAC_SEQ]).mean().reset_index()
+    pd_mean = df_summary_t.groupby([utils_labels.RANK, utils_labels.TOOL]).mean().reset_index()
     pd_mean[utils_labels.SAMPLE] = AVG_OVER_SAMPLES
     for rank, pd_mean_rank in pd_mean.groupby(utils_labels.RANK):
         available_tools = list(pd_mean_rank[utils_labels.TOOL].unique())
