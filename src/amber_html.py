@@ -200,7 +200,7 @@ def get_heatmap_colors(pd_series, **args):
     notnan_values = [x for x in values if isinstance(x, (float, int)) and not np.isnan(x)]
     if not notnan_values:
         red = 'background-color: red'
-        return [red for x in values]
+        return [red for x in values] if not dropped_gs else [''] + [red for x in values]
 
     color1, color2, hue1, hue2, min_value, max_value = get_colors_and_ranges(pd_series.name, values)
 

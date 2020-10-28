@@ -291,6 +291,26 @@ class Metrics():
         return rand_index, adjusted_rand_index
 
     def get_ordered_dict(self):
+        if self.__precision_avg_bp + self.__recall_avg_bp > 0:
+            f1_score_bp = 2 * self.__precision_avg_bp * self.__recall_avg_bp / (self.__precision_avg_bp + self.__recall_avg_bp)
+        else:
+            f1_score_bp = np.nan
+
+        if self.__precision_avg_seq + self.__recall_avg_seq > 0:
+            f1_score_seq = 2 * self.__precision_avg_seq * self.__recall_avg_seq / (self.__precision_avg_seq + self.__recall_avg_seq)
+        else:
+            f1_score_seq = np.nan
+
+        if self.__precision_weighted_bp + self.__recall_weighted_bp > 0:
+            f1_score_per_bp = 2 * self.__precision_weighted_bp * self.__recall_weighted_bp / (self.__precision_weighted_bp + self.__recall_weighted_bp)
+        else:
+            f1_score_per_bp = np.nan
+
+        if self.__precision_weighted_seq + self.__recall_weighted_seq > 0:
+            f1_score_per_seq = 2 * self.__precision_weighted_seq * self.__recall_weighted_seq / (self.__precision_weighted_seq + self.__recall_weighted_seq)
+        else:
+            f1_score_per_seq = np.nan
+
         return OrderedDict([(utils_labels.TOOL, None),
                             (utils_labels.BINNING_TYPE, None),
                             (utils_labels.SAMPLE, None),
@@ -303,21 +323,21 @@ class Metrics():
                             (utils_labels.AVG_RECALL_BP_CAMI1, [self.__recall_avg_bp_cami1]),
                             (utils_labels.AVG_RECALL_BP_SEM, [self.__recall_avg_bp_sem]),
                             ('avg_recall_bp_var', [self.__recall_avg_bp_var]),
-                            (utils_labels.F1_SCORE_BP, [2 * self.__precision_avg_bp * self.__recall_avg_bp / (self.__precision_avg_bp + self.__recall_avg_bp)]),
+                            (utils_labels.F1_SCORE_BP, [f1_score_bp]),
 
                             (utils_labels.AVG_PRECISION_SEQ, [self.__precision_avg_seq]),
                             (utils_labels.AVG_PRECISION_SEQ_SEM, [self.__precision_avg_seq_sem]),
                             (utils_labels.AVG_RECALL_SEQ, [self.__recall_avg_seq]),
                             (utils_labels.AVG_RECALL_SEQ_CAMI1, [self.__recall_avg_seq_cami1]),
                             (utils_labels.AVG_RECALL_SEQ_SEM, [self.__recall_avg_seq_sem]),
-                            (utils_labels.F1_SCORE_SEQ, [2 * self.__precision_avg_seq * self.__recall_avg_seq / (self.__precision_avg_seq + self.__recall_avg_seq)]),
+                            (utils_labels.F1_SCORE_SEQ, [f1_score_seq]),
 
                             (utils_labels.PRECISION_PER_BP, [self.__precision_weighted_bp]),
                             (utils_labels.PRECISION_PER_SEQ, [self.__precision_weighted_seq]),
                             (utils_labels.RECALL_PER_BP, [self.__recall_weighted_bp]),
                             (utils_labels.RECALL_PER_SEQ, [self.__recall_weighted_seq]),
-                            (utils_labels.F1_SCORE_PER_BP, [2 * self.__precision_weighted_bp * self.__recall_weighted_bp / (self.__precision_weighted_bp + self.__recall_weighted_bp)]),
-                            (utils_labels.F1_SCORE_PER_SEQ, [2 * self.__precision_weighted_seq * self.__recall_weighted_seq / (self.__precision_weighted_seq + self.__recall_weighted_seq)]),
+                            (utils_labels.F1_SCORE_PER_BP, [f1_score_per_bp]),
+                            (utils_labels.F1_SCORE_PER_SEQ, [f1_score_per_seq]),
 
                             (utils_labels.ACCURACY_PER_BP, [self.__accuracy_bp]),
                             (utils_labels.ACCURACY_PER_SEQ, [self.__accuracy_seq]),
@@ -648,7 +668,6 @@ class TaxonomicQuery(Query):
         self.__rank_to_df = rank_to_df
         self.metrics = defaultdict()
         self.__profile = None
-        self.__tp_fp_fn_df = pd.DataFrame()
 
     @property
     def rank_to_df(self):
@@ -708,7 +727,7 @@ class TaxonomicQuery(Query):
             allranks_metrics_df = pd.concat([allranks_metrics_df, rank_metrics_df], ignore_index=True, sort=True)
         return allranks_metrics_df
 
-    def compute_tp_fp_fn(self, rank):
+    def compute_metrics_per_rank(self, rank):
         if rank not in self.gold_standard_df:
             return
         self.metrics[rank] = Metrics()
@@ -740,12 +759,15 @@ class TaxonomicQuery(Query):
         tp_fp_fn_df['recall_bp'] = tp_fp_fn_df['tp_length'] / tp_fp_fn_df['length_gs']
         tp_fp_fn_df['recall_seq'] = tp_fp_fn_df['tp_seq_counts'] / tp_fp_fn_df['seq_counts_gs']
         tp_fp_fn_df['rank'] = rank
-        self.__tp_fp_fn_df = pd.concat([self.__tp_fp_fn_df, tp_fp_fn_df])
 
-    def compute_metrics_per_rank(self, rank):
-        if rank not in self.gold_standard_df:
-            return
-        tp_fp_fn_df = self.__tp_fp_fn_df[self.__tp_fp_fn_df['rank'] == rank]
+        if self.options.filter_tail_percentage:
+            tp_fp_fn_df['total_length_pct'] = tp_fp_fn_df['total_length'] / tp_fp_fn_df['total_length'].sum()
+            tp_fp_fn_df.sort_values(by='total_length', inplace=True)
+            tp_fp_fn_df['cumsum_length_pct'] = tp_fp_fn_df['total_length_pct'].cumsum(axis=0)
+            tp_fp_fn_df['precision_bp'].mask(tp_fp_fn_df['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100, inplace=True)
+            tp_fp_fn_df['precision_seq'].mask(tp_fp_fn_df['precision_bp'].isna(), inplace=True)
+            tp_fp_fn_df.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
+
         tp_length_sum = tp_fp_fn_df['tp_length'].sum()
         tp_seq_counts_sum = tp_fp_fn_df['tp_seq_counts'].sum()
         length_gs_sum = tp_fp_fn_df['length_gs'].sum()
@@ -775,22 +797,10 @@ class TaxonomicQuery(Query):
         if self.tax_id_to_name:
             self.recall_df['name'] = self.recall_df['TAXID'].map(self.tax_id_to_name)
 
-    def __filter_tail(self):
-        self.__tp_fp_fn_df['total_length_pct'] = self.__tp_fp_fn_df['total_length'] / self.__tp_fp_fn_df['total_length'].sum()
-        self.__tp_fp_fn_df.sort_values(by='total_length', inplace=True)
-        self.__tp_fp_fn_df['cumsum_length_pct'] = self.__tp_fp_fn_df['total_length_pct'].cumsum(axis=0)
-        self.__tp_fp_fn_df['precision_bp'].mask(self.__tp_fp_fn_df['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100, inplace=True)
-        self.__tp_fp_fn_df['precision_seq'].mask(self.__tp_fp_fn_df['precision_bp'].isna(), inplace=True)
-        self.__tp_fp_fn_df.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
-
     def compute_metrics(self):
         if self.label == utils_labels.GS and self.options.only_genome_queries:
             return False
         logging.getLogger('amber').info('Evaluating {} (sample {}, taxonomic binning)'.format(self.label, self.sample_id))
-        for rank in self.rank_to_df:
-            self.compute_tp_fp_fn(rank)
-        if self.options.filter_tail_percentage:
-            self.__filter_tail()
         for rank in self.rank_to_df:
             self.compute_metrics_per_rank(rank)
         unifrac_bp, unifrac_seq = self.compute_unifrac()
