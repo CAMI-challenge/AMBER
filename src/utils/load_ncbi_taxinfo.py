@@ -14,9 +14,13 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import os
+import numpy as np
+import pandas as pd
 
 RANKS = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain']
-DICT_RANK_TO_INDEX = dict(zip(RANKS, list(range(len(RANKS)))))
+RANK_TO_INDEX = dict(zip(RANKS, list(range(len(RANKS)))))
+INDEX_TO_RANK = dict(zip(list(range(len(RANKS))), RANKS))
 RANKS_LOW2HIGH = list(reversed(RANKS))
 
 
@@ -93,26 +97,58 @@ def get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank, tax_id_to_tax_id):
             tax_id = tax_id_to_tax_id[tax_id]
         else:
             logging.getLogger('amber').warning("Invalid NCBI taxonomic ID: {}".format(tax_id))
-            return []
+            return [np.nan] * 8
 
     while tax_id_to_rank[tax_id] not in RANKS:
         tax_id = tax_id_to_parent[tax_id]
         if tax_id == 1:
-            return []
+            return [np.nan] * 8
 
-    index = DICT_RANK_TO_INDEX[tax_id_to_rank[tax_id]]
-    path = [''] * (index + 1)
+    index = RANK_TO_INDEX[tax_id_to_rank[tax_id]]
+    path = [np.nan] * 8
     path[index] = tax_id
 
     id = tax_id
-    while id in tax_id_to_parent:
-        id = tax_id_to_parent[id]
-        if id == 1:
-            break
-        if tax_id_to_rank[id] not in RANKS:
-            continue
-        index = DICT_RANK_TO_INDEX[tax_id_to_rank[id]]
-        path[index] = id
-        if tax_id_to_rank[id] == "superkingdom":
-            break
+    try:
+        while id in tax_id_to_parent:
+            id = tax_id_to_parent[id]
+            if id == 1:
+                break
+            if tax_id_to_rank[id] not in RANKS:
+                continue
+            index = RANK_TO_INDEX[tax_id_to_rank[id]]
+            path[index] = id
+            if tax_id_to_rank[id] == 'superkingdom':
+                break
+    except KeyError:
+        logging.getLogger('amber').warning('Could not get rank for taxonomic ID: {}'.format(tax_id))
     return path
+
+
+def preprocess_ncbi_tax(ncbi_dir):
+    def get_path(row):
+        return get_id_path(row['TAXID'], tax_id_to_parent, tax_id_to_rank, tax_id_to_tax_id)
+
+    merged = pd.read_csv(os.path.join(ncbi_dir, 'merged.dmp'), sep='|', engine='python', header=None, index_col=False, names=['TAXID'], usecols=[0])
+    nodes = pd.read_csv(os.path.join(ncbi_dir, 'nodes.dmp'), sep='|', engine='python', header=None, names=['TAXID'], usecols=[0])
+    nodes = pd.concat([nodes, merged], ignore_index=True)
+
+    tax_id_to_parent, tax_id_to_rank = load_tax_info(os.path.join(ncbi_dir, 'nodes.dmp'))
+    tax_id_to_tax_id = load_merged(os.path.join(ncbi_dir, 'merged.dmp'))
+
+    nodes = pd.concat([nodes, nodes.apply(lambda row: get_path(row), axis=1, result_type='expand')], axis='columns')
+    for i in range(8):
+        nodes[i] = nodes[i].astype(pd.Int64Dtype())
+    nodes.rename(columns=INDEX_TO_RANK, inplace=True)
+
+    tax_id_to_name = load_names(tax_id_to_rank, os.path.join(ncbi_dir, 'names.dmp'))
+    for k, v in tax_id_to_tax_id.items():
+        tax_id_to_name[k] = tax_id_to_name[tax_id_to_tax_id[k]]
+
+    nodes['name'] = nodes['TAXID'].map(tax_id_to_name)
+    if os.access(ncbi_dir, os.W_OK):
+        nodes.to_feather(os.path.join(ncbi_dir, 'nodes.amber.ft'))
+    else:
+        logging.getLogger('amber').warning('You have no permission to write processed NCBI taxonomy to {}'.format(ncbi_dir))
+
+    return nodes.set_index('TAXID')

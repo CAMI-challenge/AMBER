@@ -237,9 +237,7 @@ def main(args=None):
     group_g.add_argument('--genome_coverage', help='genome coverages', required=False)
 
     group_t = parser.add_argument_group('taxonomic binning-specific arguments')
-    group_t.add_argument('--ncbi_nodes_file', help="NCBI nodes file", required=False)
-    group_t.add_argument('--ncbi_names_file', help="NCBI names file", required=False)
-    group_t.add_argument('--ncbi_merged_file', help="NCBI merged file", required=False)
+    group_t.add_argument('--ncbi_dir', help="Directory containing the NCBI taxonomy database dump files nodes.dmp, merged.dmp, and names.dmp", required=False)
     # group_t.add_argument('--rank_as_genome_binning',
     #                      help="Assess taxonomic binning at a rank also as genome binning. Valid ranks: superkingdom, phylum, class, order, family, genus, species, strain",
     #                      required=False)
@@ -267,7 +265,7 @@ def main(args=None):
                                          rank_as_genome_binning=None, #args.rank_as_genome_binning,
                                          output_dir=output_dir)
 
-    load_data.load_ncbi_info(args.ncbi_nodes_file, args.ncbi_names_file, args.ncbi_merged_file)
+    load_data.load_ncbi_info(args.ncbi_dir)
 
     sample_id_to_queries_list, sample_ids_list = load_data.load_queries(args.gold_standard_file, args.bin_files, labels,
                                                                         options, options_gs)

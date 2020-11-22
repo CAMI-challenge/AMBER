@@ -76,14 +76,14 @@ def load_unique_common(unique_common_file_path, args_keyword):
     return None
 
 
-def load_ncbi_info(ncbi_nodes_file, ncbi_names_file, ncbi_merged_file):
-    if ncbi_nodes_file:
-        logging.getLogger('amber').info('Loading NCBI files')
-        binning_classes.TaxonomicQuery.tax_id_to_parent, binning_classes.TaxonomicQuery.tax_id_to_rank = load_ncbi_taxinfo.load_tax_info(ncbi_nodes_file)
-        if ncbi_names_file:
-            binning_classes.TaxonomicQuery.tax_id_to_name = load_ncbi_taxinfo.load_names(binning_classes.TaxonomicQuery.tax_id_to_rank, ncbi_names_file)
-        if ncbi_merged_file:
-            binning_classes.TaxonomicQuery.tax_id_to_tax_id = load_ncbi_taxinfo.load_merged(ncbi_merged_file)
+def load_ncbi_info(ncbi_dir):
+    if ncbi_dir:
+        logging.getLogger('amber').info('Loading NCBI taxonomy')
+        try:
+            binning_classes.TaxonomicQuery.taxonomy_df = pd.read_feather(os.path.join(ncbi_dir, 'nodes.amber.ft')).set_index('TAXID')
+        except:
+            logging.getLogger('amber').info('Preprocessed NCBI taxonomy file not found. Creating file {}'.format(os.path.join(ncbi_dir, 'nodes.amber.ft')))
+            binning_classes.TaxonomicQuery.taxonomy_df = load_ncbi_taxinfo.preprocess_ncbi_tax(ncbi_dir)
 
 
 def read_metadata(file_path_query):
@@ -111,6 +111,7 @@ def read_metadata(file_path_query):
                 data_start = i + 1
 
             elif line.startswith('@'):
+                logging.getLogger('amber').info('Found {}'.format(line))
                 # parse header with metadata
                 if got_column_indices:
                     samples_metadata.append((data_start, data_end, header, index_to_column_name))
@@ -131,6 +132,7 @@ def read_metadata(file_path_query):
 def load_binnings(samples_metadata, file_path_query):
     sample_id_to_query_df = OrderedDict()
     for metadata in samples_metadata:
+        logging.getLogger('amber').info('Loading ' + metadata[2]['SAMPLEID'])
         nrows = metadata[1] - metadata[0] + 1
 
         df = pd.read_csv(file_path_query, sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None)
@@ -163,33 +165,26 @@ def get_sample_id_to_num_genomes(sample_id_to_queries_list):
 
 
 def get_rank_to_df(query_df, is_gs=False):
-    query_df = query_df.sort_values(by=['TAXID'])
-    rank_to_sequence_id_to_bin_id = defaultdict(dict)
-    tax_id = None
-    for row in zip(query_df.SEQUENCEID, query_df.TAXID):
-        if row[1] != tax_id:
-            tax_id = row[1]
-            tax_id_path = load_ncbi_taxinfo.get_id_path(tax_id, binning_classes.TaxonomicQuery.tax_id_to_parent,
-                                                        binning_classes.TaxonomicQuery.tax_id_to_rank,
-                                                        binning_classes.TaxonomicQuery.tax_id_to_tax_id)
-            if not tax_id_path:
-                continue
-        for tax_id2 in tax_id_path:
-            if not tax_id2:  # tax_id may be empty
-                continue
-            rank = binning_classes.TaxonomicQuery.tax_id_to_rank[tax_id2]
-            rank_to_sequence_id_to_bin_id[rank][row[0]] = tax_id2
-    rank_to_df = dict()
     if is_gs:
         if 'LENGTH' not in query_df.columns:
             logging.getLogger('amber').critical("Sequences length could not be determined. Please add column LENGTH to gold standard.")
             exit(1)
-        query_df = query_df[['SEQUENCEID', 'LENGTH']].set_index('SEQUENCEID')
-    for rank in rank_to_sequence_id_to_bin_id:
-        rank_to_df[rank] = pd.DataFrame.from_dict(rank_to_sequence_id_to_bin_id[rank], orient='index',
-                                                  columns=['TAXID']).reset_index().rename(columns={'index': 'SEQUENCEID'}).set_index('SEQUENCEID')
-        if is_gs:
-            rank_to_df[rank] = rank_to_df[rank].join(query_df, on='SEQUENCEID', how='left', sort=False)
+        cols = ['TAXID', 'LENGTH']
+    else:
+        cols = ['TAXID']
+
+    rank_to_df = dict()
+    logging.getLogger('amber').info('Aggregating taxonomy information')
+    query_df = pd.merge(query_df, binning_classes.TaxonomicQuery.taxonomy_df.reset_index(), on=['TAXID']).set_index('SEQUENCEID')
+
+    for rank in load_ncbi_taxinfo.RANKS:
+        logging.getLogger('amber').info('Deriving bins at rank: ' + rank)
+        if query_df[rank].isnull().all():
+            continue
+        rank_to_df[rank] = query_df[query_df[rank].notnull()][cols + [rank]]
+        rank_to_df[rank]['TAXID'] = rank_to_df[rank][rank]
+        rank_to_df[rank] = rank_to_df[rank].drop(columns=rank)
+
     return rank_to_df
 
 
@@ -223,7 +218,7 @@ def load_queries(gold_standard_file, query_files, labels, options, options_gs):
             g_query_gs.gold_standard_df = gs_df_g
             sample_id_to_queries_list[sample_id].append(g_query_gs)
             sample_id_to_g_gs[sample_id] = g_query_gs
-        if 'TAXID' in gs_df.columns and binning_classes.TaxonomicQuery.tax_id_to_rank:
+        if 'TAXID' in gs_df.columns and not binning_classes.TaxonomicQuery.taxonomy_df.empty:
             gs_rank_to_df = get_rank_to_df(gs_df, is_gs=True)
             sample_id_to_gs_rank_to_df[sample_id] = gs_rank_to_df
             t_query_gs = binning_classes.TaxonomicQuery(gs_rank_to_df, utils_labels.GS, sample_id, options_gs)
@@ -259,7 +254,7 @@ def load_queries(gold_standard_file, query_files, labels, options, options_gs):
                 g_query.gold_standard_df = gs_df
                 sample_id_to_queries_list[sample_id].append(g_query)
                 options.only_taxonomic_queries = options_gs.only_taxonomic_queries = False
-            if 'TAXID' in query_df.columns and binning_classes.TaxonomicQuery.tax_id_to_rank:
+            if 'TAXID' in query_df.columns and not binning_classes.TaxonomicQuery.taxonomy_df.empty:
                 t_query = binning_classes.TaxonomicQuery(get_rank_to_df(query_df), label, sample_id, options)
                 t_query.gold_standard = sample_id_to_t_gs[sample_id]
                 t_query.gold_standard_df = sample_id_to_gs_rank_to_df[sample_id]

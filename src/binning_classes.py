@@ -657,10 +657,7 @@ class GenomeQuery(Query):
 
 
 class TaxonomicQuery(Query):
-    tax_id_to_parent = None
-    tax_id_to_rank = None
-    tax_id_to_name = None
-    tax_id_to_tax_id = None
+    taxonomy_df = pd.DataFrame()
     binning_type = 'taxonomic'
 
     def __init__(self, rank_to_df, label, sample_id, options):
@@ -692,11 +689,12 @@ class TaxonomicQuery(Query):
         profile_seq = []
         for index, row in self.recall_df.iterrows():
             prediction_bp = Prediction()
-            prediction_bp.taxid = str(row['TAXID'])
+            prediction_bp.taxid = str(int(row['TAXID']))
             prediction_bp.rank = row['rank']
             prediction_bp.percentage = row['tp_length']
-            taxpath = load_ncbi_taxinfo.get_id_path(row['TAXID'], TaxonomicQuery.tax_id_to_parent, TaxonomicQuery.tax_id_to_rank, None)
-            prediction_bp.taxpath = '|'.join(map(str, taxpath))
+            taxpath = TaxonomicQuery.taxonomy_df.loc[row['TAXID']][load_ncbi_taxinfo.RANKS].values
+            taxpath = '|'.join(map(lambda v: '' if pd.isnull(v) else str(v), taxpath)).rstrip('|')
+            prediction_bp.taxpath = taxpath
             prediction_bp.taxpathsn = None
             profile_bp.append(prediction_bp)
 
@@ -794,8 +792,7 @@ class TaxonomicQuery(Query):
             by='recall_bp', axis=0, ascending=False)], ignore_index=True, sort=True)
         self.recall_df = self.precision_df
 
-        if self.tax_id_to_name:
-            self.recall_df['name'] = self.recall_df['TAXID'].map(self.tax_id_to_name)
+        self.recall_df['name'] = self.recall_df['TAXID'].apply(lambda x: TaxonomicQuery.taxonomy_df.loc[x]['name'])
 
     def compute_metrics(self):
         if self.label == utils_labels.GS and self.options.only_genome_queries:
