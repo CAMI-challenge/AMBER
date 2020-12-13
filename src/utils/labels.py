@@ -20,21 +20,26 @@ SAMPLE = "Sample"
 GS = 'Gold standard'
 
 AVG_PRECISION_BP = "Average purity (bp)"
-AVG_PRECISION_BP_SEM = "Std error of average purity (bp)"
+AVG_PRECISION_BP_SEM = "Std error of av. purity (bp)"
 
 AVG_PRECISION_SEQ = "Average purity (seq)"
-AVG_PRECISION_SEQ_SEM = "Std error of average purity (seq)"
+AVG_PRECISION_SEQ_SEM = "Std error of av. purity (seq)"
 
 AVG_RECALL_BP = "Average completeness (bp)"
 AVG_RECALL_BP_CAMI1 = "CAMI 1 average completeness (bp)"
-AVG_RECALL_BP_SEM = "Std error of average completeness (bp)"
+AVG_RECALL_BP_SEM = "Std error of av. completeness (bp)"
+AVG_RECALL_BP_SEM_CAMI1 = "CAMI 1 std error of av. completeness (bp)"
 
 AVG_RECALL_SEQ = "Average completeness (seq)"
 AVG_RECALL_SEQ_CAMI1 = "CAMI 1 average completeness (seq)"
-AVG_RECALL_SEQ_SEM = "Std error of average completeness (seq)"
+AVG_RECALL_SEQ_SEM = "Std error of av. completeness (seq)"
+AVG_RECALL_SEQ_SEM_CAMI1 = "CAMI 1 std error of av. completeness (seq)"
 
 F1_SCORE_BP = "F1 score (bp)"
 F1_SCORE_SEQ = "F1 score (seq)"
+
+F1_SCORE_BP_CAMI1 = "CAMI 1 F1 score (bp)"
+F1_SCORE_SEQ_CAMI1 = "CAMI 1 F1 score (seq)"
 
 PRECISION_PER_BP = "Purity (bp)"
 PRECISION_PER_SEQ = "Purity (seq)"

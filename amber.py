@@ -179,6 +179,9 @@ def evaluate(queries_list, sample_id):
         df_summary = pd.concat([df_summary, query_metrics_df], ignore_index=True, sort=True)
 
         query.precision_df[utils_labels.TOOL] = query.label
+
+        query.recall_df.to_csv(os.path.join(query.options.output_dir, 'genome', query.label, 'metrics_per_genome.tsv'), sep='\t', index=False)
+
         pd_bins_all = pd.concat([pd_bins_all, query.precision_df.reset_index()], ignore_index=True, sort=True)
 
     pd_bins_all['sample_id'] = sample_id

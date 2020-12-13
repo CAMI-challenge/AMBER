@@ -45,21 +45,26 @@ class Metrics():
         self.__precision_avg_bp = .0
         self.__precision_avg_bp_var = .0
         self.__precision_avg_bp_sem = .0
-        self.__precision_avg_seq  = .0
+        self.__precision_avg_seq = .0
         self.__precision_avg_seq_sem = .0
         self.__precision_weighted_bp = .0
         self.__precision_weighted_seq = .0
         self.__recall_avg_bp = .0
         self.__recall_avg_bp_cami1 = .0
         self.__recall_avg_bp_var = .0
+        self.__recall_avg_bp_var_cami1 = .0
         self.__recall_avg_bp_sem = .0
+        self.__recall_avg_bp_sem_cami1 = .0
         self.__recall_avg_seq = .0
         self.__recall_avg_seq_cami1 = .0
         self.__recall_avg_seq_sem = .0
+        self.__recall_avg_seq_sem_cami1 = .0
         self.__recall_weighted_bp = .0
         self.__recall_weighted_seq = .0
         self.__f1_score_bp = .0
         self.__f1_score_seq = .0
+        self.__f1_score_bp_cami1 = .0
+        self.__f1_score_seq_cami1 = .0
         self.__unifrac_bp = None
         self.__unifrac_seq = None
 
@@ -136,8 +141,16 @@ class Metrics():
         return self.__recall_avg_bp_var
 
     @property
+    def recall_avg_bp_var_cami1(self):
+        return self.__recall_avg_bp_var_cami1
+
+    @property
     def recall_avg_bp_sem(self):
         return self.__recall_avg_bp_sem
+
+    @property
+    def recall_avg_bp_sem_cami1(self):
+        return self.__recall_avg_bp_sem_cami1
 
     @property
     def recall_avg_seq(self):
@@ -150,6 +163,10 @@ class Metrics():
     @property
     def recall_avg_seq_sem(self):
         return self.__recall_avg_seq_sem
+
+    @property
+    def recall_avg_seq_sem_cami1(self):
+        return self.__recall_avg_seq_sem_cami1
 
     @property
     def recall_weighted_bp(self):
@@ -239,9 +256,17 @@ class Metrics():
     def recall_avg_bp_var(self, recall_avg_bp_var):
         self.__recall_avg_bp_var = recall_avg_bp_var
 
+    @recall_avg_bp_var_cami1.setter
+    def recall_avg_bp_var_cami1(self, recall_avg_bp_var_cami1):
+        self.__recall_avg_bp_var_cami1 = recall_avg_bp_var_cami1
+
     @recall_avg_bp_sem.setter
     def recall_avg_bp_sem(self, recall_avg_bp_sem):
         self.__recall_avg_bp_sem = recall_avg_bp_sem
+
+    @recall_avg_bp_sem_cami1.setter
+    def recall_avg_bp_sem_cami1(self, recall_avg_bp_sem_cami1):
+        self.__recall_avg_bp_sem_cami1 = recall_avg_bp_sem_cami1
 
     @recall_avg_seq.setter
     def recall_avg_seq(self, recall_avg_seq):
@@ -254,6 +279,10 @@ class Metrics():
     @recall_avg_seq_sem.setter
     def recall_avg_seq_sem(self, recall_avg_seq_sem):
         self.__recall_avg_seq_sem = recall_avg_seq_sem
+
+    @recall_avg_seq_sem_cami1.setter
+    def recall_avg_seq_sem_cami1(self, recall_avg_seq_sem_cami1):
+        self.__recall_avg_seq_sem_cami1 = recall_avg_seq_sem_cami1
 
     @recall_weighted_bp.setter
     def recall_weighted_bp(self, recall_weighted_bp):
@@ -291,25 +320,18 @@ class Metrics():
         return rand_index, adjusted_rand_index
 
     def get_ordered_dict(self):
-        if self.__precision_avg_bp + self.__recall_avg_bp > 0:
-            f1_score_bp = 2 * self.__precision_avg_bp * self.__recall_avg_bp / (self.__precision_avg_bp + self.__recall_avg_bp)
-        else:
-            f1_score_bp = np.nan
+        def f1_score(metric1, metric2):
+            if metric1 + metric2 > 0:
+                return 2 * metric1 * metric2 / (metric1 + metric2)
+            else:
+                return np.nan
 
-        if self.__precision_avg_seq + self.__recall_avg_seq > 0:
-            f1_score_seq = 2 * self.__precision_avg_seq * self.__recall_avg_seq / (self.__precision_avg_seq + self.__recall_avg_seq)
-        else:
-            f1_score_seq = np.nan
-
-        if self.__precision_weighted_bp + self.__recall_weighted_bp > 0:
-            f1_score_per_bp = 2 * self.__precision_weighted_bp * self.__recall_weighted_bp / (self.__precision_weighted_bp + self.__recall_weighted_bp)
-        else:
-            f1_score_per_bp = np.nan
-
-        if self.__precision_weighted_seq + self.__recall_weighted_seq > 0:
-            f1_score_per_seq = 2 * self.__precision_weighted_seq * self.__recall_weighted_seq / (self.__precision_weighted_seq + self.__recall_weighted_seq)
-        else:
-            f1_score_per_seq = np.nan
+        f1_score_bp = f1_score(self.__precision_avg_bp, self.__recall_avg_bp)
+        f1_score_seq = f1_score(self.__precision_avg_seq, self.__recall_avg_seq)
+        f1_score_bp_cami1 = f1_score(self.__precision_avg_bp, self.__recall_avg_bp_cami1)
+        f1_score_seq_cami1 = f1_score(self.__precision_avg_seq, self.__recall_avg_seq_cami1)
+        f1_score_per_bp = f1_score(self.__precision_weighted_bp, self.__recall_weighted_bp)
+        f1_score_per_seq = f1_score(self.__precision_weighted_seq, self.__recall_weighted_seq)
 
         return OrderedDict([(utils_labels.TOOL, None),
                             (utils_labels.BINNING_TYPE, None),
@@ -322,15 +344,20 @@ class Metrics():
                             (utils_labels.AVG_RECALL_BP, [self.__recall_avg_bp]),
                             (utils_labels.AVG_RECALL_BP_CAMI1, [self.__recall_avg_bp_cami1]),
                             (utils_labels.AVG_RECALL_BP_SEM, [self.__recall_avg_bp_sem]),
+                            (utils_labels.AVG_RECALL_BP_SEM_CAMI1, [self.__recall_avg_bp_sem_cami1]),
                             ('avg_recall_bp_var', [self.__recall_avg_bp_var]),
+                            ('avg_recall_bp_var_cami1', [self.__recall_avg_bp_var_cami1]),
                             (utils_labels.F1_SCORE_BP, [f1_score_bp]),
+                            (utils_labels.F1_SCORE_BP_CAMI1, [f1_score_bp_cami1]),
 
                             (utils_labels.AVG_PRECISION_SEQ, [self.__precision_avg_seq]),
                             (utils_labels.AVG_PRECISION_SEQ_SEM, [self.__precision_avg_seq_sem]),
                             (utils_labels.AVG_RECALL_SEQ, [self.__recall_avg_seq]),
                             (utils_labels.AVG_RECALL_SEQ_CAMI1, [self.__recall_avg_seq_cami1]),
                             (utils_labels.AVG_RECALL_SEQ_SEM, [self.__recall_avg_seq_sem]),
+                            (utils_labels.AVG_RECALL_SEQ_SEM_CAMI1, [self.__recall_avg_seq_sem_cami1]),
                             (utils_labels.F1_SCORE_SEQ, [f1_score_seq]),
+                            (utils_labels.F1_SCORE_SEQ_CAMI1, [f1_score_seq_cami1]),
 
                             (utils_labels.PRECISION_PER_BP, [self.__precision_weighted_bp]),
                             (utils_labels.PRECISION_PER_SEQ, [self.__precision_weighted_seq]),
@@ -526,7 +553,9 @@ class GenomeQuery(Query):
 
         most_abundant_genome_df = confusion_df.loc[confusion_df.groupby('BINID', sort=False)['genome_length'].idxmax()].reset_index().set_index('BINID')
 
-        precision_df = query_w_length.groupby('BINID', sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'total_length', 'SEQUENCEID': 'total_seq_counts'})
+        query_w_length['seq_length_mean'] = query_w_length['seq_length']
+
+        precision_df = query_w_length.groupby('BINID', sort=False).agg({'seq_length': 'sum', 'seq_length_mean': 'mean', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'total_length', 'SEQUENCEID': 'total_seq_counts'})
         precision_df = pd.merge(precision_df, most_abundant_genome_df, on='BINID')
         precision_df.rename(columns={'genome_length': 'tp_length', 'genome_seq_counts': 'tp_seq_counts'}, inplace=True)
         precision_df['precision_bp'] = precision_df['tp_length'] / precision_df['total_length']
@@ -562,7 +591,7 @@ class GenomeQuery(Query):
         recall_df['recall_bp'] = recall_df['genome_length'] / recall_df['length_gs']
         recall_df['recall_seq'] = recall_df['genome_seq_counts'] / recall_df['seq_counts_gs']
 
-        recall_df = recall_df.join(precision_df['total_length'], how='left', sort=False)
+        recall_df = recall_df.join(precision_df[['total_length', 'seq_length_mean']], how='left', sort=False)
 
         if self.options.genome_to_unique_common:
             recall_df = recall_df[~recall_df['genome_id'].isin(self.options.genome_to_unique_common)]
@@ -580,14 +609,16 @@ class GenomeQuery(Query):
         if self.options.genome_to_unique_common:
             unmapped_genomes -= set(self.options.genome_to_unique_common)
         num_unmapped_genomes = len(unmapped_genomes)
-        recall_avg_bp_cami1 = precision_df['recall_bp'].mean()
-        recall_avg_seq_cami1 = precision_df['recall_seq'].mean()
+        prec_copy = precision_df[['recall_bp', 'recall_seq']].reset_index()
+        # prec_copy = precision_df[['recall_bp', 'recall_seq', 'genome_id']].loc[precision_df.groupby('genome_id', sort=False)['recall_bp'].idxmax()].reset_index()
         if num_unmapped_genomes:
-            self.metrics.recall_avg_bp_cami1 = recall_avg_bp_cami1 * precision_df.shape[0] / (num_unmapped_genomes + precision_df.shape[0])
-            self.metrics.recall_avg_seq_cami1 = recall_avg_seq_cami1 * precision_df.shape[0] / (num_unmapped_genomes + precision_df.shape[0])
-        else:
-            self.metrics.recall_avg_bp_cami1 = recall_avg_bp_cami1
-            self.metrics.recall_avg_seq_cami1 = recall_avg_seq_cami1
+            prec_copy = prec_copy.reindex(prec_copy.index.tolist() + list(range(len(prec_copy), len(prec_copy) + num_unmapped_genomes))).fillna(.0)
+        self.metrics.recall_avg_bp_cami1 = prec_copy['recall_bp'].mean()
+        self.metrics.recall_avg_seq_cami1 = prec_copy['recall_seq'].mean()
+        self.metrics.recall_avg_bp_sem_cami1 = prec_copy['recall_bp'].sem()
+        self.metrics.recall_avg_seq_sem_cami1 = prec_copy['recall_seq'].sem()
+        self.metrics.recall_avg_bp_var_cami1 = prec_copy['recall_bp'].var()
+        # End Compute recall as in CAMI 1
 
         self.metrics.accuracy_bp = precision_df['tp_length'].sum() / recall_df['length_gs'].sum()
         self.metrics.accuracy_seq = precision_df['tp_seq_counts'].sum() / recall_df['seq_counts_gs'].sum()

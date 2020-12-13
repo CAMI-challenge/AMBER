@@ -187,7 +187,8 @@ def get_heatmap_colors(pd_series, **args):
     values = pd_series.tolist()
 
     if pd_series.name == upper1(utils_labels.AVG_PRECISION_BP_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_BP_SEM) or\
-        pd_series.name == upper1(utils_labels.AVG_PRECISION_SEQ_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM):
+        pd_series.name == upper1(utils_labels.AVG_PRECISION_SEQ_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM) or\
+        pd_series.name == upper1(utils_labels.AVG_RECALL_BP_SEM_CAMI1) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM_CAMI1):
         return ['background-color: white' for x in values]
 
     dropped_gs = False
@@ -330,11 +331,15 @@ def get_labels_genome():
              (utils_labels.AVG_RECALL_BP, utils_labels.TOOLTIP_AVG_RECALL_BP),
              (utils_labels.AVG_RECALL_BP_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_BP_CAMI1),
              (utils_labels.AVG_RECALL_BP_SEM, utils_labels.TOOLTIP_AVG_RECALL_BP_SEM),
+             (utils_labels.AVG_RECALL_BP_SEM_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_BP_SEM),
              (utils_labels.AVG_RECALL_SEQ, utils_labels.TOOLTIP_AVG_RECALL_SEQ),
              (utils_labels.AVG_RECALL_SEQ_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_SEQ_CAMI1),
              (utils_labels.F1_SCORE_BP, utils_labels.TOOLTIP_F1_SCORE_BP),
              (utils_labels.F1_SCORE_SEQ, utils_labels.TOOLTIP_F1_SCORE_SEQ),
+             (utils_labels.F1_SCORE_BP_CAMI1, utils_labels.TOOLTIP_F1_SCORE_BP),
+             (utils_labels.F1_SCORE_SEQ_CAMI1, utils_labels.TOOLTIP_F1_SCORE_SEQ),
              (utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.TOOLTIP_AVG_RECALL_SEQ_SEM),
+             (utils_labels.AVG_RECALL_SEQ_SEM_CAMI1, utils_labels.TOOLTIP_AVG_RECALL_SEQ_SEM),
              (utils_labels.PERCENTAGE_ASSIGNED_BPS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_BPS),
              (utils_labels.PERCENTAGE_ASSIGNED_SEQS, utils_labels.TOOLTIP_PERCENTAGE_ASSIGNED_SEQS),
              (utils_labels.UNIFRAC_BP, utils_labels.TOOLTIP_UNIFRAC_BP),
@@ -378,16 +383,20 @@ def create_table_html(df_summary, is_taxonomic=False, include_cami1=False):
     metrics1 = [utils_labels.AVG_PRECISION_BP,
                 utils_labels.AVG_PRECISION_SEQ,
                 utils_labels.AVG_RECALL_BP,
-                utils_labels.AVG_RECALL_SEQ]
+                utils_labels.AVG_RECALL_SEQ,
+                utils_labels.F1_SCORE_BP,
+                utils_labels.F1_SCORE_SEQ,
+                utils_labels.AVG_PRECISION_BP_SEM,
+                utils_labels.AVG_PRECISION_SEQ_SEM,
+                utils_labels.AVG_RECALL_BP_SEM,
+                utils_labels.AVG_RECALL_SEQ_SEM]
     if include_cami1:
         metrics1 += [utils_labels.AVG_RECALL_BP_CAMI1,
-                     utils_labels.AVG_RECALL_SEQ_CAMI1]
-    metrics1 += [utils_labels.F1_SCORE_BP,
-                 utils_labels.F1_SCORE_SEQ,
-                 utils_labels.AVG_PRECISION_BP_SEM,
-                 utils_labels.AVG_PRECISION_SEQ_SEM,
-                 utils_labels.AVG_RECALL_BP_SEM,
-                 utils_labels.AVG_RECALL_SEQ_SEM]
+                     utils_labels.AVG_RECALL_SEQ_CAMI1,
+                     utils_labels.F1_SCORE_BP_CAMI1,
+                     utils_labels.F1_SCORE_SEQ_CAMI1,
+                     utils_labels.AVG_RECALL_BP_SEM_CAMI1,
+                     utils_labels.AVG_RECALL_SEQ_SEM_CAMI1]
     metrics2 = [utils_labels.ACCURACY_PER_BP,
                 utils_labels.ACCURACY_PER_SEQ,
                 utils_labels.MISCLASSIFICATION_PER_BP,
