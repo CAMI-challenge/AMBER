@@ -180,7 +180,7 @@ def evaluate(queries_list, sample_id):
 
         query.precision_df[utils_labels.TOOL] = query.label
 
-        query.recall_df.to_csv(os.path.join(query.options.output_dir, 'genome', query.label, 'metrics_per_genome.tsv'), sep='\t', index=False)
+        # query.recall_df.to_csv(os.path.join(query.options.output_dir, 'genome', query.label, 'metrics_per_genome.tsv'), sep='\t', index=False)
 
         pd_bins_all = pd.concat([pd_bins_all, query.precision_df.reset_index()], ignore_index=True, sort=True)
 
@@ -197,6 +197,13 @@ def evaluate_samples_queries(sample_id_to_queries_list):
         df_summary, pd_bins = evaluate(sample_id_to_queries_list[sample_id], sample_id)
         pd_bins_all = pd.concat([pd_bins_all, pd_bins], ignore_index=True)
         df_summary_all = pd.concat([df_summary_all, df_summary], ignore_index=True)
+
+    # Gold standard only has unfiltered metrics, so copy values to unfiltered columns
+    for col in df_summary_all.columns:
+        if col.endswith(utils_labels.UNFILTERED):
+            df_summary_all.loc[df_summary_all[utils_labels.TOOL] == utils_labels.GS, col] = \
+                df_summary_all.loc[df_summary_all[utils_labels.TOOL] == utils_labels.GS, col[:-len(utils_labels.UNFILTERED)]]
+
     return df_summary_all, pd_bins_all
 
 

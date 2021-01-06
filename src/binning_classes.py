@@ -393,6 +393,7 @@ class Query(ABC):
         self.__recall_df = None
         self.__confusion_df = None
         self.__metrics = None
+        self.__metrics_filtered = None
         self.__options = options
 
     @property
@@ -426,6 +427,10 @@ class Query(ABC):
     @property
     def metrics(self):
         return self.__metrics
+
+    @property
+    def metrics_filtered(self):
+        return self.__metrics_filtered
 
     @property
     def options(self):
@@ -463,6 +468,10 @@ class Query(ABC):
     def metrics(self, metrics):
         self.__metrics = metrics
 
+    @metrics_filtered.setter
+    def metrics_filtered(self, metrics_filtered):
+        self.__metrics_filtered = metrics_filtered
+
     @options.setter
     def options(self, options):
         self.__options = options
@@ -471,7 +480,7 @@ class Query(ABC):
     def compute_metrics(self):
         pass
 
-    def compute_unifrac(self):
+    def compute_unifrac(self, all_bins):
         return None, None
 
 
@@ -695,7 +704,10 @@ class TaxonomicQuery(Query):
         super().__init__(label, sample_id, options)
         self.__rank_to_df = rank_to_df
         self.metrics = defaultdict()
+        if self.options.filter_tail_percentage:
+            self.metrics_filtered = defaultdict()
         self.__profile = None
+        self.__profile_filtered = None
 
     @property
     def rank_to_df(self):
@@ -705,20 +717,31 @@ class TaxonomicQuery(Query):
     def profile(self):
         if self.__profile:
             return self.__profile
-        self.__profile = self._create_profile()
+        self.__profile = self._create_profile(all_bins=True)
         return self.__profile
+
+    @property
+    def profile_filtered(self):
+        if self.__profile_filtered:
+            return self.__profile_filtered
+        self.__profile_filtered = self._create_profile(all_bins=False)
+        return self.__profile_filtered
 
     @rank_to_df.setter
     def rank_to_df(self, rank_to_df):
         self.__rank_to_df = rank_to_df
 
-    def _create_profile(self):
+    def _create_profile(self, all_bins):
         class Prediction:
             def __init__(self):
                 pass
         profile_bp = []
         profile_seq = []
-        for index, row in self.recall_df.iterrows():
+        if all_bins:
+            recall_df = self.recall_df
+        else:
+            recall_df = self.recall_df[~self.recall_df['filtered']]
+        for index, row in recall_df.iterrows():
             prediction_bp = Prediction()
             prediction_bp.taxid = str(int(row['TAXID']))
             prediction_bp.rank = row['rank']
@@ -738,10 +761,14 @@ class TaxonomicQuery(Query):
             profile_seq.append(prediction_seq)
         return profile_bp, profile_seq
 
-    def compute_unifrac(self):
-        pf_profile_bp = pf.Profile(profile=self.profile[0])
+    def compute_unifrac(self, all_bins):
+        if all_bins:
+            pf_profile_bp = pf.Profile(profile=self.profile[0])
+            pf_profile_seq = pf.Profile(profile=self.profile[1])
+        else:
+            pf_profile_bp = pf.Profile(profile=self.profile_filtered[0])
+            pf_profile_seq = pf.Profile(profile=self.profile_filtered[1])
         gs_pf_profile_bp = pf.Profile(profile=self.gold_standard.profile[0])
-        pf_profile_seq = pf.Profile(profile=self.profile[1])
         gs_pf_profile_seq = pf.Profile(profile=self.gold_standard.profile[1])
         return uf.compute_unifrac(gs_pf_profile_bp, pf_profile_bp), uf.compute_unifrac(gs_pf_profile_seq, pf_profile_seq)
 
@@ -749,10 +776,20 @@ class TaxonomicQuery(Query):
         allranks_metrics_df = pd.DataFrame()
         for rank in self.metrics:
             metrics_dict = self.metrics[rank].get_ordered_dict()
-            metrics_dict[utils_labels.TOOL] = self.label
-            metrics_dict[utils_labels.BINNING_TYPE] = self.binning_type
-            metrics_dict[utils_labels.RANK] = rank
             rank_metrics_df = pd.DataFrame(metrics_dict)
+
+            if self.metrics_filtered:
+                rank_metrics_df = pd.DataFrame(metrics_dict) \
+                    .drop(columns=[utils_labels.TOOL, utils_labels.BINNING_TYPE, utils_labels.SAMPLE, utils_labels.RANK]) \
+                    .add_suffix(utils_labels.UNFILTERED)
+                metrics_dict = self.metrics_filtered[rank].get_ordered_dict()
+                rank_metrics_df_filtered = pd.DataFrame(metrics_dict)
+                rank_metrics_df = pd.concat([rank_metrics_df_filtered, rank_metrics_df], axis=1)
+
+            rank_metrics_df[utils_labels.TOOL] = self.label
+            rank_metrics_df[utils_labels.BINNING_TYPE] = self.binning_type
+            rank_metrics_df[utils_labels.RANK] = rank
+
             allranks_metrics_df = pd.concat([allranks_metrics_df, rank_metrics_df], ignore_index=True, sort=True)
         return allranks_metrics_df
 
@@ -789,35 +826,63 @@ class TaxonomicQuery(Query):
         tp_fp_fn_df['recall_seq'] = tp_fp_fn_df['tp_seq_counts'] / tp_fp_fn_df['seq_counts_gs']
         tp_fp_fn_df['rank'] = rank
 
-        if self.options.filter_tail_percentage:
-            tp_fp_fn_df['total_length_pct'] = tp_fp_fn_df['total_length'] / tp_fp_fn_df['total_length'].sum()
-            tp_fp_fn_df.sort_values(by='total_length', inplace=True)
-            tp_fp_fn_df['cumsum_length_pct'] = tp_fp_fn_df['total_length_pct'].cumsum(axis=0)
-            tp_fp_fn_df['precision_bp'].mask(tp_fp_fn_df['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100, inplace=True)
-            tp_fp_fn_df['precision_seq'].mask(tp_fp_fn_df['precision_bp'].isna(), inplace=True)
-            tp_fp_fn_df.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
-
-        tp_length_sum = tp_fp_fn_df['tp_length'].sum()
-        tp_seq_counts_sum = tp_fp_fn_df['tp_seq_counts'].sum()
         length_gs_sum = tp_fp_fn_df['length_gs'].sum()
         seq_counts_gs_sum = tp_fp_fn_df['seq_counts_gs'].sum()
 
-        self.metrics[rank].precision_avg_bp = tp_fp_fn_df['precision_bp'].mean()
-        self.metrics[rank].precision_avg_bp_sem = tp_fp_fn_df['precision_bp'].sem()
-        self.metrics[rank].precision_avg_seq = tp_fp_fn_df['precision_seq'].mean()
-        self.metrics[rank].precision_avg_seq_sem = tp_fp_fn_df['precision_seq'].sem()
-        self.metrics[rank].precision_weighted_bp = tp_length_sum / tp_fp_fn_df['total_length'].sum()
-        self.metrics[rank].precision_weighted_seq = tp_seq_counts_sum / tp_fp_fn_df['total_seq_counts'].sum()
+        def set_values(metric_obj, df):
+            tp_length_sum = df['tp_length'].sum()
+            tp_seq_counts_sum = df['tp_seq_counts'].sum()
 
-        self.metrics[rank].recall_avg_bp = tp_fp_fn_df['recall_bp'].mean()
-        self.metrics[rank].recall_avg_bp_sem = tp_fp_fn_df['recall_bp'].sem()
-        self.metrics[rank].recall_avg_seq = tp_fp_fn_df['recall_seq'].mean()
-        self.metrics[rank].recall_avg_seq_sem = tp_fp_fn_df['recall_seq'].sem()
-        self.metrics[rank].recall_weighted_bp = tp_length_sum / length_gs_sum
-        self.metrics[rank].recall_weighted_seq = tp_seq_counts_sum / seq_counts_gs_sum
+            metric_obj.precision_avg_bp = df['precision_bp'].mean()
+            metric_obj.precision_avg_bp_sem = df['precision_bp'].sem()
+            metric_obj.precision_avg_seq = df['precision_seq'].mean()
+            metric_obj.precision_avg_seq_sem = df['precision_seq'].sem()
+            metric_obj.precision_weighted_bp = tp_length_sum / df['total_length'].sum()
+            metric_obj.precision_weighted_seq = tp_seq_counts_sum / df['total_seq_counts'].sum()
 
-        self.metrics[rank].accuracy_bp = tp_length_sum / length_gs_sum
-        self.metrics[rank].accuracy_seq = tp_seq_counts_sum / seq_counts_gs_sum
+            metric_obj.recall_avg_bp = df['recall_bp'].mean()
+            metric_obj.recall_avg_bp_sem = df['recall_bp'].sem()
+            metric_obj.recall_avg_seq = df['recall_seq'].mean()
+            metric_obj.recall_avg_seq_sem = df['recall_seq'].sem()
+            metric_obj.recall_weighted_bp = tp_length_sum / length_gs_sum
+            metric_obj.recall_weighted_seq = tp_seq_counts_sum / seq_counts_gs_sum
+
+            metric_obj.accuracy_bp = tp_length_sum / length_gs_sum
+            metric_obj.accuracy_seq = tp_seq_counts_sum / seq_counts_gs_sum
+
+        set_values(self.metrics[rank], tp_fp_fn_df)
+
+        if self.options.filter_tail_percentage:
+            df_cpy = tp_fp_fn_df.copy()
+            df_cpy['total_length_pct'] = df_cpy['total_length'] / df_cpy['total_length'].sum()
+            df_cpy.sort_values(by='total_length', inplace=True)
+            df_cpy['cumsum_length_pct'] = df_cpy['total_length_pct'].cumsum(axis=0)
+            nan_rows = df_cpy['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100
+            df_cpy['precision_bp'].mask(nan_rows, inplace=True)
+            df_cpy['precision_seq'].mask(nan_rows, inplace=True)
+            df_cpy['recall_bp'].mask(nan_rows, other=.0, inplace=True)
+            df_cpy['recall_seq'].mask(nan_rows, other=.0, inplace=True)
+            df_cpy['tp_length'].mask(nan_rows, inplace=True)
+            df_cpy['tp_seq_counts'].mask(nan_rows, inplace=True)
+            df_cpy['total_length'].mask(nan_rows, inplace=True)
+            df_cpy['total_seq_counts'].mask(nan_rows, inplace=True)
+            df_cpy.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
+
+            self.metrics_filtered[rank] = Metrics()
+            set_values(self.metrics_filtered[rank], df_cpy)
+
+            tp_fp_fn_df['filtered'] = nan_rows
+
+            remaining = df_cpy[~nan_rows].index.values
+            confusion_df = confusion_df.loc[remaining]
+            self.metrics_filtered[rank].rand_index_bp, self.metrics_filtered[rank].adjusted_rand_index_bp = Metrics.compute_rand_index(confusion_df, 'TAXID', 'true_taxid', 'tax_length')
+            self.metrics_filtered[rank].rand_index_seq, self.metrics_filtered[rank].adjusted_rand_index_seq = Metrics.compute_rand_index(confusion_df, 'TAXID', 'true_taxid', 'tax_seq_counts')
+
+            query_w_length_df = query_w_length_df.set_index('TAXID').loc[remaining]
+            self.metrics_filtered[rank].percentage_of_assigned_bps = query_w_length_df['LENGTH'].sum() / gs_df['LENGTH'].sum()
+            self.metrics_filtered[rank].percentage_of_assigned_seqs = query_w_length_df.shape[0] / gs_df.shape[0]
+        else:
+            tp_fp_fn_df['filtered'] = False
 
         self.precision_df = pd.concat([self.precision_df, tp_fp_fn_df.reset_index().sort_values(
             by='recall_bp', axis=0, ascending=False)], ignore_index=True, sort=True)
@@ -831,10 +896,17 @@ class TaxonomicQuery(Query):
         logging.getLogger('amber').info('Evaluating {} (sample {}, taxonomic binning)'.format(self.label, self.sample_id))
         for rank in self.rank_to_df:
             self.compute_metrics_per_rank(rank)
-        unifrac_bp, unifrac_seq = self.compute_unifrac()
+
+        unifrac_bp, unifrac_seq = self.compute_unifrac(all_bins=True)
         for rank in self.metrics:
             self.metrics[rank].unifrac_bp = unifrac_bp
             self.metrics[rank].unifrac_seq = unifrac_seq
+        if self.options.filter_tail_percentage:
+            unifrac_bp, unifrac_seq = self.compute_unifrac(all_bins=False)
+            for rank in self.metrics:
+                self.metrics_filtered[rank].unifrac_bp = unifrac_bp
+                self.metrics_filtered[rank].unifrac_seq = unifrac_seq
+
         return True
 
 

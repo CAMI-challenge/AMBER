@@ -18,6 +18,7 @@ RANK = "rank"
 BINNING_TYPE = "binning type"
 SAMPLE = "Sample"
 GS = 'Gold standard'
+UNFILTERED = ' (unfiltered)'
 
 AVG_PRECISION_BP = "Average purity (bp)"
 AVG_PRECISION_BP_SEM = "Std error of av. purity (bp)"

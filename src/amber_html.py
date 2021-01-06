@@ -79,6 +79,7 @@ TEMPLATE = Template('''<!DOCTYPE html>
                 width: auto !important;
                 padding-right: 40px;
             }
+            tr:hover {outline: 1px solid black;}
             html {overflow: -moz-scrollbars-vertical; overflow-y: scroll;}
             .tooltip {
                 position: relative;
@@ -176,9 +177,11 @@ def get_colors_and_ranges(name, all_values):
     hue1 = 12
     hue2 = 240
 
-    if name == upper1(utils_labels.MISCLASSIFICATION_PER_BP) or name == upper1(utils_labels.MISCLASSIFICATION_PER_SEQ):
+    metrics = [utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.MISCLASSIFICATION_PER_SEQ]
+    if name in map(upper1, metrics + [x + utils_labels.UNFILTERED for x in metrics]):
         return color2, color1, hue2, hue1, 0, 1
-    if name == utils_labels.UNIFRAC_BP or name == utils_labels.UNIFRAC_SEQ:
+    metrics = [utils_labels.UNIFRAC_BP, utils_labels.UNIFRAC_SEQ]
+    if name in map(upper1, metrics + [x + utils_labels.UNFILTERED for x in metrics]):
         return color2, color1, hue2, hue1, 0, max(all_values)
     return color1, color2, hue1, hue2, 0, 1
 
@@ -186,9 +189,9 @@ def get_colors_and_ranges(name, all_values):
 def get_heatmap_colors(pd_series, **args):
     values = pd_series.tolist()
 
-    if pd_series.name == upper1(utils_labels.AVG_PRECISION_BP_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_BP_SEM) or\
-        pd_series.name == upper1(utils_labels.AVG_PRECISION_SEQ_SEM) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM) or\
-        pd_series.name == upper1(utils_labels.AVG_RECALL_BP_SEM_CAMI1) or pd_series.name == upper1(utils_labels.AVG_RECALL_SEQ_SEM_CAMI1):
+    metrics = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_PRECISION_SEQ_SEM,
+               utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.AVG_RECALL_BP_SEM_CAMI1, utils_labels.AVG_RECALL_SEQ_SEM_CAMI1]
+    if pd_series.name in map(upper1, metrics + [x + utils_labels.UNFILTERED for x in metrics]):
         return ['background-color: white' for x in values]
 
     dropped_gs = False
@@ -233,8 +236,8 @@ def create_title_div(id, name, info):
 
 
 def create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_dir, binning_type):
-    styles = [{'selector': 'td', 'props': [('width', '99pt')]},
-              {'selector': 'th', 'props': [('width', '99pt'), ('text-align', 'left')]},
+    styles = [{'selector': 'td', 'props': [('width', '92pt')]},
+              {'selector': 'th', 'props': [('width', '92pt'), ('text-align', 'left')]},
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
 
     tools = pd_bins[utils_labels.TOOL].unique().tolist()
@@ -390,6 +393,10 @@ def create_table_html(df_summary, is_taxonomic=False, include_cami1=False):
                 utils_labels.AVG_PRECISION_SEQ_SEM,
                 utils_labels.AVG_RECALL_BP_SEM,
                 utils_labels.AVG_RECALL_SEQ_SEM]
+
+    if is_taxonomic and utils_labels.AVG_PRECISION_BP + utils_labels.UNFILTERED in df_summary.index:
+        metrics1 += [x + utils_labels.UNFILTERED for x in metrics1]
+
     if include_cami1:
         metrics1 += [utils_labels.AVG_RECALL_BP_CAMI1,
                      utils_labels.AVG_RECALL_SEQ_CAMI1,
@@ -416,6 +423,10 @@ def create_table_html(df_summary, is_taxonomic=False, include_cami1=False):
     if is_taxonomic:
         metrics2.append(utils_labels.UNIFRAC_BP)
         metrics2.append(utils_labels.UNIFRAC_SEQ)
+
+    if is_taxonomic and utils_labels.AVG_PRECISION_BP + utils_labels.UNFILTERED in df_summary.index:
+        metrics2 += [x + utils_labels.UNFILTERED for x in metrics2]
+
     all_metrics = [metrics1, metrics2]
     metrics1_label = utils_labels.QUALITY_OF_BINS
     metrics2_label = utils_labels.QUALITY_OF_SAMPLE
@@ -423,7 +434,7 @@ def create_table_html(df_summary, is_taxonomic=False, include_cami1=False):
 
     styles = [{'selector': 'td', 'props': [('width', '115pt')]},
               {'selector': 'th', 'props': [('width', '115pt'), ('text-align', 'left')]},
-              {'selector': 'th:nth-child(1)', 'props': [('width', '190pt'), ('font-weight', 'normal')]},
+              {'selector': 'th:nth-child(1)', 'props': [('width', '210pt'), ('font-weight', 'normal')]},
               {'selector': '', 'props': [('width', 'max-content'), ('width', '-moz-max-content'), ('border-top', '1px solid lightgray'), ('border-spacing', '0px')]},
               {'selector': 'expand-toggle:checked ~ * .data', 'props': [('background-color', 'white !important')]}]
     styles_hidden_thead = styles + [{'selector': 'thead', 'props': [('display', 'none')]}]
@@ -738,7 +749,8 @@ def get_tax_bins_columns():
                         ('recall_seq', utils_labels.RECALL_PER_SEQ),
                         ('total_seq_counts', 'Bin size (seq)'),
                         ('tp_seq_counts', 'True positives (seq)'),
-                        ('seq_counts_gs', 'True size (seq)')])
+                        ('seq_counts_gs', 'True size (seq)'),
+                        ('filtered', 'Filtered')])
 
 
 def create_tax_ranks_panel(qbins_plots_list, qsamples_plots_list, cc_plots_dict_list, contamination_plots_list):
