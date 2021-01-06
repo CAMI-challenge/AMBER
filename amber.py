@@ -277,7 +277,7 @@ def main(args=None):
 
     load_data.load_ncbi_info(args.ncbi_dir)
 
-    sample_id_to_queries_list, sample_ids_list = load_data.load_queries(args.gold_standard_file, args.bin_files, labels,
+    sample_id_to_queries_list, sample_ids_list = load_data.load_queries_mthreaded(args.gold_standard_file, args.bin_files, labels,
                                                                         options, options_gs)
 
     coverages_pd = load_data.open_coverages(args.genome_coverage)
@@ -288,14 +288,14 @@ def main(args=None):
 
     save_metrics(df_summary, pd_bins, output_dir, args.stdout)
 
-    plot_genome_binning(args.colors,
-                        sample_id_to_queries_list,
-                        df_summary,
-                        pd_bins[pd_bins['rank'] == 'NA'],
-                        labels,
-                        coverages_pd,
-                        output_dir)
-    plot_taxonomic_binning(args.colors, df_summary, pd_bins, labels, output_dir)
+    # plot_genome_binning(args.colors,
+    #                     sample_id_to_queries_list,
+    #                     df_summary,
+    #                     pd_bins[pd_bins['rank'] == 'NA'],
+    #                     labels,
+    #                     coverages_pd,
+    #                     output_dir)
+    # plot_taxonomic_binning(args.colors, df_summary, pd_bins, labels, output_dir)
 
     amber_html.create_html(df_summary,
                            pd_bins,
