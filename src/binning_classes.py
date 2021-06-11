@@ -1,4 +1,4 @@
-# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2021 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -390,7 +390,7 @@ class Query(ABC):
         self.__gold_standard = None
         self.__gold_standard_df = None
         self.__precision_df = pd.DataFrame()
-        self.__recall_df = None
+        self.__recall_df = pd.DataFrame()
         self.__confusion_df = None
         self.__metrics = None
         self.__metrics_filtered = None
@@ -490,15 +490,24 @@ class GenomeQuery(Query):
     def __init__(self, df, label, sample_id, options):
         super().__init__(label, sample_id, options)
         self.__df = df
+        self.__recall_df_cami1 = pd.DataFrame()
         self.metrics = Metrics()
 
     @property
     def df(self):
         return self.__df
 
+    @property
+    def recall_df_cami1(self):
+        return self.__recall_df_cami1
+
     @df.setter
     def df(self, df):
         self.__df = df
+
+    @recall_df_cami1.setter
+    def recall_df_cami1(self, recall_df_cami1):
+        self.__recall_df_cami1 = recall_df_cami1
 
     def get_metrics_df(self):
         metrics_dict = self.metrics.get_ordered_dict()
@@ -618,8 +627,7 @@ class GenomeQuery(Query):
         if self.options.genome_to_unique_common:
             unmapped_genomes -= set(self.options.genome_to_unique_common)
         num_unmapped_genomes = len(unmapped_genomes)
-        prec_copy = precision_df[['recall_bp', 'recall_seq']].reset_index()
-        # prec_copy = precision_df[['recall_bp', 'recall_seq', 'genome_id']].loc[precision_df.groupby('genome_id', sort=False)['recall_bp'].idxmax()].reset_index()
+        prec_copy = precision_df.reset_index()
         if num_unmapped_genomes:
             prec_copy = prec_copy.reindex(prec_copy.index.tolist() + list(range(len(prec_copy), len(prec_copy) + num_unmapped_genomes))).fillna(.0)
         self.metrics.recall_avg_bp_cami1 = prec_copy['recall_bp'].mean()
@@ -627,6 +635,7 @@ class GenomeQuery(Query):
         self.metrics.recall_avg_bp_sem_cami1 = prec_copy['recall_bp'].sem()
         self.metrics.recall_avg_seq_sem_cami1 = prec_copy['recall_seq'].sem()
         self.metrics.recall_avg_bp_var_cami1 = prec_copy['recall_bp'].var()
+        self.recall_df_cami1 = prec_copy
         # End Compute recall as in CAMI 1
 
         self.metrics.accuracy_bp = precision_df['tp_length'].sum() / recall_df['length_gs'].sum()
@@ -732,6 +741,9 @@ class TaxonomicQuery(Query):
         self.__rank_to_df = rank_to_df
 
     def _create_profile(self, all_bins):
+        if self.recall_df.empty:
+            return [], []
+
         class Prediction:
             def __init__(self):
                 pass

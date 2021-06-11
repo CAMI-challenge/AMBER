@@ -132,12 +132,13 @@ def read_metadata(file_path_query):
 
 
 def load_binnings(samples_metadata, file_path_query):
+    columns = ['SEQUENCEID', 'BINID', 'TAXID', 'LENGTH', '_LENGTH']
     sample_id_to_query_df = OrderedDict()
     for metadata in samples_metadata:
         logging.getLogger('amber').info('Loading ' + metadata[2]['SAMPLEID'])
         nrows = metadata[1] - metadata[0] + 1
-
-        df = pd.read_csv(file_path_query, sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None)
+        col_indices = [k for k, v in metadata[3].items() if v in columns]
+        df = pd.read_csv(file_path_query, sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None, usecols=col_indices)
         df.rename(columns=metadata[3], inplace=True)
         df.rename(columns={'_LENGTH': 'LENGTH'}, inplace=True)
         sample_id_to_query_df[metadata[2]['SAMPLEID']] = df

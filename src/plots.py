@@ -84,17 +84,15 @@ def plot_by_genome_coverage(pd_bins, pd_target_column, available_tools, output_d
 
     for i, (color, tool) in enumerate(zip(colors_list, available_tools)):
         pd_tool = pd_bins[pd_bins[utils_labels.TOOL] == tool].sort_values(by=['genome_index'])
-        axs.scatter(pd_tool['genome_coverage'], pd_tool[pd_target_column], marker='o', color=colors_list[i], s=[2] * pd_tool.shape[0])
+        axs.scatter(pd_tool['genome_coverage'], pd_tool[pd_target_column], marker='o', color=colors_list[i], s=[3] * pd_tool.shape[0])
         window = 50
         rolling_mean = pd_tool[pd_target_column].rolling(window=window, min_periods=10).mean()
         axs.plot(pd_tool['genome_coverage'], rolling_mean, color=colors_list[i])
 
-    axs.set_xlim([0.0, pd_tool['genome_coverage'].max()])
-    axs.set_ylim([0.0, 1.0])
+    axs.set_ylim([-0.01, 1.01])
 
-    # transform plot_labels to percentages
-    vals = axs.get_yticks()
-    axs.set_yticklabels(['{:3.0f}'.format(x * 100) for x in vals], fontsize=12)
+    axs.set_xticklabels(['{:,.1f}'.format(np.exp(x)) for x in axs.get_xticks()], fontsize=12)
+    axs.set_yticklabels(['{:3.0f}'.format(x * 100) for x in axs.get_yticks()], fontsize=12)
 
     axs.tick_params(axis='x', labelsize=12)
 
@@ -106,7 +104,7 @@ def plot_by_genome_coverage(pd_bins, pd_target_column, available_tools, output_d
         file_name = 'completeness_by_genome_coverage'
 
     plt.ylabel(ylabel, fontsize=15)
-    plt.xlabel('log$_{10}$(average genome coverage)', fontsize=15)
+    plt.xlabel('Average genome coverage', fontsize=15)
 
     colors_iter = iter(colors_list)
     circles = []
@@ -124,7 +122,7 @@ def get_pd_genomes_recall(sample_id_to_queries_list):
         for query in sample_id_to_queries_list[sample_id]:
             if not isinstance(query, binning_classes.GenomeQuery):
                 continue
-            recall_df = query.recall_df[['genome_id', 'recall_bp']].copy()
+            recall_df = query.recall_df_cami1[['genome_id', 'recall_bp']].copy()
             recall_df[utils_labels.TOOL] = query.label
             recall_df['sample_id'] = sample_id
             recall_df = recall_df.reset_index().set_index(['sample_id', utils_labels.TOOL])
@@ -141,13 +139,13 @@ def plot_precision_recall_by_coverage(sample_id_to_queries_list, pd_bins_g, cove
 
     pd_genomes_recall = get_pd_genomes_recall(sample_id_to_queries_list)
     pd_genomes_recall['genome_index'] = pd_genomes_recall['genome_id'].map(coverages_pd['rank'].to_dict())
-    pd_genomes_recall = pd_genomes_recall.groupby([utils_labels.TOOL, 'genome_id']).mean().reset_index()
-    pd_genomes_recall['genome_coverage'] = np.log10(pd_genomes_recall['genome_id'].map(coverages_pd['COVERAGE'].to_dict()))
+    pd_genomes_recall = pd_genomes_recall.reset_index()
+    pd_genomes_recall['genome_coverage'] = np.log(pd_genomes_recall['genome_id'].map(coverages_pd['COVERAGE'].to_dict()))
     plot_by_genome_coverage(pd_genomes_recall, 'recall_bp', available_tools, output_dir)
 
     pd_bins_precision = pd_bins_g[[utils_labels.TOOL, 'precision_bp', 'genome_id']].copy().dropna(subset=['precision_bp'])
     pd_bins_precision['genome_index'] = pd_bins_precision['genome_id'].map(coverages_pd['rank'].to_dict())
-    pd_bins_precision['genome_coverage'] = np.log10(pd_bins_precision['genome_id'].map(coverages_pd['COVERAGE'].to_dict()))
+    pd_bins_precision['genome_coverage'] = np.log(pd_bins_precision['genome_id'].map(coverages_pd['COVERAGE'].to_dict()))
     plot_by_genome_coverage(pd_bins_precision, 'precision_bp', available_tools, output_dir)
 
 

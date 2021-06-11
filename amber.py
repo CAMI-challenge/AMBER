@@ -179,9 +179,6 @@ def evaluate(queries_list, sample_id):
         df_summary = pd.concat([df_summary, query_metrics_df], ignore_index=True, sort=True)
 
         query.precision_df[utils_labels.TOOL] = query.label
-
-        # query.recall_df.to_csv(os.path.join(query.options.output_dir, 'genome', query.label, 'metrics_per_genome.tsv'), sep='\t', index=False)
-
         pd_bins_all = pd.concat([pd_bins_all, query.precision_df.reset_index()], ignore_index=True, sort=True)
 
     pd_bins_all['sample_id'] = sample_id
@@ -207,10 +204,10 @@ def evaluate_samples_queries(sample_id_to_queries_list):
     return df_summary_all, pd_bins_all
 
 
-def save_metrics(df_summary, pd_bins, output_dir, stdout):
+def save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, stdout):
     logging.getLogger('amber').info('Saving computed metrics')
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False)
-    # pd_bins.to_csv(os.path.join(output_dir, 'bins.tsv'), index=False, sep='\t')
+    pd_bins.to_csv(os.path.join(output_dir, 'bin_metrics.tsv'), index=False, sep='\t')
     if stdout:
         summary_columns = [utils_labels.TOOL] + [col for col in df_summary if col != utils_labels.TOOL]
         print(df_summary[summary_columns].to_string(index=False))
@@ -224,6 +221,18 @@ def save_metrics(df_summary, pd_bins, output_dir, stdout):
             del bins_columns['name']
         table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
+
+    pd_genomes_all = pd.DataFrame()
+    for sample_id in sample_id_to_queries_list:
+        pd_genomes_sample = pd.DataFrame()
+        for query in sample_id_to_queries_list[sample_id]:
+            if isinstance(query, binning_classes.GenomeQuery):
+                query.recall_df_cami1[utils_labels.TOOL] = query.label
+                pd_genomes_sample = pd.concat([pd_genomes_sample, query.recall_df_cami1], ignore_index=True, sort=False)
+        pd_genomes_sample['sample_id'] = sample_id
+        pd_genomes_all = pd.concat([pd_genomes_all, pd_genomes_sample], ignore_index=True, sort=False)
+    if not pd_genomes_all.empty:
+        pd_genomes_all.to_csv(os.path.join(output_dir, 'genome_metrics_cami1.tsv'), index=False, sep='\t')
 
 
 def main(args=None):
@@ -286,16 +295,16 @@ def main(args=None):
 
     df_summary, pd_bins = evaluate_samples_queries(sample_id_to_queries_list)
 
-    save_metrics(df_summary, pd_bins, output_dir, args.stdout)
+    save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, args.stdout)
 
-    # plot_genome_binning(args.colors,
-    #                     sample_id_to_queries_list,
-    #                     df_summary,
-    #                     pd_bins[pd_bins['rank'] == 'NA'],
-    #                     labels,
-    #                     coverages_pd,
-    #                     output_dir)
-    # plot_taxonomic_binning(args.colors, df_summary, pd_bins, labels, output_dir)
+    plot_genome_binning(args.colors,
+                        sample_id_to_queries_list,
+                        df_summary,
+                        pd_bins[pd_bins['rank'] == 'NA'],
+                        labels,
+                        coverages_pd,
+                        output_dir)
+    plot_taxonomic_binning(args.colors, df_summary, pd_bins, labels, output_dir)
 
     amber_html.create_html(df_summary,
                            pd_bins,
