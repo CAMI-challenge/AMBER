@@ -251,6 +251,7 @@ def plot_boxplot(sample_id_to_queries_list, metric_name, output_dir, available_t
 
     # transform plot_labels to percentages
     vals = axs.get_xticks()
+    axs.xaxis.set_major_locator(ticker.FixedLocator(vals))
     axs.set_xticklabels(['{:3.0f}'.format(x * 100) for x in vals])
 
     # enable code to rotate labels
@@ -289,7 +290,7 @@ def plot_summary(color_indices, df_results, labels, output_dir, rank, plot_type,
     colors_list = create_colors_list()
     if color_indices:
         colors_list = [colors_list[i] for i in color_indices]
-    df_mean = df_results.groupby(utils_labels.TOOL).mean().reindex(tools)
+    df_mean = df_results.groupby(utils_labels.TOOL).mean(numeric_only=True).reindex(tools)
 
     binning_type = df_results[utils_labels.BINNING_TYPE].iloc[0]
 
@@ -304,7 +305,7 @@ def plot_summary(color_indices, df_results, labels, output_dir, rank, plot_type,
 
     if plot_type == 'e':
         for i, (tool, df_row) in enumerate(df_mean.iterrows()):
-            axs.errorbar(df_row[utils_labels.AVG_PRECISION_BP], df_row[utils_labels.AVG_RECALL_BP], xerr=df_row['avg_precision_bp_var'], yerr=df_row['avg_recall_bp_var'],
+            axs.errorbar(df_row['precision_avg_bp'], df_row['recall_avg_bp_cami1'], xerr=df_row['precision_avg_bp_var'], yerr=df_row['recall_avg_bp_var_cami1'],
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
@@ -313,7 +314,9 @@ def plot_summary(color_indices, df_results, labels, output_dir, rank, plot_type,
                          markersize=8)
     if plot_type == 'f':
         for i, (tool, df_row) in enumerate(df_mean.iterrows()):
-            axs.errorbar(df_row[utils_labels.AVG_PRECISION_SEQ], df_row[utils_labels.AVG_RECALL_SEQ], xerr=df_row[utils_labels.AVG_PRECISION_SEQ_SEM], yerr=df_row[utils_labels.AVG_RECALL_SEQ_SEM],
+            axs.errorbar(df_row['precision_avg_seq'], df_row['recall_avg_seq_cami1'],
+                         xerr=df_row['precision_avg_seq_sem'] if not np.isnan(df_row['precision_avg_seq_sem']) else 0,
+                         yerr=df_row['recall_avg_seq_sem_cami1'] if not np.isnan(df_row['recall_avg_seq_sem_cami1']) else 0,
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
@@ -322,13 +325,13 @@ def plot_summary(color_indices, df_results, labels, output_dir, rank, plot_type,
                          markersize=8)
     if plot_type == 'w':
         for i, (tool, df_row) in enumerate(df_mean.iterrows()):
-            axs.plot(df_row[utils_labels.PRECISION_PER_BP], df_row[utils_labels.RECALL_PER_BP], marker='o', color=colors_list[i], markersize=10)
+            axs.plot(df_row['precision_weighted_bp'], df_row['recall_weighted_bp'], marker='o', color=colors_list[i], markersize=10)
     if plot_type == 'x':
         for i, (tool, df_row) in enumerate(df_mean.iterrows()):
-            axs.plot(df_row[utils_labels.PRECISION_PER_SEQ], df_row[utils_labels.RECALL_PER_SEQ], marker='o', color=colors_list[i], markersize=10)
+            axs.plot(df_row['precision_weighted_seq'], df_row['recall_weighted_seq'], marker='o', color=colors_list[i], markersize=10)
     elif plot_type == 'p':
         for i, (tool, df_row) in enumerate(df_mean.iterrows()):
-            axs.plot(df_row[utils_labels.ARI_BY_BP], df_row[utils_labels.PERCENTAGE_ASSIGNED_BPS], marker='o', color=colors_list[i], markersize=10)
+            axs.plot(df_row['adjusted_rand_index_bp'], df_row['percentage_of_assigned_bps'], marker='o', color=colors_list[i], markersize=10)
 
     # turn on grid
     # axs.minorticks_on()
@@ -338,10 +341,12 @@ def plot_summary(color_indices, df_results, labels, output_dir, rank, plot_type,
     # transform plot_labels to percentages
     if plot_type != 'p':
         vals = axs.get_xticks()
+        axs.xaxis.set_major_locator(ticker.FixedLocator(vals))
         axs.set_xticklabels(['{:3.0f}'.format(x * 100) for x in vals], fontsize=11)
     else:
         axs.tick_params(axis='x', labelsize=12)
     vals = axs.get_yticks()
+    axs.yaxis.set_major_locator(ticker.FixedLocator(vals))
     axs.set_yticklabels(['{:3.0f}'.format(x * 100) for x in vals], fontsize=11)
 
     if rank:
@@ -458,6 +463,7 @@ def plot_taxonomic_results(df_summary_t, metrics_list, errors_list, file_name, o
         plt.xticks(x_values, load_ncbi_taxinfo.RANKS, rotation='vertical')
 
         vals = axs.get_yticks()
+        axs.yaxis.set_major_locator(ticker.FixedLocator(vals))
         axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
 
         lgd = plt.legend(metrics_list, loc=1, borderaxespad=0., handlelength=2, frameon=False)
@@ -503,6 +509,7 @@ def plot_contamination(pd_bins, binning_type, title, xlabel, ylabel, create_colu
 
     # transform plot_labels to percentages
     vals = axs.get_yticks()
+    axs.yaxis.set_major_locator(ticker.FixedLocator(vals))
     axs.set_yticklabels(['{:3.0f}'.format(y * 100) for y in vals])
 
     plt.xlabel(xlabel, fontsize=14)
@@ -527,7 +534,7 @@ def get_number_of_hq_bins(tools, pd_bins):
         x70 = pd_tool_bins[(pd_tool_bins['recall_bp'] > .7) & (pd_tool_bins['precision_bp'] > .9)].shape[0]
         x90 = pd_tool_bins[(pd_tool_bins['recall_bp'] > .9) & (pd_tool_bins['precision_bp'] > .9)].shape[0]
         pd_tool_counts = pd.DataFrame([[x90, x70, x50]], columns=['>90%', '>70%', '>50%'], index=[tool])
-        pd_counts = pd_counts.append(pd_tool_counts)
+        pd_counts = pd.concat([pd_counts, pd_tool_counts])
     return pd_counts
 
 
@@ -543,7 +550,7 @@ def get_number_of_hq_bins_by_score(tools, pd_bins):
         x50 -= x70
         x70 -= x90
         pd_tool_counts = pd.DataFrame([[x90, x70, x50]], columns=['>90', '>70', '>50'], index=[tool])
-        pd_counts = pd_counts.append(pd_tool_counts)
+        pd_counts = pd.concat([pd_counts, pd_tool_counts])
     return pd_counts
 
 

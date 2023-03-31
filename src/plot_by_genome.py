@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2023 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +18,7 @@ import numpy as np
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -86,8 +85,10 @@ def plot_precision_recall_per_bin(pd_bins, output_dir):
 
     # transform plot_labels to percentages
     vals = axs.get_xticks()
+    axs.xaxis.set_major_locator(ticker.FixedLocator(vals))
     axs.set_xticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
     vals = axs.get_yticks()
+    axs.yaxis.set_major_locator(ticker.FixedLocator(vals))
     axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
 
     plt.xlabel('Purity per bin')

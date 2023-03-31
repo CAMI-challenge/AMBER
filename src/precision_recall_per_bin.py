@@ -35,7 +35,7 @@ def transform_confusion_matrix2(query):
     genomes_sorted_list += unmapped_genomes
 
     unbinned_genomes_df = genomes_df[~genomes_df['genome_id'].isin(confusion_df.reset_index()['genome_id'])]
-    heatmap_df = confusion_df.reset_index().append(unbinned_genomes_df, sort=True).fillna({'genome_length': 0, 'genome_seq_counts': 0})
+    heatmap_df = pd.concat([confusion_df.reset_index(), unbinned_genomes_df], sort=True).fillna({'genome_length': 0, 'genome_seq_counts': 0})
     heatmap_df = heatmap_df.pivot(index='BINID', columns='genome_id', values='genome_length')
     heatmap_df = heatmap_df.merge(precision_df['tp_length'], on='BINID', sort=False).sort_values(by='tp_length', axis=0, ascending=False)
 
@@ -44,7 +44,7 @@ def transform_confusion_matrix2(query):
     difference_df = gs_df.index.difference(query_df.index)
     unassigned_sequences = gs_df.loc[difference_df].groupby('genome_id', sort=False).agg({'seq_length': 'sum'})
 
-    heatmap_df = heatmap_df.append(unassigned_sequences.T, sort=True)
+    heatmap_df = pd.concat([heatmap_df, unassigned_sequences.T], sort=True)
     heatmap_df = heatmap_df[genomes_sorted_list].fillna(0)
 
     return heatmap_df
@@ -66,7 +66,7 @@ def transform_confusion_matrix(query):
         genome_id_to_unassigned_bps[genome_id] += gold_standard.sequence_id_to_length[unassigned_seq_id]
 
     df_unassigned = pd.DataFrame.from_dict(genome_id_to_unassigned_bps, orient='index').rename(columns={0: 'unassigned'}).T
-    table = df_confusion.append(df_unassigned, sort=False)
+    table = pd.concat([df_confusion, df_unassigned], sort=False)
     table.fillna(0, inplace=True)
     # use log scale
     # table = table.applymap(np.log).fillna(0)
@@ -83,11 +83,11 @@ def transform_confusion_matrix(query):
     for bin_id in bin_id_to_mapped_genome_by_length:
         mapped_genome = bin_id_to_mapped_genome_by_length[bin_id]
         if mapped_genome not in genome_order:
-            genome_order.append(mapped_genome)
+            genome_order = pd.concat([genome_order, mapped_genome])
     genome_order += list(set(table.columns.values.tolist()) - set(genome_order))
     for genome_id in genome_id_to_unassigned_bps.keys():
         if genome_id not in genome_order:
-            genome_order.append(genome_id)
+            genome_order = pd.concat([genome_order, genome_id])
 
     table = table.loc[list(bin_id_to_mapped_genome_by_length.keys()) + ['unassigned'], genome_order]
 

@@ -56,7 +56,7 @@ class Profile(object):
                 ancestor = tax_path[-2]
                 _data[tax_id]["branch_length"] = 1
                 i = -3
-                while ancestor is "" or ancestor == tax_id:  # if it's a blank or repeated, go up until finding ancestor
+                while ancestor == "" or ancestor == tax_id:  # if it's a blank or repeated, go up until finding ancestor
                     ancestor = tax_path[i]
                     _data[tax_id]["branch_length"] += 1
                     i -= 1
@@ -127,7 +127,7 @@ class Profile(object):
                 ancestor = tax_path[-2]
                 _data[key]["branch_length"] = 1
                 i = -3
-                while ancestor is "" or ancestor == key:  # if it's a blank or repeated, go up until finding ancestor
+                while ancestor == "" or ancestor == key:  # if it's a blank or repeated, go up until finding ancestor
                     if i < -len(tax_path):  # Path is all the way full with bad tax_ids, connect to root
                         _data[key]["branch_length"] += 1
                         ancestor = "-1"

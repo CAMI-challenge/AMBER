@@ -1,4 +1,4 @@
-# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2023 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
+import io
 import os
 from collections import OrderedDict
 from collections import defaultdict
@@ -39,102 +39,88 @@ from matplotlib.colors import Normalize
 from version import __version__
 
 from bokeh.plotting import figure
-from bokeh.layouts import column, row, widgetbox
-from bokeh.models.widgets import TableColumn, Div, Select, Panel, Tabs
+from bokeh.layouts import column, row
+from bokeh.models.widgets import TableColumn, Div, Select
+from bokeh.models import TabPanel, Tabs
 from bokeh.models import (DataTable,
                           CustomJS,
                           Legend, LegendItem,
                           Band,
-                          FuncTickFormatter,
+                          CustomJSTickFormatter,
                           HoverTool)
 from bokeh.models.tickers import FixedTicker
-from bokeh.embed import components
 from bokeh.resources import INLINE
+from bokeh.embed import file_html
 from bokeh.plotting import ColumnDataSource
 
 
 AVG_OVER_SAMPLES = '[average over samples]'
 CLICK_ON_LEGENDS_DIV = '<div>' + AVG_OVER_SAMPLES + '</div><div style="padding-top: 10px;">Click on the legends to enable/disable the results for a tool.</div>'
 
-
-TEMPLATE = Template('''<!DOCTYPE html>
-    <html lang="en">
-        <head>
-            <meta charset="utf-8">
-            <title>AMBER: Assessment of Metagenome BinnERs</title>
-            {{ js_resources }}
-            {{ css_resources }}
-            <style>.bk-fit-content {width: fit-content; width: -moz-fit-content;}
-            .bk-width-auto {width: auto !important; height: auto !important;}
-            .bk-display-block {display: block !important;}
-            .bk-float-left {float: left;}
-            .bk-width-auto-main>div {width: -webkit-fill-available !important;}
-            div.bk-width-auto-main {width: -webkit-fill-available !important;}
-            .bk-tabs-margin{margin-top: 20px !important;}
-            .bk-tabs-margin-lr{margin-left: 10px; margin-right: 10px}
-            .bk-root {display: flex; justify-content: center;}
-            .bk-padding-top {padding-top: 10px;}
-            .bk-padding-top2 {padding-top: 20px;}
-            .bk-combo-box > div:first-child {
-                width: auto !important;
-                padding-right: 40px;
-            }
-            tr:hover {outline: 1px solid black;}
-            html {overflow: -moz-scrollbars-vertical; overflow-y: scroll;}
-            .tooltip {
-                position: relative;
-                display: inline-block;
-                border-bottom: 1px dashed lightgray;
-                cursor: help;
-            }
-            .tooltip-sem {
-                border-bottom: 1px dotted black;
-            }
-            .tooltip .tooltiptext {
-                visibility: hidden;
-                width: 280px;
-                background-color: #555;
-                color: #fff;
-                text-align: center;
-                border-radius: 6px;
-                padding: 5px 0;
-                position: absolute;
-                z-index: 1;
-                bottom: 125%;
-                left: 50%;
-                margin-left: -60px;
-                opacity: 0;
-            }
-            .tooltip .tooltiptext::after {
-                content: "";
-                position: absolute;
-                top: 100%;
-                left: 50%;
-                margin-left: -5px;
-                border-width: 5px;
-                border-style: solid;
-                border-color: #555 transparent transparent transparent;
-            }
-            .tooltip:hover .tooltiptext {
-                visibility: visible;
-                opacity: 1;
-            }
-            .proportions {
-                cursor: pointer;
-            }
-            .legend {
-                position:absolute;
-                cursor: move;
-                z-index: 1;
-            }
-            </style>
-        </head>
-        <body>
-            {{ div }}
-            {{ script }}
-        </body>
-    </html>
-    ''')
+TEMPLATE = Template('''
+{% from macros import embed %}
+<!DOCTYPE html>
+<html lang="en">
+  {% block head %}
+  <head>
+  {% block inner_head %}
+    <meta charset="utf-8">
+    <title>{% block title %}{{ title | e if title else "Bokeh Plot" }}{% endblock %}</title>
+  {%  block preamble -%}{%- endblock %}
+  {%  block resources %}
+    <style>
+      html, body {
+        box-sizing: border-box;
+        height: 100%;
+        margin: 8px;
+        padding: 0;
+      }
+      .bk-fit-content {width: fit-content; width: -moz-fit-content;}
+      .bk-width-auto {width: auto !important; height: auto !important;}
+      .bk-display-block {display: block !important;}
+      .bk-float-left {float: left;}
+      bk-width-auto-main>div {width: -webkit-fill-available !important;}
+      div.bk-width-auto-main {width: -webkit-fill-available !important;}
+      .bk-tabs-margin{margin-top: 20px !important;}
+      .bk-tabs-margin-lr{margin-left: 10px; margin-right: 10px}
+      .bk-root {display: flex; justify-content: center;}
+      .bk-padding-top {padding-top: 10px;}
+      .bk-padding-top2 {padding-top: 20px;}
+      .bk-combo-box > div:first-child {
+        width: auto !important;
+        padding-right: 40px;
+      }
+    </style>
+  {%   block css_resources -%}
+    {{- bokeh_css if bokeh_css }}
+  {%-  endblock css_resources %}
+  {%   block js_resources -%}
+    {{  bokeh_js if bokeh_js }}
+  {%-  endblock js_resources %}
+  {%  endblock resources %}
+  {%  block postamble %}{% endblock %}
+  {% endblock inner_head %}
+  </head>
+  {% endblock head%}
+  {% block body %}
+  <body>
+  {%  block inner_body %}
+  {%    block contents %}
+  {%      for doc in docs %}
+  {{        embed(doc) if doc.elementid }}
+  {%-       for root in doc.roots %}
+  {%          block root scoped %}
+  {{            embed(root) }}
+  {%          endblock %}
+  {%        endfor %}
+  {%      endfor %}
+  {%    endblock contents %}
+  {{ plot_script | indent(4) }}
+  {%  endblock inner_body %}
+  </body>
+  {% endblock body%}
+</html>
+''')
 
 
 def create_heatmap_bar(output_dir):
@@ -168,7 +154,7 @@ class MidpointNormalize(Normalize):
 
 
 def upper1(x):
-        return x[:1].upper() + x[1:]
+    return x[:1].upper() + x[1:]
 
 
 def get_colors_and_ranges(name, all_values):
@@ -231,7 +217,13 @@ def get_heatmap_colors(pd_series, **args):
 
 
 def create_title_div(id, name, info):
-    div = Div(text="""<div style="text-align:left;font-size: 20pt;font-weight: bold;">{1}<span style="float: right;font-size: 10pt;font-weight:normal;">{2}</span>""".format(id, name, info), css_classes=['bk-width-auto']) # width=DIV_WIDTH, height=DIV_HEIGHT)
+    div = Div(text="""<div style="text-align:left;font-size: 20pt;font-weight: bold;">{1}<span style="float: right;font-size: 10pt;font-weight:normal;">{2}</span>""".format(id, name, info), styles={'width': 'auto'})
+    div.stylesheets = ["""
+    .bk-clearfix {
+      width: -webkit-fill-available;
+      width: -moz-available;
+    }
+    """]
     return div
 
 
@@ -254,26 +246,26 @@ def create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_
             pd_tool_sample = pd_tool_sample[list(bins_columns.keys())].rename(columns=dict(bins_columns))
             if binning_type == 'taxonomic':
                 pd_tool_sample['Taxon ID'] = pd_tool_sample['Taxon ID'].astype('Int64')
-            tool_sample_html = pd_tool_sample.head(500).style.set_table_styles(styles).set_precision(3).hide_index().render()
+            tool_sample_html = pd_tool_sample.head(500).style.set_table_styles(styles).format(precision=3).hide(axis='index').to_html()
             tool_sample_html += '<div style="padding-top: 20px; padding-bottom: 20px;">{}</div>'.format('Complete table available in: ' + os.path.join(output_dir, binning_type, tool, 'metrics_per_bin.tsv'))
             tool_to_sample_to_html[tool].append(tool_sample_html)
     tool_to_sample_to_html['all_samples'] = sample_ids_list
 
-    table_div = Div(text="""<div>{}</div>""".format(tool_to_sample_to_html[tools[0]][0]), css_classes=['bk-width-auto'])
+    table_div = Div(text="""<div>{}</div>""".format(tool_to_sample_to_html[tools[0]][0]))
 
     source = ColumnDataSource(data=tool_to_sample_to_html)
 
-    select_tool = Select(title="Binner:", value=tools[0], options=tools, css_classes=['bk-fit-content'])
-    select_sample = Select(title="Sample:", value='0', options=list(zip(map(str, range(len(sample_ids_list))), sample_ids_list)), css_classes=['bk-fit-content'])
+    select_tool = Select(title="Binner:", value=tools[0], options=tools)
+    select_sample = Select(title="Sample:", value='0', options=list(zip(map(str, range(len(sample_ids_list))), sample_ids_list)))
     select_tool_sample_callback = CustomJS(args=dict(source=source), code="""
-        select_sample.options = []
-        options_array = []
-        for (index in source.data[select_tool.value]) {
+        select_sample.options = [];
+        const options_array = [];
+        for (let index in source.data[select_tool.value]) {
             if (source.data[select_tool.value][index] != "") {
                 options_array.push([index, source.data["all_samples"][index]])
             }
         }
-        select_sample.options = options_array
+        select_sample.options = options_array;
         if (source.data[select_tool.value][select_sample.value] != "") {
             mytable.text = source.data[select_tool.value][select_sample.value];
         } else {
@@ -286,8 +278,8 @@ def create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, output_
     select_tool_sample_callback.args["select_tool"] = select_tool
     select_tool_sample_callback.args["select_sample"] = select_sample
 
-    table_column = row(column(row(select_tool, select_sample, css_classes=['bk-width-auto', 'bk-combo-box']), table_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width') # column(table_div, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-width-auto-main'])
-    metrics_bins_panel = Panel(child=table_column, title="Metrics per bin")
+    table_column = row(column(row(select_tool, select_sample), table_div, sizing_mode='scale_width'), sizing_mode='scale_width')
+    metrics_bins_panel = TabPanel(child=table_column, title="Metrics per bin")
     return metrics_bins_panel
 
 
@@ -303,13 +295,13 @@ def create_contamination_completeness_table(pd_bins, min_completeness, max_conta
                    height=1000,
                    reorderable=True,
                    selectable=True)
-    return [widgetbox(dt)]
+    return [column(dt)]
 
 
 def create_heatmap_div():
     heatmap_legend = '<img src="heatmap_bar.png" /><div style="text-align:left;font-size: 11px;">Worst<span style="float:right;">Best</span><span style="margin-right: 36px;float:right;">Median</span></div>'
-    heatmap_legend_div = Div(text=heatmap_legend, style={"width": "155px", "margin-bottom": "-10px"})
-    return  heatmap_legend_div
+    heatmap_legend_div = Div(text=heatmap_legend, styles={"width": "155px", "margin-bottom": "-10px"})
+    return heatmap_legend_div
 
 
 def get_labels_genome():
@@ -442,7 +434,7 @@ def create_table_html(df_summary, is_taxonomic=False, include_cami1=False):
     def get_html_dict(metrics):
         d_dict = {}
         for tuple in metrics:
-            d_dict[tuple[0]] = '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div>'.format(tuple[0], tuple[0], tuple[1])
+            d_dict[tuple[0] + '<'] = '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div><'.format(utils_labels.LABELS[tuple[0]], utils_labels.LABELS[tuple[0]], tuple[1])
         return d_dict
 
     d = get_html_dict(get_labels_taxonomic() if is_taxonomic else get_labels_genome())
@@ -454,10 +446,10 @@ def create_table_html(df_summary, is_taxonomic=False, include_cami1=False):
 
     df_summary.index.name = None
 
-    html = ''
+    html = io.StringIO()
     first_metrics = True
     for metrics, metrics_label in zip(all_metrics, all_metrics_labels):
-        html += '<p style="margin-bottom: auto"><b>{}</b></p>'.format(metrics_label)
+        html.write('<p style="margin-bottom: auto"><b>{}</b></p>'.format(metrics_label))
         df_metrics = df_summary.loc[metrics]
         sorted_columns = df_metrics.columns.tolist()
         df_metrics = df_metrics.loc[:, sorted_columns]
@@ -467,10 +459,54 @@ def create_table_html(df_summary, is_taxonomic=False, include_cami1=False):
             first_metrics = False
         else:
             this_style = styles_hidden_thead
-        html += df_metrics.style.apply(get_heatmap_colors, df_metrics=df_metrics, axis=1).set_precision(3).set_table_styles(this_style).render()
+        html.write(df_metrics.style.apply(get_heatmap_colors, df_metrics=df_metrics, axis=1).format(
+            precision=3).set_table_styles(this_style).to_html())
+    html = html.getvalue()
     html = pattern.sub(translate, html)
 
-    return '<div style="margin-bottom:10pt;">{}</div>'.format(html)
+    tooltips = """
+    <style>
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dashed lightgray;
+            cursor: help;
+        }
+        div.tooltip span.tooltiptext {
+            visibility: hidden;
+            width: 280px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+        }
+        div.tooltip span.tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #555 transparent transparent transparent;
+        }
+        div.tooltip:hover span.tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        tr:hover {
+            outline: 1px solid black;
+        }
+    </style>"""
+
+    return '{}<div style="margin-bottom:10pt;">{}</div>'.format(tooltips, html)
 
 
 def create_precision_recall_figure(df_summary, xname1, yname1, xname2, yname2, title):
@@ -484,7 +520,7 @@ def create_precision_recall_figure(df_summary, xname1, yname1, xname2, yname2, t
     tooltips2 = [(utils_labels.TOOL, '@index'),
                  (xname2, '@{' + xname2 + '}'),
                  (yname2, '@{' + yname2 + '}')]
-    p = figure(title=title, plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
+    p = figure(title=title, width=580, height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
     p.xaxis.axis_label = upper1(xname1.split('(')[0])
     p.yaxis.axis_label = upper1(yname1.split('(')[0])
     p.xaxis.axis_label_text_font_style = 'normal'
@@ -511,7 +547,7 @@ def create_precision_recall_all_genomes_scatter(pd_genome_bins, tools):
     colors_list = plots.create_colors_list()
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
-    p = figure(title='Quality per bin', plot_width=580, plot_height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
+    p = figure(title='Quality per bin', width=580, height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
     p.add_tools(HoverTool(tooltips=[('Sample', '@sample_id'),
                                     ('Genome', '@mapping_id'),
                                     ('Purity of bin (bp)', '@precision_bp'),
@@ -538,7 +574,7 @@ def create_contamination_plot(pd_bins, tools, title, xlabel, ylabel, create_colu
     colors_list = plots.create_colors_list()
     bokeh_colors = [matplotlib.colors.to_hex(c) for c in colors_list]
 
-    p = figure(title=title, plot_width=580, plot_height=400, toolbar_location="below")
+    p = figure(title=title, width=580, height=400, toolbar_location="below")
     p.x_range.start = 0
     # p.y_range.start = pd_bins_copy['newcolumn'].min()
     p.y_range.end = 1
@@ -572,7 +608,7 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
             df[metric + "lower"] = df[metric] - df[error]
     source = ColumnDataSource(df.reset_index())
 
-    p = figure(plot_width=500, plot_height=550, x_range=(0, 7), y_range=(0, 1))
+    p = figure(width=500, height=550, x_range=(0, 7), y_range=(0, 1))
     line_colors = ["#006cba", "#008000", "#ba9e00", "red"]
     legend_it = []
     for i, (metric, error, color) in enumerate(zip(metrics_list, errors_list, line_colors)):
@@ -593,7 +629,7 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
                 band.visible = False
 
     p.xaxis.ticker = FixedTicker(ticks=rank_indices)
-    p.xaxis.formatter = FuncTickFormatter(code="""
+    p.xaxis.formatter = CustomJSTickFormatter(code="""
         var mapping = {0: "superkingdom", 1: "phylum", 2: "class", 3: "order", 4: "family", 5: "genus", 6: "species", 7: "strain"};
         return mapping[tick];
     """)
@@ -629,35 +665,20 @@ def create_rankings_table(df_summary, show_rank=False):
                    height=1000,
                    reorderable=True,
                    selectable=True)
-    return [widgetbox(dt)]
-
-
-def get_genome_bins_columns():
-    return OrderedDict([('BINID', 'Bin ID'),
-                        ('genome_id', 'Most abundant genome'),
-                        ('precision_bp', utils_labels.PRECISION_PER_BP),
-                        ('recall_bp', utils_labels.RECALL_PER_BP),
-                        ('total_length', 'Bin size (bp)'),
-                        ('tp_length', 'True positives (bp)'),
-                        ('length_gs', 'True size of most abundant genome (bp)'),
-                        ('precision_seq', utils_labels.PRECISION_PER_SEQ),
-                        ('recall_seq', utils_labels.RECALL_PER_SEQ),
-                        ('total_seq_counts', 'Bin size (seq)'),
-                        ('tp_seq_counts', 'True positives (seq)'),
-                        ('seq_counts_gs', 'True size of most abundant genome (seq)')])
+    return [column(dt)]
 
 
 def create_genome_binning_plots_panel(pd_bins, pd_mean):
-    click_div = Div(text=CLICK_ON_LEGENDS_DIV, css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
-    purity_completeness_plot = column(create_precision_recall_figure(pd_mean, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, utils_labels.QUALITY_OF_BINS), css_classes=['bk-width-auto', 'bk-float-left'])
-    purity_recall_bp_plot = column(create_precision_recall_figure(pd_mean, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, utils_labels.QUALITY_OF_SAMPLE), css_classes=['bk-width-auto', 'bk-float-left'])
+    click_div = Div(text=CLICK_ON_LEGENDS_DIV, styles={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
+    purity_completeness_plot = column(create_precision_recall_figure(pd_mean, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, utils_labels.QUALITY_OF_BINS))
+    purity_recall_bp_plot = column(create_precision_recall_figure(pd_mean, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, utils_labels.QUALITY_OF_SAMPLE))
 
-    all_samples_div = Div(text='<div style="padding-top: 20px;">All samples</div>', css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
-    all_bins_plot = column(create_precision_recall_all_genomes_scatter(pd_bins, pd_mean.index.tolist()), css_classes=['bk-width-auto', 'bk-float-left'])
-    completeness_contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column), css_classes=['bk-width-auto', 'bk-float-left'])
-    contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', plots.create_contamination_column), css_classes=['bk-width-auto', 'bk-float-left'])
+    all_samples_div = Div(text='<div style="padding-top: 20px;">All samples</div>', styles={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
+    all_bins_plot = column(create_precision_recall_all_genomes_scatter(pd_bins, pd_mean.index.tolist()))
+    completeness_contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column))
+    contamination_plot = column(create_contamination_plot(pd_bins, pd_mean.index.tolist(), 'Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', plots.create_contamination_column))
 
-    return Panel(child=column([click_div, purity_completeness_plot, purity_recall_bp_plot, all_samples_div, all_bins_plot, completeness_contamination_plot, contamination_plot], sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block']), title='Plots')
+    return TabPanel(child=column([click_div, purity_completeness_plot, purity_recall_bp_plot, all_samples_div, all_bins_plot, completeness_contamination_plot, contamination_plot], sizing_mode='scale_width'), title='Plots')
 
 
 def create_genome_binning_html(df_summary, pd_bins, labels, sample_ids_list, options):
@@ -673,7 +694,7 @@ def create_genome_binning_html(df_summary, pd_bins, labels, sample_ids_list, opt
     available_tools = list(df_summary_g[utils_labels.TOOL].unique())
     available_tools = [tool for tool in labels if tool in available_tools]
 
-    pd_mean = df_summary_g.groupby(utils_labels.TOOL).mean().reindex(available_tools)
+    pd_mean = df_summary_g.groupby(utils_labels.TOOL).mean(numeric_only=True).reindex(available_tools)
     pd_mean[utils_labels.SAMPLE] = AVG_OVER_SAMPLES
     sample_to_html[AVG_OVER_SAMPLES] = [create_table_html(pd_mean.T, include_cami1=True)]
 
@@ -682,10 +703,10 @@ def create_genome_binning_html(df_summary, pd_bins, labels, sample_ids_list, opt
 
     sample_ids_list_combo = [AVG_OVER_SAMPLES] + available_samples
 
-    genome_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(sample_to_html[sample_ids_list_combo[0]][0]), css_classes=['bk-width-auto'])
+    genome_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(sample_to_html[sample_ids_list_combo[0]][0]))
     source = ColumnDataSource(data=sample_to_html)
 
-    select_sample = Select(title="Sample:", value=sample_ids_list_combo[0], options=sample_ids_list_combo, css_classes=['bk-fit-content'])
+    select_sample = Select(title="Sample:", value=sample_ids_list_combo[0], options=sample_ids_list_combo)
     select_sample_callback = CustomJS(args=dict(source=source), code="""
         mytable.text = source.data[select_sample.value][0];
     """)
@@ -693,76 +714,59 @@ def create_genome_binning_html(df_summary, pd_bins, labels, sample_ids_list, opt
     select_sample_callback.args["mytable"] = genome_div
     select_sample_callback.args["select_sample"] = select_sample
 
-    metrics_column = column(column(select_sample, create_heatmap_div(), genome_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
-    metrics_panel = Panel(child=metrics_column, title="Metrics")
+    metrics_column = column(column(select_sample, create_heatmap_div(), genome_div, sizing_mode='scale_width'), sizing_mode='scale_width')
+    metrics_panel = TabPanel(child=metrics_column, title="Metrics")
 
     plots_panel = create_genome_binning_plots_panel(pd_bins, pd_mean)
 
-    bins_columns = get_genome_bins_columns()
+    bins_columns = utils_labels.get_genome_bins_columns()
     metrics_bins_panel = create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, options.output_dir, 'genome')
 
     cc_table = create_contamination_completeness_table(pd_bins, options.min_completeness, options.max_contamination)
-    cc_panel = Panel(child=row(cc_table), title="#Recovered genomes")
+    cc_panel = TabPanel(child=row(cc_table), title="#Recovered genomes")
 
-    rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
+    rankings_panel = TabPanel(child=column([Div(text="Click on the columns header for sorting.", styles={"width": "500px", "margin-top": "20px"}),
                                         row(create_rankings_table(pd_mean.reset_index().set_index([utils_labels.SAMPLE, utils_labels.TOOL])))]), title="Rankings")
 
-    tabs = Tabs(tabs=[metrics_panel, plots_panel, metrics_bins_panel, rankings_panel, cc_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
+    tabs = Tabs(tabs=[metrics_panel, plots_panel, metrics_bins_panel, rankings_panel, cc_panel])
 
     return tabs
 
 
 def create_plots_per_binner(df_summary_t):
     tools = df_summary_t[utils_labels.TOOL].unique().tolist()
-    sample_div = Div(text=AVG_OVER_SAMPLES, css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
+    sample_div = Div(text=AVG_OVER_SAMPLES, styles={"margin-top": "15px; margin-bottom:5px;"})
     # using the same div breaks the layout
-    sample_div2 = Div(text=AVG_OVER_SAMPLES, css_classes=['bk-width-auto'], style={"margin-top": "15px; margin-bottom:5px;"})
+    sample_div2 = Div(text=AVG_OVER_SAMPLES, styles={"margin-top": "15px; margin-bottom:5px;"})
 
     metrics_list = [utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ]
     errors_list = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM]
     tools_figures = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
-    tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures]
-    tools_column_unweighted = column([sample_div] + tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
+    tools_figures_columns = [column(x) for x in tools_figures]
+    tools_column_unweighted = column([sample_div] + tools_figures_columns, sizing_mode='scale_width')
 
     metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ]
     errors_list = ['', '', '', '']
     tools_figures_weighted = [create_tax_figure(tool, df_summary_t[df_summary_t[utils_labels.TOOL] == tool], metrics_list, errors_list) for tool in tools]
-    tools_figures_columns = [column(x, css_classes=['bk-width-auto', 'bk-float-left']) for x in tools_figures_weighted]
-    tools_column_weighted = column([sample_div2] + tools_figures_columns, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block'])
+    tools_figures_columns = [column(x) for x in tools_figures_weighted]
+    tools_column_weighted = column([sample_div2] + tools_figures_columns, sizing_mode='scale_width')
 
-    tools_unweighted_panel = Panel(child=tools_column_unweighted, title=utils_labels.QUALITY_OF_BINS)
-    tools_weighted_panel = Panel(child=tools_column_weighted, title=utils_labels.QUALITY_OF_SAMPLE)
-    tools_tabs = Tabs(tabs=[tools_unweighted_panel, tools_weighted_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
+    tools_unweighted_panel = TabPanel(child=tools_column_unweighted, title=utils_labels.QUALITY_OF_BINS)
+    tools_weighted_panel = TabPanel(child=tools_column_weighted, title=utils_labels.QUALITY_OF_SAMPLE)
+    tools_tabs = Tabs(tabs=[tools_unweighted_panel, tools_weighted_panel])
     return tools_tabs
 
 
-def get_tax_bins_columns():
-    return OrderedDict([('TAXID', 'Taxon ID'),
-                        ('name', 'Scientific name'),
-                        ('rank', 'Taxonomic rank'),
-                        ('precision_bp', utils_labels.PRECISION_PER_BP),
-                        ('recall_bp', utils_labels.RECALL_PER_BP),
-                        ('total_length', 'Bin size (bp)'),
-                        ('tp_length', 'True positives (bp)'),
-                        ('length_gs', 'True size (bp)'),
-                        ('precision_seq', utils_labels.PRECISION_PER_SEQ),
-                        ('recall_seq', utils_labels.RECALL_PER_SEQ),
-                        ('total_seq_counts', 'Bin size (seq)'),
-                        ('tp_seq_counts', 'True positives (seq)'),
-                        ('seq_counts_gs', 'True size (seq)'),
-                        ('filtered', 'Filtered')])
-
-
 def create_tax_ranks_panel(qbins_plots_list, qsamples_plots_list, cc_plots_dict_list, contamination_plots_list):
-    sample_div = Div(text=CLICK_ON_LEGENDS_DIV, css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "20px"})
-    all_samples_div = Div(text='<div style="padding-top: 20px;">All samples</div>', css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
-    all_samples_div2 = Div(text='<div style="padding-top: 20px;">All samples</div>', css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
-    unweighted_panel = Panel(child=column([sample_div] + qbins_plots_list + [all_samples_div] + cc_plots_dict_list + [all_samples_div2] + contamination_plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block']), title=utils_labels.QUALITY_OF_BINS)
+    sample_div = Div(text=CLICK_ON_LEGENDS_DIV, styles={"width": "500px", "margin-top": "20px"})
+    all_samples_div = Div(text='<div style="padding-top: 20px;">All samples</div>', styles={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
+    all_samples_div2 = Div(text='<div style="padding-top: 20px;">All samples</div>', styles={"width": "500px", "margin-top": "15px; margin-bottom:5px;"})
+    unweighted_panel = TabPanel(child=column([sample_div] + qbins_plots_list + [all_samples_div] + cc_plots_dict_list + [all_samples_div2] + contamination_plots_list, sizing_mode='scale_width'), title=utils_labels.QUALITY_OF_BINS)
 
-    sample_div2 = Div(text=CLICK_ON_LEGENDS_DIV, css_classes=['bk-width-auto'], style={"width": "500px", "margin-top": "20px"})
-    weighted_panel = Panel(child=column([sample_div2] + qsamples_plots_list, sizing_mode='scale_width', css_classes=['bk-width-auto', 'bk-display-block']), title=utils_labels.QUALITY_OF_SAMPLE)
-    tax_ranks_tabs = Tabs(tabs=[unweighted_panel, weighted_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
-    return Panel(child=tax_ranks_tabs, title="Plots per taxonomic rank")
+    sample_div2 = Div(text=CLICK_ON_LEGENDS_DIV, styles={"width": "500px", "margin-top": "20px"})
+    weighted_panel = TabPanel(child=column([sample_div2] + qsamples_plots_list, sizing_mode='scale_width'), title=utils_labels.QUALITY_OF_SAMPLE)
+    tax_ranks_tabs = Tabs(tabs=[unweighted_panel, weighted_panel])
+    return TabPanel(child=tax_ranks_tabs, title="Plots per taxonomic rank")
 
 
 def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, options):
@@ -777,7 +781,7 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
     cc_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
     contamination_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
 
-    pd_mean = df_summary_t.groupby([utils_labels.RANK, utils_labels.TOOL]).mean().reset_index()
+    pd_mean = df_summary_t.groupby([utils_labels.RANK, utils_labels.TOOL]).mean(numeric_only=True).reset_index()
     pd_mean[utils_labels.SAMPLE] = AVG_OVER_SAMPLES
     for rank, pd_mean_rank in pd_mean.groupby(utils_labels.RANK):
         available_tools = list(pd_mean_rank[utils_labels.TOOL].unique())
@@ -786,14 +790,14 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
 
         purity_completeness_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP, utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ, rank)
         purity_recall_bp_plot = create_precision_recall_figure(pd_mean_rank, utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ, utils_labels.RECALL_PER_SEQ, rank)
-        qbins_plots_dict[rank] = column(purity_completeness_plot, css_classes=['bk-width-auto', 'bk-float-left'])
-        qsamples_plots_dict[rank] = column(purity_recall_bp_plot, css_classes=['bk-width-auto', 'bk-float-left'])
+        qbins_plots_dict[rank] = column(purity_completeness_plot)
+        qsamples_plots_dict[rank] = column(purity_recall_bp_plot)
 
         pd_bins_rank = pd_bins[pd_bins['rank'] == rank]
         completeness_minus_contamination_plot = create_contamination_plot(pd_bins_rank, available_tools, rank + ' | Completeness - contamination', 'Index of bin (sorted by completeness - contamination (bp))', 'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column)
         contamination_plot = create_contamination_plot(pd_bins_rank, available_tools, rank + ' | Contamination', 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)', plots.create_contamination_column)
-        cc_plots_dict[rank] = column(completeness_minus_contamination_plot, css_classes=['bk-width-auto', 'bk-float-left'])
-        contamination_plots_dict[rank] = column(contamination_plot, css_classes=['bk-width-auto', 'bk-float-left'])
+        cc_plots_dict[rank] = column(completeness_minus_contamination_plot)
+        contamination_plots_dict[rank] = column(contamination_plot)
 
         rank_to_sample_to_html[rank].append(create_table_html(pd_mean_rank.T, is_taxonomic=True))
 
@@ -819,14 +823,14 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
 
     sample_ids_list_combo = [AVG_OVER_SAMPLES] + sample_ids_list
 
-    taxonomic_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(rank_to_sample_to_html[load_ncbi_taxinfo.RANKS[0]][0]), css_classes=['bk-width-auto'])
+    taxonomic_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(rank_to_sample_to_html[load_ncbi_taxinfo.RANKS[0]][0]))
     source = ColumnDataSource(data=rank_to_sample_to_html)
 
     available_ranks = list(pd_groupby_rank.groups.keys())
     available_ranks_sorted = [rank for rank in load_ncbi_taxinfo.RANKS if rank in available_ranks]
 
-    select_rank = Select(title="Taxonomic rank:", value=load_ncbi_taxinfo.RANKS[0], options=available_ranks_sorted, css_classes=['bk-fit-content'])
-    select_sample = Select(title="Sample:", value='0', options=list(zip(map(str, range(len(sample_ids_list_combo))), sample_ids_list_combo)), css_classes=['bk-fit-content'])
+    select_rank = Select(title="Taxonomic rank:", value=load_ncbi_taxinfo.RANKS[0], options=available_ranks_sorted)
+    select_sample = Select(title="Sample:", value='0', options=list(zip(map(str, range(len(sample_ids_list_combo))), sample_ids_list_combo)))
     select_rank_sample_callback = CustomJS(args=dict(source=source), code="""
         mytable.text = source.data[select_rank.value][select_sample.value];
     """)
@@ -836,23 +840,23 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
     select_rank_sample_callback.args["select_rank"] = select_rank
     select_rank_sample_callback.args["select_sample"] = select_sample
 
-    metrics_column = column(column(row(select_sample, select_rank, css_classes=['bk-width-auto', 'bk-combo-box']), create_heatmap_div(), taxonomic_div, sizing_mode='scale_width', css_classes=['bk-width-auto']), css_classes=['bk-width-auto'], sizing_mode='scale_width')
-    metrics_panel = Panel(child=metrics_column, title="Metrics")
+    metrics_column = column(column(row(select_sample, select_rank), create_heatmap_div(), taxonomic_div, sizing_mode='scale_width'), sizing_mode='scale_width')
+    metrics_panel = TabPanel(child=metrics_column, title="Metrics")
 
-    bins_columns = get_tax_bins_columns()
+    bins_columns = utils_labels.get_tax_bins_columns()
     if 'name' not in pd_bins.columns or pd_bins['name'].isnull().any():
         del bins_columns['name']
 
     metrics_bins_panel = create_metrics_per_bin_panel(pd_bins, bins_columns, sample_ids_list, options.output_dir, 'taxonomic')
 
-    rankings_panel = Panel(child=column([Div(text="Click on the columns header for sorting.", style={"width": "500px", "margin-top": "20px"}),
+    rankings_panel = TabPanel(child=column([Div(text="Click on the columns header for sorting.", styles={"width": "500px", "margin-top": "20px"}),
                                         row(create_rankings_table(pd_mean.reset_index().set_index([utils_labels.SAMPLE, utils_labels.TOOL]), True))]), title="Rankings")
 
     tax_ranks_panel = create_tax_ranks_panel(qbins_plots_list, qsamples_plots_list, cc_plots_dict_list, contamination_plots_list)
 
-    tools_panel = Panel(child=create_plots_per_binner(pd_mean), title="Plots per binner")
+    tools_panel = TabPanel(child=create_plots_per_binner(pd_mean), title="Plots per binner")
 
-    tabs = Tabs(tabs=[metrics_panel, tax_ranks_panel, tools_panel, metrics_bins_panel, rankings_panel], css_classes=['bk-tabs-margin', 'bk-tabs-margin-lr'])
+    tabs = Tabs(tabs=[metrics_panel, tax_ranks_panel, tools_panel, metrics_bins_panel, rankings_panel])
 
     return tabs
 
@@ -864,30 +868,24 @@ def create_html(df_summary, pd_bins, labels, sample_ids_list, options, desc_text
 
     metrics_row_g = create_genome_binning_html(df_summary, pd_bins[pd_bins['rank'] == 'NA'], labels, sample_ids_list, options)
     if metrics_row_g:
-        tabs_list.append(Panel(child=metrics_row_g, title="Genome binning"))
+        tabs_list.append(TabPanel(child=metrics_row_g, title="Genome binning"))
 
     metrics_row_t = create_taxonomic_binning_html(df_summary, pd_bins[pd_bins['rank'] != 'NA'], labels, sample_ids_list, options)
     if metrics_row_t:
-        tabs_list.append(Panel(child=metrics_row_t, title="Taxonomic binning"))
+        tabs_list.append(TabPanel(child=metrics_row_t, title="Taxonomic binning"))
 
-    tabs = Tabs(tabs=tabs_list, css_classes=['bk-tabs-margin'])
+    tabs = Tabs(tabs=tabs_list)
 
     title = create_title_div("main", "AMBER: Assessment of Metagenome BinnERs", " produced on {0} with AMBER version {1} ".format(
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), __version__))
 
     if desc_text:
-        data_desc_div = Div(text="""<div style="text-align:left;font-size: 11pt;font-weight: bold;">{}""".format(desc_text), css_classes=['bk-width-auto'])
-        html_columns = column(title, data_desc_div, tabs, sizing_mode='scale_width', css_classes=['bk-width-auto-main'])
+        data_desc_div = Div(text="""<div style="text-align:left;font-size: 11pt;font-weight: bold;">{}""".format(desc_text))
+        html_columns = column(title, data_desc_div, tabs, sizing_mode='scale_width')
     else:
-        html_columns = column(title, tabs, sizing_mode='scale_width', css_classes=['bk-width-auto-main'])
-    script, div = components(html_columns)
-    js_resources = INLINE.render_js()
-    css_resources = INLINE.render_css()
+        html_columns = column(title, tabs, sizing_mode='scale_width')
 
-    html = TEMPLATE.render(js_resources=js_resources,
-            css_resources=css_resources,
-            script=script,
-            div=div)
+    html = file_html(models=html_columns, resources=INLINE, title='AMBER: Assessment of Metagenome BinnERs', template=TEMPLATE)
 
     with open(os.path.join(options.output_dir, "index.html"), 'w') as f:
         f.write(html)

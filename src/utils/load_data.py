@@ -83,7 +83,8 @@ def load_ncbi_info(ncbi_dir):
         logging.getLogger('amber').info('Loading NCBI taxonomy')
         try:
             binning_classes.TaxonomicQuery.taxonomy_df = pd.read_feather(os.path.join(ncbi_dir, 'nodes.amber.ft')).set_index('TAXID')
-        except:
+        except BaseException as e:
+            traceback.print_exc()
             logging.getLogger('amber').info('Preprocessed NCBI taxonomy file not found. Creating file {}'.format(os.path.join(ncbi_dir, 'nodes.amber.ft')))
             binning_classes.TaxonomicQuery.taxonomy_df = load_ncbi_taxinfo.preprocess_ncbi_tax(ncbi_dir)
 

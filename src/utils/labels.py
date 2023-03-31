@@ -1,4 +1,4 @@
-# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2023 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
+
 TOOL = "Tool"
 RANK = "rank"
 BINNING_TYPE = "binning type"
@@ -20,52 +22,52 @@ SAMPLE = "Sample"
 GS = 'Gold standard'
 UNFILTERED = ' (unfiltered)'
 
-AVG_PRECISION_BP = "Average purity (bp)"
-AVG_PRECISION_BP_SEM = "Std error of av. purity (bp)"
+AVG_PRECISION_BP = 'precision_avg_bp'
+AVG_PRECISION_BP_SEM = 'precision_avg_bp_sem'
 
-AVG_PRECISION_SEQ = "Average purity (seq)"
-AVG_PRECISION_SEQ_SEM = "Std error of av. purity (seq)"
+AVG_PRECISION_SEQ = 'precision_avg_seq'
+AVG_PRECISION_SEQ_SEM = 'precision_avg_seq_sem'
 
-AVG_RECALL_BP = "Average completeness (bp)"
-AVG_RECALL_BP_CAMI1 = "CAMI 1 average completeness (bp)"
-AVG_RECALL_BP_SEM = "Std error of av. completeness (bp)"
-AVG_RECALL_BP_SEM_CAMI1 = "CAMI 1 std error of av. completeness (bp)"
+AVG_RECALL_BP = 'recall_avg_bp'
+AVG_RECALL_BP_CAMI1 = 'recall_avg_bp_cami1'
+AVG_RECALL_BP_SEM = 'recall_avg_bp_sem'
+AVG_RECALL_BP_SEM_CAMI1 = 'recall_avg_bp_sem_cami1'
 
-AVG_RECALL_SEQ = "Average completeness (seq)"
-AVG_RECALL_SEQ_CAMI1 = "CAMI 1 average completeness (seq)"
-AVG_RECALL_SEQ_SEM = "Std error of av. completeness (seq)"
-AVG_RECALL_SEQ_SEM_CAMI1 = "CAMI 1 std error of av. completeness (seq)"
+AVG_RECALL_SEQ = 'recall_avg_seq'
+AVG_RECALL_SEQ_CAMI1 = 'recall_avg_seq_cami1'
+AVG_RECALL_SEQ_SEM = 'recall_avg_seq_sem'
+AVG_RECALL_SEQ_SEM_CAMI1 = 'recall_avg_seq_sem_cami1'
 
-F1_SCORE_BP = "F1 score (bp)"
-F1_SCORE_SEQ = "F1 score (seq)"
+F1_SCORE_BP = 'f1_score_bp'
+F1_SCORE_SEQ = 'f1_score_seq'
 
-F1_SCORE_BP_CAMI1 = "CAMI 1 F1 score (bp)"
-F1_SCORE_SEQ_CAMI1 = "CAMI 1 F1 score (seq)"
+F1_SCORE_BP_CAMI1 = 'f1_score_bp_cami1'
+F1_SCORE_SEQ_CAMI1 = 'f1_score_seq_cami1'
 
-PRECISION_PER_BP = "Purity (bp)"
-PRECISION_PER_SEQ = "Purity (seq)"
+PRECISION_PER_BP = 'precision_weighted_bp'
+PRECISION_PER_SEQ = 'precision_weighted_seq'
 
-RECALL_PER_BP = "Completeness (bp)"
-RECALL_PER_SEQ = "Completeness (seq)"
+RECALL_PER_BP = 'recall_weighted_bp'
+RECALL_PER_SEQ = 'recall_weighted_seq'
 
-F1_SCORE_PER_BP = "F1 score for sample (bp)"
-F1_SCORE_PER_SEQ = "F1 score for sample (seq)"
+F1_SCORE_PER_BP = 'f1_score_per_bp'
+F1_SCORE_PER_SEQ = 'f1_score_per_seq'
 
-RI_BY_BP = "Rand index (bp)"
-RI_BY_SEQ = "Rand index (seq)"
-ARI_BY_BP = "Adjusted Rand index (bp)"
-ARI_BY_SEQ = "Adjusted Rand index (seq)"
+RI_BY_BP = 'rand_index_bp'
+RI_BY_SEQ = 'rand_index_seq'
+ARI_BY_BP = 'adjusted_rand_index_bp'
+ARI_BY_SEQ = 'adjusted_rand_index_seq'
 
-PERCENTAGE_ASSIGNED_BPS = "Percentage of binned bp"
-PERCENTAGE_ASSIGNED_SEQS = "Percentage of binned sequences"
+PERCENTAGE_ASSIGNED_BPS = 'percentage_of_assigned_bps'
+PERCENTAGE_ASSIGNED_SEQS = 'percentage_of_assigned_seqs'
 
-ACCURACY_PER_BP = "Accuracy (bp)"
-ACCURACY_PER_SEQ = "Accuracy (seq)"
-MISCLASSIFICATION_PER_BP = "Misclassification rate (bp)"
-MISCLASSIFICATION_PER_SEQ = "Misclassification rate (seq)"
+ACCURACY_PER_BP = 'accuracy_bp'
+ACCURACY_PER_SEQ = 'accuracy_seq'
+MISCLASSIFICATION_PER_BP = 'misclassification_bp'
+MISCLASSIFICATION_PER_SEQ = 'misclassification_seq'
 
-UNIFRAC_BP = "UniFrac (bp)"
-UNIFRAC_SEQ = "UniFrac (seq)"
+UNIFRAC_BP = 'unifrac_bp'
+UNIFRAC_SEQ = 'unifrac_seq'
 
 QUALITY_OF_BINS = "Quality of bins: all bins have the same weight"
 QUALITY_OF_SAMPLE = "Quality for sample"
@@ -128,3 +130,70 @@ TOOLTIP_MISCLASSIFICATION_PER_SEQ = "1 - purity (seq)"
 
 TOOLTIP_UNIFRAC_BP = "Tree-based measure of similarity between the true and predicted base pair assignments at all taxonomic ranks ranging from 0 (high similarity) to 16 (low similarity)."
 TOOLTIP_UNIFRAC_SEQ = "Tree-based measure of similarity between the true and predicted base pair assignments at all taxonomic ranks ranging from 0 (high similarity) to 16 (low similarity)."
+
+LABELS = {'precision_avg_bp': 'Average purity (bp)',
+          'precision_avg_seq': 'Average purity (seq)',
+          'precision_avg_bp_sem': 'Std error of av. purity (bp)',
+          'precision_avg_seq_sem': 'Std error of av. purity (seq)',
+          'recall_avg_bp': 'Average completeness (bp)',
+          'recall_avg_seq': 'Average completeness (seq)',
+          'recall_avg_bp_cami1': 'CAMI 1 average completeness (bp)',
+          'recall_avg_seq_cami1': 'CAMI 1 average completeness (seq)',
+          'recall_avg_bp_sem': 'Std error of av. completeness (bp)',
+          'recall_avg_seq_sem': 'Std error of av. completeness (seq)',
+          'recall_avg_bp_sem_cami1': 'CAMI 1 std error of av. completeness (bp)',
+          'recall_avg_seq_sem_cami1': 'CAMI 1 std error of av. completeness (seq)',
+          'f1_score_bp': 'F1 score (bp)',
+          'f1_score_seq': 'F1 score (seq)',
+          'f1_score_bp_cami1': 'CAMI 1 F1 score (bp)',
+          'f1_score_seq_cami1': 'CAMI 1 F1 score (seq)',
+          'f1_score_per_bp': 'F1 score for sample (bp)',
+          'f1_score_per_seq': 'F1 score for sample (seq)',
+          'accuracy_bp': 'Accuracy (bp)',
+          'accuracy_seq': 'Accuracy (seq)',
+          'misclassification_bp': 'Misclassification rate (bp)',
+          'misclassification_seq': 'Misclassification rate (seq)',
+          'precision_weighted_bp': 'Purity (bp)',
+          'precision_weighted_seq': 'Purity (seq)',
+          'recall_weighted_bp': 'Completeness (bp)',
+          'recall_weighted_seq': 'Completeness (seq)',
+          'rand_index_bp': 'Rand index (bp)',
+          'rand_index_seq': 'Rand index (seq)',
+          'adjusted_rand_index_bp': 'Adjusted Rand index (bp)',
+          'adjusted_rand_index_seq': 'Adjusted Rand index (seq)',
+          'percentage_of_assigned_bps': 'Percentage of binned bp',
+          'percentage_of_assigned_seqs': 'Percentage of binned sequences',
+          'unifrac_bp': 'UniFrac (bp)',
+          'unifrac_seq': 'UniFrac (seq)'}
+
+
+def get_genome_bins_columns():
+    return OrderedDict([('BINID', 'Bin ID'),
+                        ('genome_id', 'Most abundant genome'),
+                        ('precision_bp', PRECISION_PER_BP),
+                        ('recall_bp', RECALL_PER_BP),
+                        ('total_length', 'Bin size (bp)'),
+                        ('tp_length', 'True positives (bp)'),
+                        ('length_gs', 'True size of most abundant genome (bp)'),
+                        ('precision_seq', PRECISION_PER_SEQ),
+                        ('recall_seq', RECALL_PER_SEQ),
+                        ('total_seq_counts', 'Bin size (seq)'),
+                        ('tp_seq_counts', 'True positives (seq)'),
+                        ('seq_counts_gs', 'True size of most abundant genome (seq)')])
+
+
+def get_tax_bins_columns():
+    return OrderedDict([('TAXID', 'Taxon ID'),
+                        ('name', 'Scientific name'),
+                        ('rank', 'Taxonomic rank'),
+                        ('precision_bp', PRECISION_PER_BP),
+                        ('recall_bp', RECALL_PER_BP),
+                        ('total_length', 'Bin size (bp)'),
+                        ('tp_length', 'True positives (bp)'),
+                        ('length_gs', 'True size (bp)'),
+                        ('precision_seq', PRECISION_PER_SEQ),
+                        ('recall_seq', RECALL_PER_SEQ),
+                        ('total_seq_counts', 'Bin size (seq)'),
+                        ('tp_seq_counts', 'True positives (seq)'),
+                        ('seq_counts_gs', 'True size (seq)'),
+                        ('filtered', 'Filtered')])

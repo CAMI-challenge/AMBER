@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2023 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,16 +20,13 @@ import errno
 import logging
 import os
 import sys
-
+import pandas as pd
 import matplotlib
-
+matplotlib.use('Agg')
 from src import amber_html
 from src import plot_by_genome
 from src import plots
 from version import __version__
-
-matplotlib.use('Agg')
-import pandas as pd
 from src.utils import load_data
 from src.utils import argparse_parents
 from src.utils import labels as utils_labels
@@ -212,11 +209,11 @@ def save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, std
         summary_columns = [utils_labels.TOOL] + [col for col in df_summary if col != utils_labels.TOOL]
         print(df_summary[summary_columns].to_string(index=False))
     for tool, pd_group in pd_bins[pd_bins['rank'] == 'NA'].groupby(utils_labels.TOOL):
-        bins_columns = amber_html.get_genome_bins_columns()
+        bins_columns = utils_labels.get_genome_bins_columns()
         table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))
         table.to_csv(os.path.join(output_dir, 'genome', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
     for tool, pd_group in pd_bins[pd_bins['rank'] != 'NA'].groupby(utils_labels.TOOL):
-        bins_columns = amber_html.get_tax_bins_columns()
+        bins_columns = utils_labels.get_tax_bins_columns()
         if 'name' not in pd_bins.columns or pd_group['name'].isnull().any():
             del bins_columns['name']
         table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))

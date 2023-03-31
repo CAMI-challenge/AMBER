@@ -1,4 +1,4 @@
-# Copyright 2021 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2023 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('Agg')
 import os
+import math
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections import OrderedDict
@@ -32,7 +33,7 @@ from src import precision_recall_per_bin
 from src import plots
 
 
-class Metrics():
+class Metrics:
     def __init__(self):
         self.__percentage_of_assigned_bps = .0
         self.__percentage_of_assigned_seqs = .0
@@ -303,16 +304,16 @@ class Metrics():
     @staticmethod
     def compute_rand_index(confusion_df, col_name, gs_col_name, field):
         def choose2(n):
-            return (n * (n - 1)) / 2.0
+            return math.comb(n, 2)
 
-        bin_mapping_comb = confusion_df[field].apply(choose2).sum()
-        bin_comb = confusion_df.groupby(col_name).agg({field: 'sum'})[field].apply(choose2).sum()
-        mapping_comb = confusion_df.groupby(gs_col_name).agg({field: 'sum'})[field].apply(choose2).sum()
-        num_bp_comb = choose2(confusion_df[field].sum())
+        bin_mapping_comb = sum(confusion_df[field].apply(choose2))
+        bin_comb = sum(confusion_df.groupby(col_name).agg({field: 'sum'})[field].apply(choose2))
+        mapping_comb = sum(confusion_df.groupby(gs_col_name).agg({field: 'sum'})[field].apply(choose2))
+        num_bp_comb = choose2(sum(confusion_df[field]))
 
         rand_index = ((num_bp_comb - bin_comb - mapping_comb + 2 * bin_mapping_comb) / num_bp_comb) if num_bp_comb != 0 else .0
 
-        temp = (bin_comb * mapping_comb / num_bp_comb) if num_bp_comb != 0 else .0
+        temp = (bin_comb * (mapping_comb / num_bp_comb)) if num_bp_comb != 0 else .0
         ret = bin_mapping_comb - temp
         denominator = (((bin_comb + mapping_comb) / 2.0) - temp)
         adjusted_rand_index = (ret / denominator) if denominator != 0 else .0
@@ -326,61 +327,21 @@ class Metrics():
             else:
                 return np.nan
 
-        f1_score_bp = f1_score(self.__precision_avg_bp, self.__recall_avg_bp)
-        f1_score_seq = f1_score(self.__precision_avg_seq, self.__recall_avg_seq)
-        f1_score_bp_cami1 = f1_score(self.__precision_avg_bp, self.__recall_avg_bp_cami1)
-        f1_score_seq_cami1 = f1_score(self.__precision_avg_seq, self.__recall_avg_seq_cami1)
-        f1_score_per_bp = f1_score(self.__precision_weighted_bp, self.__recall_weighted_bp)
-        f1_score_per_seq = f1_score(self.__precision_weighted_seq, self.__recall_weighted_seq)
+        metrics_dict = {metric.split("__")[1]: value for metric, value in self.__dict__.items()}
+        metrics_dict['f1_score_bp'] = f1_score(self.__precision_avg_bp, self.__recall_avg_bp)
+        metrics_dict['f1_score_seq'] = f1_score(self.__precision_avg_seq, self.__recall_avg_seq)
+        metrics_dict['f1_score_bp_cami1'] = f1_score(self.__precision_avg_bp, self.__recall_avg_bp_cami1)
+        metrics_dict['f1_score_seq_cami1'] = f1_score(self.__precision_avg_seq, self.__recall_avg_seq_cami1)
+        metrics_dict['f1_score_per_bp'] = f1_score(self.__precision_weighted_bp, self.__recall_weighted_bp)
+        metrics_dict['f1_score_per_seq'] = f1_score(self.__precision_weighted_seq, self.__recall_weighted_seq)
+        metrics_dict['misclassification_bp'] = 1 - self.__precision_weighted_bp
+        metrics_dict['misclassification_seq'] = 1 - self.__precision_weighted_seq
 
         return OrderedDict([(utils_labels.TOOL, None),
                             (utils_labels.BINNING_TYPE, None),
                             (utils_labels.SAMPLE, None),
-                            (utils_labels.RANK, None),
-                            (utils_labels.AVG_PRECISION_BP, [self.__precision_avg_bp]),
-                            (utils_labels.AVG_PRECISION_BP_SEM, [self.__precision_avg_bp_sem]),
-
-                            ('avg_precision_bp_var', [self.__precision_avg_bp_var]),
-                            (utils_labels.AVG_RECALL_BP, [self.__recall_avg_bp]),
-                            (utils_labels.AVG_RECALL_BP_CAMI1, [self.__recall_avg_bp_cami1]),
-                            (utils_labels.AVG_RECALL_BP_SEM, [self.__recall_avg_bp_sem]),
-                            (utils_labels.AVG_RECALL_BP_SEM_CAMI1, [self.__recall_avg_bp_sem_cami1]),
-                            ('avg_recall_bp_var', [self.__recall_avg_bp_var]),
-                            ('avg_recall_bp_var_cami1', [self.__recall_avg_bp_var_cami1]),
-                            (utils_labels.F1_SCORE_BP, [f1_score_bp]),
-                            (utils_labels.F1_SCORE_BP_CAMI1, [f1_score_bp_cami1]),
-
-                            (utils_labels.AVG_PRECISION_SEQ, [self.__precision_avg_seq]),
-                            (utils_labels.AVG_PRECISION_SEQ_SEM, [self.__precision_avg_seq_sem]),
-                            (utils_labels.AVG_RECALL_SEQ, [self.__recall_avg_seq]),
-                            (utils_labels.AVG_RECALL_SEQ_CAMI1, [self.__recall_avg_seq_cami1]),
-                            (utils_labels.AVG_RECALL_SEQ_SEM, [self.__recall_avg_seq_sem]),
-                            (utils_labels.AVG_RECALL_SEQ_SEM_CAMI1, [self.__recall_avg_seq_sem_cami1]),
-                            (utils_labels.F1_SCORE_SEQ, [f1_score_seq]),
-                            (utils_labels.F1_SCORE_SEQ_CAMI1, [f1_score_seq_cami1]),
-
-                            (utils_labels.PRECISION_PER_BP, [self.__precision_weighted_bp]),
-                            (utils_labels.PRECISION_PER_SEQ, [self.__precision_weighted_seq]),
-                            (utils_labels.RECALL_PER_BP, [self.__recall_weighted_bp]),
-                            (utils_labels.RECALL_PER_SEQ, [self.__recall_weighted_seq]),
-                            (utils_labels.F1_SCORE_PER_BP, [f1_score_per_bp]),
-                            (utils_labels.F1_SCORE_PER_SEQ, [f1_score_per_seq]),
-
-                            (utils_labels.ACCURACY_PER_BP, [self.__accuracy_bp]),
-                            (utils_labels.ACCURACY_PER_SEQ, [self.__accuracy_seq]),
-
-                            (utils_labels.PERCENTAGE_ASSIGNED_BPS, [self.__percentage_of_assigned_bps]),
-                            (utils_labels.PERCENTAGE_ASSIGNED_SEQS, [self.__percentage_of_assigned_seqs]),
-                            (utils_labels.RI_BY_BP, [self.__rand_index_bp]),
-                            (utils_labels.RI_BY_SEQ, [self.__rand_index_seq]),
-                            (utils_labels.ARI_BY_BP, [self.__adjusted_rand_index_bp]),
-                            (utils_labels.ARI_BY_SEQ, [self.__adjusted_rand_index_seq]),
-
-                            (utils_labels.UNIFRAC_BP, self.__unifrac_bp),
-                            (utils_labels.UNIFRAC_SEQ, self.__unifrac_seq),
-
-                            (utils_labels.MISCLASSIFICATION_PER_BP, [1 - self.__precision_weighted_bp]),
-                            (utils_labels.MISCLASSIFICATION_PER_SEQ, [1 - self.__precision_weighted_seq])])
+                            (utils_labels.RANK, None)] +
+                            [(k, [v]) for k, v in metrics_dict.items()])
 
 
 class Query(ABC):
@@ -517,7 +478,7 @@ class GenomeQuery(Query):
         return pd.DataFrame(metrics_dict)
 
     def compute_metrics(self):
-        if self.label == utils_labels.GS and self.options.only_taxonomic_queries:
+        if self.label == utils_labels.GS and (self.options.only_taxonomic_queries or self.options.skip_gs):
             return False
         logging.getLogger('amber').info('Evaluating {} (sample {}, genome binning)'.format(self.label, self.sample_id))
         gs_df = self.gold_standard_df
@@ -594,8 +555,12 @@ class GenomeQuery(Query):
         self.metrics.precision_avg_bp_var = precision_df['precision_bp'].var()
         self.metrics.precision_avg_seq = precision_df['precision_seq'].mean()
         self.metrics.precision_avg_seq_sem = precision_df['precision_seq'].sem()
-        self.metrics.precision_weighted_bp = precision_df['tp_length'].sum() / precision_df['total_length'].sum()
-        self.metrics.precision_weighted_seq = precision_df['tp_seq_counts'].sum() / precision_df['total_seq_counts'].sum()
+
+        def safe_divide(x, y):
+            return x / y if y else np.nan
+
+        self.metrics.precision_weighted_bp = safe_divide(precision_df['tp_length'].sum(), precision_df['total_length'].sum())
+        self.metrics.precision_weighted_seq = safe_divide(precision_df['tp_seq_counts'].sum(), precision_df['total_seq_counts'].sum())
 
         genome_sizes_df = gs_df.groupby('genome_id', sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'length_gs', 'SEQUENCEID': 'seq_counts_gs'})
         precision_df = precision_df.reset_index().join(genome_sizes_df, on='genome_id', how='left', sort=False).set_index('BINID')
@@ -903,7 +868,7 @@ class TaxonomicQuery(Query):
         self.recall_df['name'] = self.recall_df['TAXID'].apply(lambda x: TaxonomicQuery.taxonomy_df.loc[x]['name'])
 
     def compute_metrics(self):
-        if self.label == utils_labels.GS and self.options.only_genome_queries:
+        if self.label == utils_labels.GS and (self.options.only_genome_queries or self.options.skip_gs):
             return False
         logging.getLogger('amber').info('Evaluating {} (sample {}, taxonomic binning)'.format(self.label, self.sample_id))
         for rank in self.rank_to_df:
@@ -924,7 +889,8 @@ class TaxonomicQuery(Query):
 
 class Options:
     def __init__(self, filter_tail_percentage, genome_to_unique_common, filter_keyword, min_length,
-                 rank_as_genome_binning, output_dir, min_completeness=None, max_contamination=None):
+                 rank_as_genome_binning, output_dir, min_completeness=None, max_contamination=None,
+                 skip_gs=False):
         self.__filter_tail_percentage = float(filter_tail_percentage) if filter_tail_percentage else .0
         self.__genome_to_unique_common = genome_to_unique_common
         self.__filter_keyword = filter_keyword
@@ -943,6 +909,7 @@ class Options:
             self.__max_contamination = [int(x.strip()) / 100.0 for x in max_contamination.split(',')]
         else:
             self.__max_contamination = [.1, .05]
+        self.__skip_gs = skip_gs
 
     @property
     def filter_tail_percentage(self):
@@ -984,6 +951,10 @@ class Options:
     def max_contamination(self):
         return self.__max_contamination
 
+    @property
+    def skip_gs(self):
+        return self.__skip_gs
+
     @filter_tail_percentage.setter
     def filter_tail_percentage(self, filter_tail_percentage):
         self.__filter_tail_percentage = filter_tail_percentage
@@ -1023,3 +994,7 @@ class Options:
     @max_contamination.setter
     def max_contamination(self, max_contamination):
         self.__max_contamination = max_contamination
+
+    @skip_gs.setter
+    def skip_gs(self, skip_gs):
+        self.__skip_gs = skip_gs
