@@ -6,7 +6,7 @@
 # than the prescribed lifecycle of 1.0. In general, we recommend using this generated
 # configuration as a reference rather than using it in production, though in most
 # cases it should duplicate the execution of your original 1.0 config.
-version: 2
+version: 2.1
 jobs:
   build:
     working_directory: ~/CAMI-challenge/AMBER
@@ -76,4 +76,9 @@ jobs:
     - store_artifacts:
         path: /tmp/circleci-artifacts
     - store_artifacts:
-        path: /tmp/circleci-test-results
+        path: /tmp/circleci-test-resultsv
+  deploy-job:
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "3c:7b:fb:3f:dd:1d:5b:7e:aa:e5:15:b1:13:8f:9e:04"
