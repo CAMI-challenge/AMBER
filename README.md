@@ -32,15 +32,17 @@ AMBER is an evaluation package for the comparative assessment of genome reconstr
 
 ## Requirements
 
-AMBER requires Python 3.7.
+AMBER 2.0.4 has been tested with Python 3.11.
 
-See [default.txt](requirements/default.txt) for all dependencies.
+AMBER 2.0.3 requires Python 3.7
+
+See [requirements.txt](requirements.txt) for all dependencies.
 
 ## Steps
 
 You can run [AMBER using Docker (see below)](#running-amberpy-using-docker) or install it as follows.
 
-Install pip if not already installed (tested on Linux Ubuntu 18.04):
+Install pip if not already installed (tested on Linux Ubuntu 22.04):
 
 ~~~BASH
 sudo apt install python3-pip
@@ -84,13 +86,13 @@ RH|P|C20873  1053046    765201 339258
 See [here](./test/gsa_mapping.binning) another example. Observations:
 * The value of the SampleID header tag must uniquely identify a sample and be the same in the gold standard and the predictions (input 2 below).
 * Column BINID (TAXID) is required to assess genome (taxonomic) binning.
-* Column _LENGTH can be added to a mapping file using tool [_src/utils/add_length_column.py_](#srcutilsadd_length_columnpy).
+* Column LENGTH can be added to a mapping file using tool [_src/utils/add_length_column.py_](#srcutilsadd_length_columnpy).
 
-2. One or more files, each containing the bin assignments from a binning program, also in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format). Column _LENGTH is not required  (_LENGTH is only required in the gold standard).
+2. One or more files, each containing the bin assignments from a binning program, also in the [CAMI binning Bioboxes format](https://github.com/bioboxes/rfc/tree/master/data-format). Column LENGTH is not required  (LENGTH is only required in the gold standard).
 
 Note: a tool for converting FASTA files, such that each file represents a bin, is available (see [_src/utils/convert_fasta_bins_to_biobox_format.py_](#srcutilsconvert_fasta_bins_to_biobox_formatpy)).
 
-3. For assessing **taxonomic binning**, AMBER also requires the file **nodes.dmp** from NCBI. Download taxdump.tar.gz from [ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz), extract nodes.tmp, and provide it to AMBER with option `--ncbi_nodes_file`.
+3. For assessing **taxonomic binning**, AMBER also requires the file **nodes.dmp** from NCBI. Download taxdump.tar.gz from [ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz), extract nodes.tmp, and provide it to AMBER with option `--ncbi_dir`.
 
 ## Input format for multiple samples
 
@@ -100,13 +102,8 @@ Binnings of datasets with multiple samples are supported by AMBER. For each binn
 ## Running _amber.py_
 
 ~~~BASH
-usage: AMBER [-h] -g GOLD_STANDARD_FILE [-l LABELS] [-p FILTER]
-             [-n MIN_LENGTH] -o OUTPUT_DIR [--stdout] [-d DESC] [--silent]
-             [-v] [-m] [-x MIN_COMPLETENESS] [-y MAX_CONTAMINATION] [-c]
-             [-r REMOVE_GENOMES] [-k KEYWORD]
-             [--ncbi_nodes_file NCBI_NODES_FILE]
-             [--ncbi_names_file NCBI_NAMES_FILE]
-             [--rank_as_genome_binning RANK_AS_GENOME_BINNING]
+usage: AMBER [-h] -g GOLD_STANDARD_FILE [-l LABELS] [-p FILTER] [-n MIN_LENGTH] -o OUTPUT_DIR [--stdout] [-d DESC] [--colors COLORS] [--silent] [-v] [-x MIN_COMPLETENESS]
+             [-y MAX_CONTAMINATION] [-r REMOVE_GENOMES] [-k KEYWORD] [--genome_coverage GENOME_COVERAGE] [--ncbi_dir NCBI_DIR]
              bin_files [bin_files ...]
 
 AMBER: Assessment of Metagenome BinnERs
@@ -114,7 +111,7 @@ AMBER: Assessment of Metagenome BinnERs
 positional arguments:
   bin_files             Binning files
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -g GOLD_STANDARD_FILE, --gold_standard_file GOLD_STANDARD_FILE
                         Gold standard - ground truth - file
@@ -132,32 +129,19 @@ optional arguments:
   -v, --version         show program's version number and exit
 
 genome binning-specific arguments:
-  -m, --map_by_completeness
-                        Map genomes to bins by maximizing completeness
   -x MIN_COMPLETENESS, --min_completeness MIN_COMPLETENESS
-                        Comma-separated list of min. completeness thresholds
-                        (default %: 50,70,90)
+                        Comma-separated list of min. completeness thresholds (default %: 50,70,90)
   -y MAX_CONTAMINATION, --max_contamination MAX_CONTAMINATION
-                        Comma-separated list of max. contamination thresholds
-                        (default %: 10,5)
-  -c, --plot_heatmaps   Plot heatmaps of confusion matrices (can take some
-                        minutes)
+                        Comma-separated list of max. contamination thresholds (default %: 10,5)
   -r REMOVE_GENOMES, --remove_genomes REMOVE_GENOMES
                         File with list of genomes to be removed
   -k KEYWORD, --keyword KEYWORD
-                        Keyword in the second column of file with list of
-                        genomes to be removed (no keyword=remove all genomes
-                        in list)
+                        Keyword in the second column of file with list of genomes to be removed (no keyword=remove all genomes in list)
+  --genome_coverage GENOME_COVERAGE
+                        genome coverages
 
 taxonomic binning-specific arguments:
-  --ncbi_nodes_file NCBI_NODES_FILE
-                        NCBI nodes file
-  --ncbi_names_file NCBI_NAMES_FILE
-                        NCBI names file
-  --rank_as_genome_binning RANK_AS_GENOME_BINNING
-                        Assess taxonomic binning at a rank also as genome
-                        binning. Valid ranks: superkingdom, phylum, class,
-                        order, family, genus, species, strain
+  --ncbi_dir NCBI_DIR   Directory containing the NCBI taxonomy database dump files nodes.dmp, merged.dmp, and names.dmp
 ~~~
 **Example:**
 ~~~BASH
@@ -306,10 +290,14 @@ twine upload dist/*
 # Citation
 
 Please cite AMBER as:
-* Fernando Meyer, Peter Hofmann, Peter Belmann, Ruben Garrido-Oter, Adrian Fritz, Alexander Sczyrba, and Alice C. McHardy. (2018). **AMBER: Assessment of Metagenome BinnERs.** *GigaScience*, giy069. doi:[10.1093/gigascience/giy069](https://doi.org/10.1093/gigascience/giy069)
+* Meyer, F., Hofmann, P., Belmann, P., Garrido-Oter, R., Fritz, A., Sczyrba, A., McHardy, A.C., **AMBER: Assessment of Metagenome BinnERs**, GigaScience 7, giy069 (2018). [https://doi.org/10.1093/gigascience/giy069](https://doi.org/10.1093/gigascience/giy069)
 
 The metrics implemented in AMBER were used and described in the CAMI manuscript, thus you may also cite:
-* Sczyrba, Hofmann, Belmann, et al. (2017). **Critical Assessment of Metagenome Interpretation—a benchmark of metagenomics software.** *Nature Methods*, 14, 11:1063–1071. doi:[10.1038/nmeth.4458](https://doi.org/10.1038/nmeth.4458)
+* Sczyrba, A., Hofmann, P., Belmann, P. et al. **Critical Assessment of Metagenome Interpretation—a benchmark of metagenomics software.** Nat Methods 14, 1063–1071 (2017). [https://doi.org/10.1038/nmeth.4458](https://doi.org/10.1038/nmeth.4458)
+
+or
+
+* Meyer, F., Fritz, A., Deng, ZL. et al. **Critical Assessment of Metagenome Interpretation: the second round of challenges.** Nat Methods 19, 429–440 (2022). [https://doi.org/10.1038/s41592-022-01431-4](https://doi.org/10.1038/s41592-022-01431-4)
 
 # License
 
