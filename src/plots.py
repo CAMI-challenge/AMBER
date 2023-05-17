@@ -91,8 +91,13 @@ def plot_by_genome_coverage(pd_bins, pd_target_column, available_tools, output_d
 
     axs.set_ylim([-0.01, 1.01])
 
-    axs.set_xticklabels(['{:,.1f}'.format(np.exp(x)) for x in axs.get_xticks()], fontsize=12)
-    axs.set_yticklabels(['{:3.0f}'.format(x * 100) for x in axs.get_yticks()], fontsize=12)
+    vals = axs.get_xticks()
+    axs.xaxis.set_major_locator(ticker.FixedLocator(vals))
+    axs.set_xticklabels(['{:,.1f}'.format(np.exp(x)) for x in vals], fontsize=12)
+
+    vals = axs.get_yticks()
+    axs.yaxis.set_major_locator(ticker.FixedLocator(vals))
+    axs.set_yticklabels(['{:3.0f}'.format(x * 100) for x in vals], fontsize=12)
 
     axs.tick_params(axis='x', labelsize=12)
 
@@ -132,7 +137,7 @@ def get_pd_genomes_recall(sample_id_to_queries_list):
 
 def plot_precision_recall_by_coverage(sample_id_to_queries_list, pd_bins_g, coverages_pd, available_tools, output_dir):
     # compute average genome coverage if coverages for multiple samples were provided
-    coverages_pd = coverages_pd.groupby(['GENOMEID']).mean()
+    coverages_pd = coverages_pd.groupby(['GENOMEID']).mean(numeric_only=True)
     coverages_pd.rename(columns={'GENOMEID': 'genome_id'})
     coverages_pd = coverages_pd.sort_values(by=['COVERAGE'])
     coverages_pd['rank'] = coverages_pd['COVERAGE'].rank()

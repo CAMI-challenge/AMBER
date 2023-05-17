@@ -1,2 +1,2 @@
-include requirements/*
+include requirements.txt
 include LICENSE

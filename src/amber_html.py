@@ -153,10 +153,6 @@ class MidpointNormalize(Normalize):
         return np.ma.masked_array(np.interp(value, x, y))
 
 
-def upper1(x):
-    return x[:1].upper() + x[1:]
-
-
 def get_colors_and_ranges(name, all_values):
     color1 = 'dodgerblue'
     color2 = 'red'
@@ -164,10 +160,10 @@ def get_colors_and_ranges(name, all_values):
     hue2 = 240
 
     metrics = [utils_labels.MISCLASSIFICATION_PER_BP, utils_labels.MISCLASSIFICATION_PER_SEQ]
-    if name in map(upper1, metrics + [x + utils_labels.UNFILTERED for x in metrics]):
+    if name in metrics + [x + utils_labels.UNFILTERED for x in metrics]:
         return color2, color1, hue2, hue1, 0, 1
     metrics = [utils_labels.UNIFRAC_BP, utils_labels.UNIFRAC_SEQ]
-    if name in map(upper1, metrics + [x + utils_labels.UNFILTERED for x in metrics]):
+    if name in metrics + [x + utils_labels.UNFILTERED for x in metrics]:
         return color2, color1, hue2, hue1, 0, max(all_values)
     return color1, color2, hue1, hue2, 0, 1
 
@@ -177,7 +173,7 @@ def get_heatmap_colors(pd_series, **args):
 
     metrics = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM, utils_labels.AVG_PRECISION_SEQ_SEM,
                utils_labels.AVG_RECALL_SEQ_SEM, utils_labels.AVG_RECALL_BP_SEM_CAMI1, utils_labels.AVG_RECALL_SEQ_SEM_CAMI1]
-    if pd_series.name in map(upper1, metrics + [x + utils_labels.UNFILTERED for x in metrics]):
+    if pd_series.name in metrics + [x + utils_labels.UNFILTERED for x in metrics]:
         return ['background-color: white' for x in values]
 
     dropped_gs = False
@@ -435,6 +431,7 @@ def create_table_html(df_summary, is_taxonomic=False, include_cami1=False):
         d_dict = {}
         for tuple in metrics:
             d_dict[tuple[0] + '<'] = '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div><'.format(utils_labels.LABELS[tuple[0]], utils_labels.LABELS[tuple[0]], tuple[1])
+            d_dict[tuple[0] + utils_labels.UNFILTERED + '<'] = '<div class="tooltip">{}<span class="tooltiptext">{}: {}</span></div><'.format(utils_labels.LABELS[tuple[0]] + utils_labels.UNFILTERED, utils_labels.LABELS[tuple[0]], tuple[1])
         return d_dict
 
     d = get_html_dict(get_labels_taxonomic() if is_taxonomic else get_labels_genome())
@@ -521,8 +518,8 @@ def create_precision_recall_figure(df_summary, xname1, yname1, xname2, yname2, t
                  (xname2, '@{' + xname2 + '}'),
                  (yname2, '@{' + yname2 + '}')]
     p = figure(title=title, width=580, height=400, x_range=(0, 1), y_range=(0, 1), toolbar_location="below")
-    p.xaxis.axis_label = upper1(xname1.split('(')[0])
-    p.yaxis.axis_label = upper1(yname1.split('(')[0])
+    p.xaxis.axis_label = utils_labels.LABELS[xname1]
+    p.yaxis.axis_label = utils_labels.LABELS[yname1]
     p.xaxis.axis_label_text_font_style = 'normal'
     p.yaxis.axis_label_text_font_style = 'normal'
     for color, (index, row) in zip(bokeh_colors, df_summary.iterrows()):
@@ -613,7 +610,7 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
     legend_it = []
     for i, (metric, error, color) in enumerate(zip(metrics_list, errors_list, line_colors)):
         pline = p.line(x='x', y=metric, line_color=color, source=source, line_width=2)
-        legend_it.append(LegendItem(label=metric, renderers=[pline]))
+        legend_it.append(LegendItem(label=utils_labels.LABELS[metric], renderers=[pline]))
         if error:
             band = Band(base='x', lower=metric + "lower", upper=metric + "upper", source=source, level='underlay',
                               fill_alpha=.3, line_width=1, line_color='black', fill_color=color)
@@ -643,18 +640,19 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
 
 
 def create_rankings_table(df_summary, show_rank=False):
-    columns= [utils_labels.AVG_PRECISION_BP,
-              utils_labels.AVG_RECALL_BP,
-              utils_labels.PRECISION_PER_BP,
-              utils_labels.RECALL_PER_BP,
-              utils_labels.ARI_BY_SEQ,
-              utils_labels.ARI_BY_BP,
-              utils_labels.PERCENTAGE_ASSIGNED_BPS,
-              utils_labels.ACCURACY_PER_BP]
+    columns = [utils_labels.AVG_PRECISION_BP,
+               utils_labels.AVG_RECALL_BP,
+               utils_labels.PRECISION_PER_BP,
+               utils_labels.RECALL_PER_BP,
+               utils_labels.ARI_BY_SEQ,
+               utils_labels.ARI_BY_BP,
+               utils_labels.PERCENTAGE_ASSIGNED_BPS,
+               utils_labels.ACCURACY_PER_BP]
     if show_rank:
         columns.insert(0, utils_labels.RANK)
-    pd_rankings = df_summary[columns].rename(columns={utils_labels.RANK: 'Taxonomic rank'}).round(decimals=5).reset_index()
-    pd_rankings.columns = list(map(upper1, pd_rankings.columns))
+    labels_dict = utils_labels.LABELS.copy()
+    labels_dict[utils_labels.RANK] = 'Taxonomic rank'
+    pd_rankings = df_summary[columns].rename(columns=labels_dict).round(decimals=5).reset_index()
 
     def create_table_column(field):
         return TableColumn(title=field, field=field, width=100)

@@ -34,13 +34,31 @@ AMBER is an evaluation package for the comparative assessment of genome reconstr
 
 AMBER 2.0.4 has been tested with Python 3.11.
 
-AMBER 2.0.3 requires Python 3.7
-
 See [requirements.txt](requirements.txt) for all dependencies.
 
-## Steps
+## Installation options
 
-You can run [AMBER using Docker (see below)](#running-amberpy-using-docker) or install it as follows.
+There are several options to install AMBER:
+
+* [Bioconda](#conda)
+* [Python pip](#python-pip)
+* [Docker](#docker)
+
+## Bioconda
+
+Install and configure [Bioconda](https://bioconda.github.io/index.html) if not already installed. Then use the following command to create a Conda environment and install AMBER:
+
+~~~BASH
+conda create --name amber cami-amber
+~~~
+
+Activate the Conda environment with:
+
+~~~BASH
+conda activate amber
+~~~
+
+## Python pip
 
 Install pip if not already installed (tested on Linux Ubuntu 22.04):
 
@@ -57,7 +75,7 @@ sudo apt update
 Then run:
 
 ~~~BASH
-pip3 install cami-amber 
+pip install cami-amber 
 ~~~
 
 Make sure to add AMBER to your PATH:
@@ -66,6 +84,31 @@ Make sure to add AMBER to your PATH:
 echo 'PATH=$PATH:${HOME}/.local/bin' >> ~/.bashrc
 source ~/.bashrc
 ~~~
+
+Alternatively, download or git-clone AMBER from GitHub. In AMBER's directory, install all requirements with the command:
+
+~~~BASH
+pip install -r requirements.txt 
+~~~
+
+# Docker
+
+You can pull a pre-built [AMBER Docker BioContainer](https://bioconda.github.io/recipes/cami-amber/README.html) as follows:
+
+~~~BASH
+docker pull quay.io/biocontainers/cami-amber:<tag>
+~~~
+
+See [valid values for &lt;tag&gt;](https://quay.io/repository/biocontainers/cami-amber?tab=tags).
+
+Alternatively, download or git-clone AMBER from GitHub. In AMBER's directory, build the Docker image with the command:
+
+~~~BASH
+docker build -t amber .
+~~~
+
+See bellow an example of how to [run AMBER using Docker](#running-amberpy-using-docker).
+
 
 # User guide
 
@@ -158,24 +201,18 @@ test/elated_franklin_0 \
 
 ## Running _amber.py_ using Docker
 
-Download or git-clone AMBER from GitHub. In AMBER's directory, build the Docker image with the command:
+_amber.py_ can be run with the `docker run` command. Example:
 
 ~~~BASH
-docker build -t amber:latest .
-~~~
-
-_amber.py_ can then be run with the `docker run` command. Example:
-
-~~~BASH
-docker run -v /path/to/AMBER/test:/host amber:latest \
+docker run -v $(pwd):/host amber \
 amber.py \
 -l "CONCOCT (CAMI), MaxBin 2.0.2 (CAMI)" \
 -p 1 \
--r /host/unique_common.tsv \
+-r /host/test/unique_common.tsv \
 -k "circular element" \
--g /host/gsa_mapping.binning \
-/host/goofy_hypatia_2 \
-/host/naughty_carson_2 \
+-g /host/test/gsa_mapping.binning \
+/host/test/goofy_hypatia_2 \
+/host/test/naughty_carson_2 \
 -o /host/output_dir
 ~~~
 
@@ -263,7 +300,7 @@ tox
 You can use all libraries that AMBER depends on by activating tox's virtual environment with the command: 
 
 ~~~BASH
-source  <project_directory>/.tox/py37/bin/activate
+source  <project_directory>/.tox/py311/bin/activate
 ~~~
 
 ### Update GitHub page
