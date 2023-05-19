@@ -1,11 +1,10 @@
-import os
 from setuptools import setup, find_packages
 from version import __version__
 import glob
 
 
 def dependencies():
-    with open(os.path.join('requirements', 'default.txt'), 'r') as f:
+    with open('requirements.txt', 'r') as f:
         return f.read().splitlines()
 
 
