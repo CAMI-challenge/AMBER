@@ -471,7 +471,7 @@ def plot_taxonomic_results(df_summary_t, metrics_list, errors_list, file_name, o
         axs.yaxis.set_major_locator(ticker.FixedLocator(vals))
         axs.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in vals])
 
-        lgd = plt.legend(metrics_list, loc=1, borderaxespad=0., handlelength=2, frameon=False)
+        lgd = plt.legend([utils_labels.LABELS[x] for x in metrics_list], loc=1, borderaxespad=0., handlelength=2, frameon=False)
 
         plt.tight_layout()
         fig.savefig(os.path.join(output_dir, 'taxonomic', tool, file_name + '.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')

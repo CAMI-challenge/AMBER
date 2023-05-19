@@ -40,7 +40,7 @@ See [requirements.txt](requirements.txt) for all dependencies.
 
 There are several options to install AMBER:
 
-* [Bioconda](#conda)
+* [Bioconda](#bioconda)
 * [Python pip](#python-pip)
 * [Docker](#docker)
 
