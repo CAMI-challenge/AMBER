@@ -22,8 +22,8 @@ import multiprocessing
 from multiprocessing.pool import ThreadPool
 from collections import defaultdict
 from collections import OrderedDict
-from src import binning_classes
-from src.utils import labels as utils_labels
+from cami_amber import binning_classes
+from cami_amber.utils import labels as utils_labels
 
 try:
     import load_ncbi_taxinfo

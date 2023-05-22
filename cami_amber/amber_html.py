@@ -24,10 +24,10 @@ import re
 import logging
 from jinja2 import Template
 from statistics import median
-from src import plots
-from src import binning_classes
-from src.utils import labels as utils_labels
-from src.utils import load_ncbi_taxinfo
+from cami_amber import plots
+from cami_amber import binning_classes
+from cami_amber.utils import labels as utils_labels
+from cami_amber.utils import load_ncbi_taxinfo
 
 import matplotlib
 matplotlib.use('Agg')

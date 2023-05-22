@@ -23,8 +23,8 @@ import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
-from src import plots
-from src.utils import labels as utils_labels
+from cami_amber import plots
+from cami_amber.utils import labels as utils_labels
 
 
 def plot_by_genome(data, out_file=None, sort_by='completeness'):

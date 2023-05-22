@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from src.utils import labels as utils_labels
-from src.utils import load_ncbi_taxinfo
-from src import binning_classes
+from cami_amber.utils import labels as utils_labels
+from cami_amber.utils import load_ncbi_taxinfo
+from cami_amber import binning_classes
 import matplotlib
 matplotlib.use('Agg')
 import seaborn as sns

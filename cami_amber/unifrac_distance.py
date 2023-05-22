@@ -1,6 +1,6 @@
 # This is an example of how to use the script
-from src.utils import ProfilingTools as PF
-from src.utils import EMDUnifrac as EMDU
+from cami_amber.utils import ProfilingTools as PF
+from cami_amber.utils import EMDUnifrac as EMDU
 import numpy as np
 import argparse
 import copy

@@ -25,12 +25,12 @@ import math
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections import OrderedDict
-from src.utils import labels as utils_labels
-from src.utils import load_ncbi_taxinfo
-from src.utils import ProfilingTools as pf
-from src import unifrac_distance as uf
-from src import precision_recall_per_bin
-from src import plots
+from cami_amber.utils import labels as utils_labels
+from cami_amber.utils import load_ncbi_taxinfo
+from cami_amber.utils import ProfilingTools as pf
+from cami_amber import unifrac_distance as uf
+from cami_amber import precision_recall_per_bin
+from cami_amber import plots
 
 
 class Metrics:

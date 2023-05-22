@@ -15,6 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from cami_amber import amber_html
+from cami_amber import plot_by_genome
+from cami_amber import plots
+from cami_amber.utils import load_data
+from cami_amber.utils import argparse_parents
+from cami_amber.utils import labels as utils_labels
+from cami_amber import binning_classes
+from cami_amber.utils import load_ncbi_taxinfo
+from version import __version__
 import argparse
 import errno
 import logging
@@ -23,15 +32,6 @@ import sys
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
-from src import amber_html
-from src import plot_by_genome
-from src import plots
-from version import __version__
-from src.utils import load_data
-from src.utils import argparse_parents
-from src.utils import labels as utils_labels
-from src import binning_classes
-from src.utils import load_ncbi_taxinfo
 
 
 def get_logger(output_dir, silent):
