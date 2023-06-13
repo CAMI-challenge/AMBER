@@ -893,7 +893,7 @@ class TaxonomicQuery(Query):
 
 class Options:
     def __init__(self, filter_tail_percentage=0, genome_to_unique_common=None, filter_keyword=None, min_length=0,
-                 rank_as_genome_binning=None, output_dir=None, min_completeness=[.5, .7, .9], max_contamination=[.1, .05],
+                 rank_as_genome_binning=None, output_dir=None, min_completeness=None, max_contamination=None,
                  ncbi_dir=None, skip_gs=False):
         self.__filter_tail_percentage = float(filter_tail_percentage) if filter_tail_percentage else .0
         self.__genome_to_unique_common = genome_to_unique_common
@@ -905,10 +905,14 @@ class Options:
         self.__only_genome_queries = True
         self.__only_taxonomic_queries = True
         self.__output_dir = output_dir
-        if isinstance(min_completeness, str):
+        if min_completeness:
             self.__min_completeness = [int(x.strip()) / 100.0 for x in min_completeness.split(',')]
-        if isinstance(max_contamination, str):
+        else:
+            self.__min_completeness = [.5, .7, .9]
+        if max_contamination:
             self.__max_contamination = [int(x.strip()) / 100.0 for x in max_contamination.split(',')]
+        else:
+            self.__max_contamination = [.1, .05]
         self.__skip_gs = skip_gs
         self.__ncbi_dir = ncbi_dir
 
