@@ -671,10 +671,9 @@ class GenomeQuery(Query):
 
 
 class TaxonomicQuery(Query):
-    taxonomy_df = pd.DataFrame()
     binning_type = 'taxonomic'
 
-    def __init__(self, rank_to_df, label, sample_id, options):
+    def __init__(self, rank_to_df, label, sample_id, options, taxonomy_df):
         super().__init__(label, sample_id, options)
         self.__rank_to_df = rank_to_df
         self.metrics = defaultdict()
@@ -682,6 +681,7 @@ class TaxonomicQuery(Query):
             self.metrics_filtered = defaultdict()
         self.__profile = None
         self.__profile_filtered = None
+        self.__taxonomy_df = taxonomy_df
 
     @property
     def rank_to_df(self):
@@ -700,6 +700,10 @@ class TaxonomicQuery(Query):
             return self.__profile_filtered
         self.__profile_filtered = self._create_profile(all_bins=False)
         return self.__profile_filtered
+
+    @property
+    def taxonomy_df(self):
+        return self.__taxonomy_df
 
     @rank_to_df.setter
     def rank_to_df(self, rank_to_df):
@@ -723,7 +727,7 @@ class TaxonomicQuery(Query):
             prediction_bp.taxid = str(int(row['TAXID']))
             prediction_bp.rank = row['rank']
             prediction_bp.percentage = row['tp_length']
-            taxpath = TaxonomicQuery.taxonomy_df.loc[row['TAXID']][load_ncbi_taxinfo.RANKS].values
+            taxpath = self.taxonomy_df.loc[row['TAXID']][load_ncbi_taxinfo.RANKS].values
             taxpath = '|'.join(map(lambda v: '' if pd.isnull(v) else str(v), taxpath)).rstrip('|')
             prediction_bp.taxpath = taxpath
             prediction_bp.taxpathsn = None
@@ -865,7 +869,7 @@ class TaxonomicQuery(Query):
             by='recall_bp', axis=0, ascending=False)], ignore_index=True, sort=True)
         self.recall_df = self.precision_df
 
-        self.recall_df['name'] = self.recall_df['TAXID'].apply(lambda x: TaxonomicQuery.taxonomy_df.loc[x]['name'])
+        self.recall_df['name'] = self.recall_df['TAXID'].apply(lambda x: self.taxonomy_df.loc[x]['name'])
 
     def compute_metrics(self):
         if self.label == utils_labels.GS and (self.options.only_genome_queries or self.options.skip_gs):
@@ -888,9 +892,9 @@ class TaxonomicQuery(Query):
 
 
 class Options:
-    def __init__(self, filter_tail_percentage, genome_to_unique_common, filter_keyword, min_length,
-                 rank_as_genome_binning, output_dir, min_completeness=None, max_contamination=None,
-                 skip_gs=False):
+    def __init__(self, filter_tail_percentage=0, genome_to_unique_common=None, filter_keyword=None, min_length=0,
+                 rank_as_genome_binning=None, output_dir=None, min_completeness=[.5, .7, .9], max_contamination=[.1, .05],
+                 ncbi_dir=None, skip_gs=False):
         self.__filter_tail_percentage = float(filter_tail_percentage) if filter_tail_percentage else .0
         self.__genome_to_unique_common = genome_to_unique_common
         self.__filter_keyword = filter_keyword
@@ -901,15 +905,12 @@ class Options:
         self.__only_genome_queries = True
         self.__only_taxonomic_queries = True
         self.__output_dir = output_dir
-        if min_completeness:
+        if isinstance(min_completeness, str):
             self.__min_completeness = [int(x.strip()) / 100.0 for x in min_completeness.split(',')]
-        else:
-            self.__min_completeness = [.5, .7, .9]
-        if max_contamination:
+        if isinstance(max_contamination, str):
             self.__max_contamination = [int(x.strip()) / 100.0 for x in max_contamination.split(',')]
-        else:
-            self.__max_contamination = [.1, .05]
         self.__skip_gs = skip_gs
+        self.__ncbi_dir = ncbi_dir
 
     @property
     def filter_tail_percentage(self):
@@ -950,6 +951,10 @@ class Options:
     @property
     def max_contamination(self):
         return self.__max_contamination
+
+    @property
+    def ncbi_dir(self):
+        return self.__ncbi_dir
 
     @property
     def skip_gs(self):
@@ -994,6 +999,10 @@ class Options:
     @max_contamination.setter
     def max_contamination(self, max_contamination):
         self.__max_contamination = max_contamination
+
+    @ncbi_dir.setter
+    def ncbi_dir(self, ncbi_dir):
+        self.__ncbi_dir = ncbi_dir
 
     @skip_gs.setter
     def skip_gs(self, skip_gs):

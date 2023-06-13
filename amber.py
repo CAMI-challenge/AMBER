@@ -18,6 +18,7 @@
 from cami_amber import amber_html
 from cami_amber import plot_by_genome
 from cami_amber import plots
+from cami_amber import evaluate
 from cami_amber.utils import load_data
 from cami_amber.utils import argparse_parents
 from cami_amber.utils import labels as utils_labels
@@ -162,45 +163,6 @@ def plot_taxonomic_binning(color_indices, df_summary, pd_bins, labels, output_di
                                  plots.create_completeness_minus_contamination_column, output_dir)
 
 
-def evaluate(queries_list, sample_id):
-    pd_bins_all = pd.DataFrame()
-    df_summary = pd.DataFrame()
-
-    for query in queries_list:
-        if not query.compute_metrics():
-            continue
-
-        query_metrics_df = query.get_metrics_df()
-        query_metrics_df[utils_labels.SAMPLE] = sample_id
-
-        df_summary = pd.concat([df_summary, query_metrics_df], ignore_index=True, sort=True)
-
-        query.precision_df[utils_labels.TOOL] = query.label
-        pd_bins_all = pd.concat([pd_bins_all, query.precision_df.reset_index()], ignore_index=True, sort=True)
-
-    pd_bins_all['sample_id'] = sample_id
-
-    return df_summary, pd_bins_all
-
-
-def evaluate_samples_queries(sample_id_to_queries_list):
-    pd_bins_all = pd.DataFrame()
-    df_summary_all = pd.DataFrame()
-
-    for sample_id in sample_id_to_queries_list:
-        df_summary, pd_bins = evaluate(sample_id_to_queries_list[sample_id], sample_id)
-        pd_bins_all = pd.concat([pd_bins_all, pd_bins], ignore_index=True)
-        df_summary_all = pd.concat([df_summary_all, df_summary], ignore_index=True)
-
-    # Gold standard only has unfiltered metrics, so copy values to unfiltered columns
-    for col in df_summary_all.columns:
-        if col.endswith(utils_labels.UNFILTERED):
-            df_summary_all.loc[df_summary_all[utils_labels.TOOL] == utils_labels.GS, col] = \
-                df_summary_all.loc[df_summary_all[utils_labels.TOOL] == utils_labels.GS, col[:-len(utils_labels.UNFILTERED)]]
-
-    return df_summary_all, pd_bins_all
-
-
 def save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, stdout):
     logging.getLogger('amber').info('Saving computed metrics')
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False)
@@ -272,15 +234,17 @@ def main(args=None):
                                       rank_as_genome_binning=None, #args.rank_as_genome_binning,
                                       output_dir=output_dir,
                                       min_completeness=args.min_completeness,
-                                      max_contamination=args.max_contamination)
+                                      max_contamination=args.max_contamination,
+                                      ncbi_dir=args.ncbi_dir,
+                                      skip_gs=False)
     options_gs = binning_classes.Options(filter_tail_percentage=.0,
                                          genome_to_unique_common=genome_to_unique_common,
                                          filter_keyword=args.keyword,
                                          min_length=args.min_length,
                                          rank_as_genome_binning=None, #args.rank_as_genome_binning,
-                                         output_dir=output_dir)
-
-    load_data.load_ncbi_info(args.ncbi_dir)
+                                         output_dir=output_dir,
+                                         ncbi_dir=args.ncbi_dir,
+                                         skip_gs=False)
 
     sample_id_to_queries_list, sample_ids_list = load_data.load_queries_mthreaded(args.gold_standard_file, args.bin_files, labels,
                                                                         options, options_gs)
@@ -289,7 +253,7 @@ def main(args=None):
 
     create_output_directories(output_dir, sample_id_to_queries_list)
 
-    df_summary, pd_bins = evaluate_samples_queries(sample_id_to_queries_list)
+    df_summary, pd_bins = evaluate.evaluate_samples_queries(sample_id_to_queries_list)
 
     save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, args.stdout)
 

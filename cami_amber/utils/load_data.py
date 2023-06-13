@@ -82,11 +82,12 @@ def load_ncbi_info(ncbi_dir):
     if ncbi_dir:
         logging.getLogger('amber').info('Loading NCBI taxonomy')
         try:
-            binning_classes.TaxonomicQuery.taxonomy_df = pd.read_feather(os.path.join(ncbi_dir, 'nodes.amber.ft')).set_index('TAXID')
-        except BaseException as e:
+            taxonomy_df = pd.read_feather(os.path.join(ncbi_dir, 'nodes.amber.ft')).set_index('TAXID')
+        except BaseException:
             traceback.print_exc()
             logging.getLogger('amber').info('Preprocessed NCBI taxonomy file not found. Creating file {}'.format(os.path.join(ncbi_dir, 'nodes.amber.ft')))
-            binning_classes.TaxonomicQuery.taxonomy_df = load_ncbi_taxinfo.preprocess_ncbi_tax(ncbi_dir)
+            taxonomy_df = load_ncbi_taxinfo.preprocess_ncbi_tax(ncbi_dir)
+        return taxonomy_df
 
 
 def read_metadata(file_path_query):
@@ -128,7 +129,11 @@ def read_metadata(file_path_query):
             else:
                 reading_data = True
                 data_end = i
-    samples_metadata.append((data_start, data_end, header, index_to_column_name))
+    try:
+        samples_metadata.append((data_start, data_end, header, index_to_column_name))
+    except UnboundLocalError:
+        logging.getLogger('amber').critical("File {} is malformed.".format(file_path_query))
+        exit(1)
     return samples_metadata
 
 
@@ -168,7 +173,7 @@ def get_sample_id_to_num_genomes(sample_id_to_queries_list):
     return sample_id_to_num_genomes
 
 
-def get_rank_to_df(query_df, is_gs=False):
+def get_rank_to_df(query_df, taxonomy_df, is_gs=False):
     if is_gs:
         if 'LENGTH' not in query_df.columns:
             logging.getLogger('amber').critical("Sequences length could not be determined. Please add column LENGTH to gold standard.")
@@ -179,7 +184,7 @@ def get_rank_to_df(query_df, is_gs=False):
 
     rank_to_df = dict()
     logging.getLogger('amber').info('Aggregating taxonomy information')
-    query_df = pd.merge(query_df, binning_classes.TaxonomicQuery.taxonomy_df.reset_index(), on=['TAXID']).set_index('SEQUENCEID')
+    query_df = pd.merge(query_df, taxonomy_df.reset_index(), on=['TAXID']).set_index('SEQUENCEID')
 
     for rank in load_ncbi_taxinfo.RANKS:
         logging.getLogger('amber').info('Deriving bins at rank: ' + rank)
@@ -200,16 +205,21 @@ def filter_by_length(sample_id_to_df, min_length):
     return sample_id_to_df_filtered
 
 
-def load_queries_mthreaded(gold_standard_file, bin_files, labels, options, options_gs):
+def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, options_gs=None):
+    if not options:
+        options = binning_classes.Options()
+    if not options_gs:
+        options_gs = binning_classes.Options()
+    taxonomy_df = load_ncbi_info(options.ncbi_dir) if options.ncbi_dir else pd.DataFrame()
     pool = ThreadPool(multiprocessing.cpu_count())
     results = pool.map(open_query, [gold_standard_file] + bin_files)
     pool.close()
     gs = results[0]
     queries = results[1:]
-    return load_queries(gs, queries, labels, options, options_gs)
+    return load_queries(gs, queries, labels, options, options_gs, taxonomy_df)
 
 
-def load_queries(gs, queries, labels, options, options_gs):
+def load_queries(gs, queries, labels, options, options_gs, taxonomy_df):
     logging.getLogger('amber').info('Loading {}'.format(utils_labels.GS))
     sample_id_to_gs_df = gs
     if options.min_length:
@@ -231,10 +241,10 @@ def load_queries(gs, queries, labels, options, options_gs):
             g_query_gs.gold_standard_df = gs_df_g
             sample_id_to_queries_list[sample_id].append(g_query_gs)
             sample_id_to_g_gs[sample_id] = g_query_gs
-        if 'TAXID' in gs_df.columns and not binning_classes.TaxonomicQuery.taxonomy_df.empty:
-            gs_rank_to_df = get_rank_to_df(gs_df, is_gs=True)
+        if 'TAXID' in gs_df.columns and not taxonomy_df.empty:
+            gs_rank_to_df = get_rank_to_df(gs_df, taxonomy_df, is_gs=True)
             sample_id_to_gs_rank_to_df[sample_id] = gs_rank_to_df
-            t_query_gs = binning_classes.TaxonomicQuery(gs_rank_to_df, utils_labels.GS, sample_id, options_gs)
+            t_query_gs = binning_classes.TaxonomicQuery(gs_rank_to_df, utils_labels.GS, sample_id, options_gs, taxonomy_df)
             t_query_gs.gold_standard = t_query_gs
             t_query_gs.gold_standard_df = gs_rank_to_df
             sample_id_to_queries_list[sample_id].append(t_query_gs)
@@ -267,8 +277,8 @@ def load_queries(gs, queries, labels, options, options_gs):
                 g_query.gold_standard_df = gs_df
                 sample_id_to_queries_list[sample_id].append(g_query)
                 options.only_taxonomic_queries = options_gs.only_taxonomic_queries = False
-            if 'TAXID' in query_df.columns and not binning_classes.TaxonomicQuery.taxonomy_df.empty:
-                t_query = binning_classes.TaxonomicQuery(get_rank_to_df(query_df), label, sample_id, options)
+            if 'TAXID' in query_df.columns and not taxonomy_df.empty:
+                t_query = binning_classes.TaxonomicQuery(get_rank_to_df(query_df, taxonomy_df), label, sample_id, options, taxonomy_df)
                 t_query.gold_standard = sample_id_to_t_gs[sample_id]
                 t_query.gold_standard_df = sample_id_to_gs_rank_to_df[sample_id]
                 sample_id_to_queries_list[sample_id].append(t_query)
