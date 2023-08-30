@@ -19,6 +19,11 @@ import logging
 import traceback
 import os
 import multiprocessing
+import mimetypes
+import gzip
+import io
+import tarfile
+import zipfile
 from multiprocessing.pool import ThreadPool
 from collections import defaultdict
 from collections import OrderedDict
@@ -33,6 +38,24 @@ except ImportError:
         import load_ncbi_taxinfo
     finally:
         sys.path.remove(os.path.dirname(__file__))
+
+
+def open_generic(file):
+    file_type, file_encoding = mimetypes.guess_type(file)
+
+    if file_encoding == 'gzip':
+        if file_type == 'application/x-tar':  # .tar.gz
+            tar = tarfile.open(file, 'r:gz')
+            f = tar.extractfile(tar.getmembers()[0])
+            return io.TextIOWrapper(f)
+        else:  # .gz
+            return gzip.open(file, 'rt')
+    if file_type == 'application/zip':  # .zip
+        f = zipfile.ZipFile(file, 'r')
+        f = f.open(f.namelist()[0])
+        return io.TextIOWrapper(f)
+    else:
+        return open(file, 'rt')
 
 
 def open_coverages(file_path):
@@ -82,7 +105,11 @@ def load_ncbi_info(ncbi_dir):
     if ncbi_dir:
         logging.getLogger('amber').info('Loading NCBI taxonomy')
         try:
-            taxonomy_df = pd.read_feather(os.path.join(ncbi_dir, 'nodes.amber.ft')).set_index('TAXID')
+            logging.getLogger('amber').info('%s' % ncbi_dir)
+            if os.path.isfile(ncbi_dir):
+                taxonomy_df = pd.read_feather(ncbi_dir).set_index('TAXID')
+            else:
+                taxonomy_df = pd.read_feather(os.path.join(ncbi_dir, 'nodes.amber.ft')).set_index('TAXID')
         except BaseException:
             traceback.print_exc()
             logging.getLogger('amber').info('Preprocessed NCBI taxonomy file not found. Creating file {}'.format(os.path.join(ncbi_dir, 'nodes.amber.ft')))
@@ -97,7 +124,7 @@ def read_metadata(file_path_query):
 
     samples_metadata = []
 
-    with open(file_path_query, 'r') as f:
+    with open_generic(file_path_query) as f:
         for i, line in enumerate(f):
             line = line.strip()
 
