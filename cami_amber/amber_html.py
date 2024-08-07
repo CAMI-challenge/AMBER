@@ -1,4 +1,4 @@
-# Copyright 2023 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -525,14 +525,14 @@ def create_precision_recall_figure(df_summary, xname1, yname1, xname2, yname2, t
     for color, (index, row) in zip(bokeh_colors, df_summary.iterrows()):
         tool = index
         source = ColumnDataSource(data=row.to_frame().T)
-        pcircle = p.circle(xname1, yname1, source=source, color=color, fill_alpha=0.2, size=10)
-        px = p.x(xname2, yname2, source=source, color=color, size=10)
-        p.add_tools(HoverTool(tooltips=tooltips1, renderers=[pcircle], toggleable=False))
-        p.add_tools(HoverTool(tooltips=tooltips2, renderers=[px], toggleable=False))
+        pcircle = p.scatter(xname1, yname1, source=source, color=color, fill_alpha=0.2, size=10)
+        px = p.scatter(xname2, yname2, marker='x', source=source, color=color, size=10)
+        p.add_tools(HoverTool(tooltips=tooltips1, renderers=[pcircle], visible=False))
+        p.add_tools(HoverTool(tooltips=tooltips2, renderers=[px], visible=False))
         legend_it.append(LegendItem(label=tool, renderers=[pcircle, px]))
-    pcircle = p.circle([0], [0], color='black', fill_alpha=0, size=0)
+    pcircle = p.scatter([0], [0], color='black', fill_alpha=0, size=0)
     legend_it.append(LegendItem(label='by bp', renderers=[pcircle]))
-    px = p.x([0], [0], color='black', fill_alpha=0, size=0)
+    px = p.scatter([0], [0], marker='x', color='black', fill_alpha=0, size=0)
     legend_it.append(LegendItem(label='by seq', renderers=[px]))
 
     p.add_layout(Legend(items=legend_it), 'right')
@@ -548,12 +548,12 @@ def create_precision_recall_all_genomes_scatter(pd_genome_bins, tools):
     p.add_tools(HoverTool(tooltips=[('Sample', '@sample_id'),
                                     ('Genome', '@mapping_id'),
                                     ('Purity of bin (bp)', '@precision_bp'),
-                                    ('Completeness of bin (bp)', '@recall_bp')], toggleable=False))
+                                    ('Completeness of bin (bp)', '@recall_bp')], visible=False))
 
     legend_it = []
     for color, tool in zip(bokeh_colors, tools):
         source = ColumnDataSource(data=pd_genome_bins[pd_genome_bins[utils_labels.TOOL] == tool])
-        pcircle = p.circle('precision_bp', 'recall_bp', color=color, alpha=0.8, source=source)
+        pcircle = p.scatter('precision_bp', 'recall_bp', color=color, alpha=0.8, source=source)
         legend_it.append((tool, [pcircle]))
     p.add_layout(Legend(items=legend_it), 'right')
     p.xaxis.axis_label = 'Purity per bin (bp)'

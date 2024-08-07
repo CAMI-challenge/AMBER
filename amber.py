@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2023 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,23 +16,20 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from cami_amber import amber_html
-from cami_amber import plot_by_genome
-from cami_amber import plots
 from cami_amber import evaluate
+from cami_amber import plots
+from cami_amber import binning_classes
 from cami_amber.utils import load_data
 from cami_amber.utils import argparse_parents
 from cami_amber.utils import labels as utils_labels
-from cami_amber import binning_classes
-from cami_amber.utils import load_ncbi_taxinfo
 from version import __version__
+from collections import defaultdict
 import argparse
 import errno
 import logging
 import os
 import sys
 import pandas as pd
-import matplotlib
-matplotlib.use('Agg')
 
 
 def get_logger(output_dir, silent):
@@ -78,89 +75,6 @@ def get_labels(labels, bin_files):
     for bin_file in bin_files:
         tool_id.append(bin_file.split('/')[-1].split('.binning')[0])
     return tool_id
-
-
-def plot_genome_binning(color_indices, sample_id_to_queries_list, df_summary, pd_bins, labels, coverages_pd,
-                        output_dir):
-    df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
-    if len(df_summary_g) == 0:
-        return
-
-    logging.getLogger('amber').info('Creating genome binning plots')
-
-    for sample_id in sample_id_to_queries_list:
-        for query in sample_id_to_queries_list[sample_id]:
-            if isinstance(query, binning_classes.GenomeQuery):
-                query.plot()
-
-    available_tools = list(df_summary_g[utils_labels.TOOL].unique())
-    available_tools = [tool for tool in labels if tool in available_tools]
-
-    if not coverages_pd.empty:
-        plots.plot_precision_recall_by_coverage(sample_id_to_queries_list, pd_bins, coverages_pd, available_tools,
-                                                output_dir)
-
-    if color_indices:
-        color_indices = [int(i) - 1 for i in color_indices.split(',')]
-    plots.create_legend(color_indices, available_tools, output_dir)
-    plots.plot_avg_precision_recall(color_indices, df_summary_g, labels, output_dir)
-    plots.plot_precision_recall(color_indices, df_summary_g, labels, output_dir)
-    plots.plot_adjusted_rand_index_vs_assigned_bps(color_indices, df_summary_g, labels, output_dir)
-
-    plots.plot_boxplot(sample_id_to_queries_list, 'recall_bp', output_dir, available_tools)
-    plots.plot_boxplot(sample_id_to_queries_list, 'precision_bp', output_dir, available_tools)
-
-    plots.plot_counts(pd_bins, available_tools, output_dir, 'bin_counts', plots.get_number_of_hq_bins)
-    plots.plot_counts(pd_bins, available_tools, output_dir, 'high_scoring_bins', plots.get_number_of_hq_bins_by_score)
-
-    plot_by_genome.plot_precision_recall_per_bin(pd_bins, output_dir)
-
-    plots.plot_contamination(pd_bins, 'genome', 'Contamination', 'Index of bin (sorted by contamination (bp))',
-                             'Contamination (bp)', plots.create_contamination_column, output_dir)
-    plots.plot_contamination(pd_bins, 'genome', 'Completeness - contamination',
-                             'Index of bin (sorted by completeness - contamination (bp))',
-                             'Completeness - contamination (bp)', plots.create_completeness_minus_contamination_column,
-                             output_dir)
-
-
-def plot_taxonomic_binning(color_indices, df_summary, pd_bins, labels, output_dir):
-    df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
-    if len(df_summary_t) == 0:
-        return
-
-    logging.getLogger('amber').info('Creating taxonomic binning plots')
-
-    available_tools = list(df_summary_t[utils_labels.TOOL].unique())
-    available_tools = [tool for tool in labels if tool in available_tools]
-
-    if color_indices:
-        color_indices = [int(i) - 1 for i in color_indices.split(',')]
-    for rank, pd_group in df_summary_t.groupby('rank'):
-        plots.plot_avg_precision_recall(color_indices, pd_group, available_tools, output_dir, rank)
-        plots.plot_precision_recall(color_indices, pd_group, available_tools, output_dir, rank)
-        plots.plot_adjusted_rand_index_vs_assigned_bps(color_indices, pd_group, available_tools, output_dir, rank)
-
-    metrics_list = [utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP]
-    errors_list = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM]
-    plots.plot_taxonomic_results(df_summary_t, metrics_list, errors_list, 'avg_precision_recall_bp', output_dir)
-
-    metrics_list = [utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ]
-    errors_list = [utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM]
-    plots.plot_taxonomic_results(df_summary_t, metrics_list, errors_list, 'avg_precision_recall_seq', output_dir)
-
-    metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ,
-                    utils_labels.RECALL_PER_SEQ]
-    plots.plot_taxonomic_results(df_summary_t, metrics_list, [], 'precision_recall', output_dir)
-
-    for rank in load_ncbi_taxinfo.RANKS:
-        pd_bins_rank = pd_bins[pd_bins['rank'] == rank]
-        plots.plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Contamination',
-                                 'Index of bin (sorted by contamination (bp))', 'Contamination (bp)',
-                                 plots.create_contamination_column, output_dir)
-        plots.plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Completeness - contamination',
-                                 'Index of bin (sorted by completeness - contamination (bp))',
-                                 'Completeness - contamination (bp)',
-                                 plots.create_completeness_minus_contamination_column, output_dir)
 
 
 def save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, stdout):
@@ -246,25 +160,30 @@ def main(args=None):
                                          ncbi_dir=args.ncbi_dir,
                                          skip_gs=False)
 
-    sample_id_to_queries_list, sample_ids_list = load_data.load_queries_mthreaded(args.gold_standard_file, args.bin_files, labels,
-                                                                        options, options_gs)
+    sample_id_to_g_queries_list, sample_id_to_t_queries_list, sample_ids_list = load_data.load_queries_mthreaded(
+        args.gold_standard_file, args.bin_files, labels, options, options_gs)
 
     coverages_pd = load_data.open_coverages(args.genome_coverage)
 
+    sample_id_to_queries_list = defaultdict(list)
+    for sample_id in sample_id_to_g_queries_list | sample_id_to_t_queries_list:
+        sample_id_to_queries_list[sample_id] += sample_id_to_g_queries_list[sample_id]
+        sample_id_to_queries_list[sample_id] += sample_id_to_t_queries_list[sample_id]
+
     create_output_directories(output_dir, sample_id_to_queries_list)
 
-    df_summary, pd_bins = evaluate.evaluate_samples_queries(sample_id_to_queries_list)
+    df_summary, pd_bins = evaluate.evaluate_samples_queries(sample_id_to_g_queries_list, sample_id_to_t_queries_list)
 
     save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, args.stdout)
 
-    plot_genome_binning(args.colors,
-                        sample_id_to_queries_list,
-                        df_summary,
-                        pd_bins[pd_bins['rank'] == 'NA'],
-                        labels,
-                        coverages_pd,
-                        output_dir)
-    plot_taxonomic_binning(args.colors, df_summary, pd_bins, labels, output_dir)
+    plots.plot_genome_binning(args.colors,
+                              sample_id_to_g_queries_list,
+                              df_summary,
+                              pd_bins[pd_bins['rank'] == 'NA'],
+                              labels,
+                              coverages_pd,
+                              output_dir)
+    plots.plot_taxonomic_binning(args.colors, df_summary, pd_bins, labels, output_dir)
 
     amber_html.create_html(df_summary,
                            pd_bins,

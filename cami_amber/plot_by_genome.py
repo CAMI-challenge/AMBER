@@ -97,7 +97,7 @@ def plot_precision_recall_per_bin(pd_bins, output_dir):
     fig.savefig(os.path.join(output_dir, 'genome', 'purity_completeness_per_bin.eps'), dpi=100, format='eps', bbox_inches='tight')
 
     lgd = plt.legend(list(df_groups.groups.keys()), bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., handlelength=0, frameon=False)
-    for handle in lgd.legendHandles:
+    for handle in lgd.legend_handles:
         handle.set_sizes([100.0])
 
     fig.savefig(os.path.join(output_dir, 'genome', 'purity_completeness_per_bin.png'), dpi=100, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')

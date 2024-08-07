@@ -1,4 +1,4 @@
-# Copyright 2023 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections import OrderedDict
 from cami_amber.utils import labels as utils_labels
+from cami_amber.utils import load_data
 from cami_amber.utils import load_ncbi_taxinfo
 from cami_amber.utils import ProfilingTools as pf
 from cami_amber import unifrac_distance as uf
@@ -345,17 +346,18 @@ class Metrics:
 
 
 class Query(ABC):
-    def __init__(self, label, sample_id, options):
+    def __init__(self, label, sample_id, options, metadata, is_gs=False):
         self.__label = label
         self.__sample_id = sample_id
         self.__gold_standard = None
-        self.__gold_standard_df = None
         self.__precision_df = pd.DataFrame()
         self.__recall_df = pd.DataFrame()
-        self.__confusion_df = None
+        self.__heatmap_sdf = None
         self.__metrics = None
         self.__metrics_filtered = None
         self.__options = options
+        self.__metadata = metadata
+        self.__is_gs = is_gs
 
     @property
     def label(self):
@@ -370,10 +372,6 @@ class Query(ABC):
         return self.__gold_standard
 
     @property
-    def gold_standard_df(self):
-        return self.__gold_standard_df
-
-    @property
     def precision_df(self):
         return self.__precision_df
 
@@ -382,8 +380,8 @@ class Query(ABC):
         return self.__recall_df
 
     @property
-    def confusion_df(self):
-        return self.__confusion_df
+    def heatmap_sdf(self):
+        return self.__heatmap_sdf
 
     @property
     def metrics(self):
@@ -397,6 +395,14 @@ class Query(ABC):
     def options(self):
         return self.__options
 
+    @property
+    def metadata(self):
+        return self.__metadata
+
+    @property
+    def is_gs(self):
+        return self.__is_gs
+
     @label.setter
     def label(self, label):
         self.__label = label
@@ -409,10 +415,6 @@ class Query(ABC):
     def gold_standard(self, gold_standard):
         self.__gold_standard = gold_standard
 
-    @gold_standard_df.setter
-    def gold_standard_df(self, gold_standard_df):
-        self.__gold_standard_df = gold_standard_df
-
     @precision_df.setter
     def precision_df(self, precision_df):
         self.__precision_df = precision_df
@@ -421,9 +423,9 @@ class Query(ABC):
     def recall_df(self, recall_df):
         self.__recall_df = recall_df
 
-    @confusion_df.setter
-    def confusion_df(self, confusion_df):
-        self.__confusion_df = confusion_df
+    @heatmap_sdf.setter
+    def heatmap_sdf(self, heatmap_sdf):
+        self.__heatmap_sdf = heatmap_sdf
 
     @metrics.setter
     def metrics(self, metrics):
@@ -437,6 +439,10 @@ class Query(ABC):
     def options(self, options):
         self.__options = options
 
+    @metadata.setter
+    def metadata(self, metadata):
+        self.__metadata = metadata
+
     @abstractmethod
     def compute_metrics(self):
         pass
@@ -444,27 +450,31 @@ class Query(ABC):
     def compute_unifrac(self, all_bins):
         return None, None
 
+    def plot(self):
+        return
+
 
 class GenomeQuery(Query):
     binning_type = 'genome'
 
-    def __init__(self, df, label, sample_id, options):
-        super().__init__(label, sample_id, options)
-        self.__df = df
+    def __init__(self, label, sample_id, options, metadata, is_gs=False):
+        super().__init__(label, sample_id, options, metadata, is_gs)
         self.__recall_df_cami1 = pd.DataFrame()
         self.metrics = Metrics()
 
     @property
     def df(self):
-        return self.__df
+        query_df = load_data.load_sample(self.metadata).drop_duplicates(['SEQUENCEID', 'BINID'])
+        if self.options.min_length:
+            query_df = query_df[query_df['LENGTH'] >= self.options.min_length]
+        if self.is_gs:
+            return query_df[['SEQUENCEID', 'BINID', 'LENGTH']]
+        else:
+            return query_df[['SEQUENCEID', 'BINID']]
 
     @property
     def recall_df_cami1(self):
         return self.__recall_df_cami1
-
-    @df.setter
-    def df(self, df):
-        self.__df = df
 
     @recall_df_cami1.setter
     def recall_df_cami1(self, recall_df_cami1):
@@ -477,15 +487,16 @@ class GenomeQuery(Query):
         metrics_dict[utils_labels.RANK] = 'NA'
         return pd.DataFrame(metrics_dict)
 
-    def compute_metrics(self):
+    def compute_metrics(self, gs_df):
         if self.label == utils_labels.GS and (self.options.only_taxonomic_queries or self.options.skip_gs):
             return False
-        logging.getLogger('amber').info('Evaluating {} (sample {}, genome binning)'.format(self.label, self.sample_id))
-        gs_df = self.gold_standard_df
-        gs_df = gs_df[['SEQUENCEID', 'BINID', 'LENGTH']].rename(columns={'LENGTH': 'seq_length', 'BINID': 'genome_id'})
+        logging.getLogger('amber').info('Evaluating {}, sample {}, genome binning'.format(self.label, self.sample_id))
 
         query_df = self.df
-        query_df = query_df[['SEQUENCEID', 'BINID']]
+        condition = query_df['SEQUENCEID'].isin(gs_df['SEQUENCEID'])
+        if ~condition.all():
+            logging.getLogger('amber').warning("{} sequences in {} not found in the gold standard.".format(query_df[~condition]['SEQUENCEID'].nunique(), self.label))
+            query_df = query_df[condition]
 
         query_w_length = pd.merge(query_df, gs_df.drop_duplicates('SEQUENCEID'), on='SEQUENCEID', sort=False)
 
@@ -493,6 +504,7 @@ class GenomeQuery(Query):
         gs_df_no_dups = gs_df.drop_duplicates('SEQUENCEID')
         self.metrics.percentage_of_assigned_bps = query_w_length_no_dups['seq_length'].sum() / gs_df_no_dups['seq_length'].sum()
         self.metrics.percentage_of_assigned_seqs = query_w_length_no_dups.shape[0] / gs_df_no_dups['SEQUENCEID'].shape[0]
+        del query_w_length_no_dups
 
         # confusion table possibly with the same sequences in multiple bins
         query_w_length_mult_seqs = query_df.reset_index().merge(gs_df, on='SEQUENCEID', sort=False)
@@ -522,10 +534,9 @@ class GenomeQuery(Query):
             # query_w_length = grouped.apply(lambda x: x[x['genome_id_x'] == x['genome_id_y'] if any(x['genome_id_x'] == x['genome_id_y']) else len(x) * [True]])
             # query_w_length = query_w_length.groupby(['index'], sort=False).first().drop(columns='genome_id_y').rename(columns={'genome_id_x': 'genome_id'})
 
-        self.df = query_w_length
+        del query_w_length_mult_seqs
 
         confusion_df = query_w_length.groupby(['BINID', 'genome_id'], sort=False).agg({'seq_length': 'sum', 'SEQUENCEID': 'count'}).rename(columns={'seq_length': 'genome_length', 'SEQUENCEID': 'genome_seq_counts'})
-        self.confusion_df = confusion_df
 
         self.metrics.rand_index_bp, self.metrics.adjusted_rand_index_bp = Metrics.compute_rand_index(confusion_df, 'BINID', 'genome_id', 'genome_length')
         self.metrics.rand_index_seq, self.metrics.adjusted_rand_index_seq = Metrics.compute_rand_index(confusion_df, 'BINID', 'genome_id', 'genome_seq_counts')
@@ -608,6 +619,9 @@ class GenomeQuery(Query):
 
         self.precision_df = precision_df.sort_values(by=['recall_bp'], axis=0, ascending=False)
         self.recall_df = recall_df
+
+        self.heatmap_sdf = precision_recall_per_bin.transform_confusion_matrix2(query_w_length, confusion_df, precision_df, gs_df, log_scale=True)
+
         return True
 
     @staticmethod
@@ -661,10 +675,11 @@ class GenomeQuery(Query):
     def plot_heat_maps(self):
         if self.label == utils_labels.GS:
             return
-        heatmap_df = precision_recall_per_bin.transform_confusion_matrix2(self)
-        plots.plot_heatmap(heatmap_df, self.sample_id, self.options.output_dir, self.label, log_scale=True)
+        plots.plot_heatmap(self.heatmap_sdf, self.sample_id, self.options.output_dir, self.label, log_scale=True)
 
     def plot(self):
+        if self.label == utils_labels.GS:
+            return
         self.plot_precision_vs_bin_size()
         self.plot_recall_vs_genome_size()
         self.plot_heat_maps()
@@ -673,9 +688,8 @@ class GenomeQuery(Query):
 class TaxonomicQuery(Query):
     binning_type = 'taxonomic'
 
-    def __init__(self, rank_to_df, label, sample_id, options, taxonomy_df):
-        super().__init__(label, sample_id, options)
-        self.__rank_to_df = rank_to_df
+    def __init__(self, label, sample_id, options, metadata, taxonomy_df, is_gs=False):
+        super().__init__(label, sample_id, options, metadata, is_gs)
         self.metrics = defaultdict()
         if self.options.filter_tail_percentage:
             self.metrics_filtered = defaultdict()
@@ -685,7 +699,12 @@ class TaxonomicQuery(Query):
 
     @property
     def rank_to_df(self):
-        return self.__rank_to_df
+        query_df = load_data.load_sample(self.metadata)
+        if self.options.min_length:
+            query_df = query_df[query_df['LENGTH'] >= self.options.min_length]
+        rank_to_df = load_data.get_rank_to_df(query_df, self.taxonomy_df, self.label, self.is_gs)
+        del query_df
+        return rank_to_df
 
     @property
     def profile(self):
@@ -774,13 +793,19 @@ class TaxonomicQuery(Query):
             allranks_metrics_df = pd.concat([allranks_metrics_df, rank_metrics_df], ignore_index=True, sort=True)
         return allranks_metrics_df
 
-    def compute_metrics_per_rank(self, rank):
-        if rank not in self.gold_standard_df:
+    def compute_metrics_per_rank(self, rank_to_df, gs_rank_to_df, rank):
+        if rank not in gs_rank_to_df:
             return
-        self.metrics[rank] = Metrics()
-        gs_df = self.gold_standard_df[rank].reset_index()
+        logging.getLogger('amber').info('Evaluating {}, sample {}, taxonomic binning, {}'.format(self.label, self.sample_id, rank))
 
-        query_df = self.rank_to_df[rank].reset_index()[['SEQUENCEID', 'TAXID']]
+        self.metrics[rank] = Metrics()
+        gs_df = gs_rank_to_df[rank]
+
+        query_df = rank_to_df[rank][['SEQUENCEID', 'TAXID']]
+        condition = query_df['SEQUENCEID'].isin(gs_df['SEQUENCEID'])
+        if ~condition.all():
+            logging.getLogger('amber').warning("{} sequences in {} not found in the gold standard.".format(query_df[~condition]['SEQUENCEID'].nunique(), self.label))
+            query_df = query_df[condition]
 
         query_w_length_df = pd.merge(query_df, gs_df.rename(columns={'TAXID': 'true_taxid'}).reset_index(), on='SEQUENCEID', sort=False)
 
@@ -871,12 +896,13 @@ class TaxonomicQuery(Query):
 
         self.recall_df['name'] = self.recall_df['TAXID'].apply(lambda x: self.taxonomy_df.loc[x]['name'])
 
-    def compute_metrics(self):
+    def compute_metrics(self, gs_rank_to_df):
         if self.label == utils_labels.GS and (self.options.only_genome_queries or self.options.skip_gs):
             return False
-        logging.getLogger('amber').info('Evaluating {} (sample {}, taxonomic binning)'.format(self.label, self.sample_id))
-        for rank in self.rank_to_df:
-            self.compute_metrics_per_rank(rank)
+        rank_to_df = self.rank_to_df
+        for rank in rank_to_df:
+            self.compute_metrics_per_rank(rank_to_df, gs_rank_to_df, rank)
+        del rank_to_df
 
         unifrac_bp, unifrac_seq = self.compute_unifrac(all_bins=True)
         for rank in self.metrics:

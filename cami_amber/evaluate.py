@@ -17,18 +17,18 @@ from cami_amber.utils import labels as utils_labels
 import pandas as pd
 
 
-def evaluate_each(queries_list, sample_id):
+def evaluate_each(queries_list, sample_id, gs):
     pd_bins_all = pd.DataFrame()
     df_summary = pd.DataFrame()
 
     for query in queries_list:
-        if not query.compute_metrics():
+        if not query.compute_metrics(gs):
             continue
 
         query_metrics_df = query.get_metrics_df()
         query_metrics_df[utils_labels.SAMPLE] = sample_id
 
-        df_summary = pd.concat([df_summary, query_metrics_df], ignore_index=True, sort=True)
+        df_summary = pd.concat([df_summary, query_metrics_df.dropna(axis=1, how='all')], ignore_index=True, sort=True)
 
         query.precision_df[utils_labels.TOOL] = query.label
         pd_bins_all = pd.concat([pd_bins_all, query.precision_df.reset_index()], ignore_index=True, sort=True)
@@ -38,12 +38,28 @@ def evaluate_each(queries_list, sample_id):
     return df_summary, pd_bins_all
 
 
-def evaluate_samples_queries(sample_id_to_queries_list):
+def evaluate_samples_queries(sample_id_to_g_queries_list, sample_id_to_t_queries_list):
     pd_bins_all = pd.DataFrame()
     df_summary_all = pd.DataFrame()
 
-    for sample_id in sample_id_to_queries_list:
-        df_summary, pd_bins = evaluate_each(sample_id_to_queries_list[sample_id], sample_id)
+    for sample_id in sample_id_to_g_queries_list:
+        if not sample_id_to_g_queries_list[sample_id]:
+            continue
+        query1 = sample_id_to_g_queries_list[sample_id][0]
+        gs_df = query1.gold_standard.df
+        gs_df = gs_df[['SEQUENCEID', 'BINID', 'LENGTH']].rename(columns={'LENGTH': 'seq_length', 'BINID': 'genome_id'})
+        df_summary, pd_bins = evaluate_each(sample_id_to_g_queries_list[sample_id], sample_id, gs_df)
+        del gs_df
+        pd_bins_all = pd.concat([pd_bins_all, pd_bins], ignore_index=True)
+        df_summary_all = pd.concat([df_summary_all, df_summary], ignore_index=True)
+
+    for sample_id in sample_id_to_t_queries_list:
+        if not sample_id_to_t_queries_list[sample_id]:
+            continue
+        query1 = sample_id_to_t_queries_list[sample_id][0]
+        gs_rank_to_df = query1.gold_standard.rank_to_df
+        df_summary, pd_bins = evaluate_each(sample_id_to_t_queries_list[sample_id], sample_id, gs_rank_to_df)
+        del gs_rank_to_df
         pd_bins_all = pd.concat([pd_bins_all, pd_bins], ignore_index=True)
         df_summary_all = pd.concat([df_summary_all, df_summary], ignore_index=True)
 

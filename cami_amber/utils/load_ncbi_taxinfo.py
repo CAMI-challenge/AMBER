@@ -1,4 +1,4 @@
-# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -138,7 +138,7 @@ def preprocess_ncbi_tax(ncbi_dir):
 
     nodes = pd.concat([nodes, nodes.apply(lambda row: get_path(row), axis=1, result_type='expand')], axis='columns')
     for i in range(8):
-        nodes[i] = nodes[i].astype(pd.Int64Dtype())
+        nodes[i] = nodes[i].astype(pd.UInt32Dtype())
     nodes.rename(columns=INDEX_TO_RANK, inplace=True)
 
     tax_id_to_name = load_names(tax_id_to_rank, os.path.join(ncbi_dir, 'names.dmp'))
@@ -146,6 +146,11 @@ def preprocess_ncbi_tax(ncbi_dir):
         tax_id_to_name[k] = tax_id_to_name[tax_id_to_tax_id[k]]
 
     nodes['name'] = nodes['TAXID'].map(tax_id_to_name)
+
+    for k, v in tax_id_to_tax_id.items():
+        tax_id_to_rank[k] = tax_id_to_rank[tax_id_to_tax_id[k]]
+    nodes['rank'] = nodes.apply(lambda x: tax_id_to_rank[x['TAXID']], axis=1)
+
     if os.access(ncbi_dir, os.W_OK):
         nodes.to_feather(os.path.join(ncbi_dir, 'nodes.amber.ft'))
     else:

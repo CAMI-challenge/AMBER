@@ -1,4 +1,4 @@
-# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,9 +103,8 @@ def load_unique_common(unique_common_file_path, args_keyword):
 
 def load_ncbi_info(ncbi_dir):
     if ncbi_dir:
-        logging.getLogger('amber').info('Loading NCBI taxonomy')
+        logging.getLogger('amber').info('Loading NCBI taxonomy from %s ' % ncbi_dir)
         try:
-            logging.getLogger('amber').info('%s' % ncbi_dir)
             if os.path.isfile(ncbi_dir):
                 taxonomy_df = pd.read_feather(ncbi_dir).set_index('TAXID')
             else:
@@ -114,12 +113,14 @@ def load_ncbi_info(ncbi_dir):
             traceback.print_exc()
             logging.getLogger('amber').info('Preprocessed NCBI taxonomy file not found. Creating file {}'.format(os.path.join(ncbi_dir, 'nodes.amber.ft')))
             taxonomy_df = load_ncbi_taxinfo.preprocess_ncbi_tax(ncbi_dir)
+        taxonomy_df = taxonomy_df.astype(dtype={rank: pd.UInt32Dtype() for rank in load_ncbi_taxinfo.RANKS})
         return taxonomy_df
 
 
-def read_metadata(file_path_query):
+def read_metadata(path_label_tuple):
+    file_path_query, label = path_label_tuple
     header = {}
-    index_to_column_name = {}
+    columns_list = []
     got_column_indices = False
 
     samples_metadata = []
@@ -136,18 +137,18 @@ def read_metadata(file_path_query):
             # parse header with column indices
             if line.startswith('@@'):
                 for index, column_name in enumerate(line[2:].split('\t')):
-                    index_to_column_name[index] = column_name
+                    columns_list.append(column_name)
                 got_column_indices = True
                 reading_data = False
                 data_start = i + 1
 
             elif line.startswith('@'):
-                logging.getLogger('amber').info('Found {}'.format(line))
+                logging.getLogger('amber').info('Found {} in {}'.format(line, label))
                 # parse header with metadata
                 if got_column_indices:
-                    samples_metadata.append((data_start, data_end, header, index_to_column_name))
+                    samples_metadata.append((data_start, data_end, header, columns_list, file_path_query))
                     header = {}
-                    index_to_column_name = {}
+                    columns_list = []
                 key, value = line[1:].split(':', 1)
                 header[key.upper()] = value.strip()
                 got_column_indices = False
@@ -157,11 +158,25 @@ def read_metadata(file_path_query):
                 reading_data = True
                 data_end = i
     try:
-        samples_metadata.append((data_start, data_end, header, index_to_column_name))
+        samples_metadata.append((data_start, data_end, header, columns_list, file_path_query))
     except UnboundLocalError:
         logging.getLogger('amber').critical("File {} is malformed.".format(file_path_query))
         exit(1)
     return samples_metadata
+
+
+def load_sample(metadata):
+    columns = ['SEQUENCEID', 'BINID', 'TAXID', 'LENGTH', '_LENGTH']
+    logging.getLogger('amber').info('Loading ' + metadata[2]['SAMPLEID'])
+    nrows = metadata[1] - metadata[0] + 1
+    usecols = [v for v in metadata[3] if v in columns]
+    df = pd.read_csv(metadata[4], sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None,
+                     names=metadata[3],
+                     usecols=usecols,
+                     dtype={'SEQUENCEID': pd.StringDtype(), 'BINID': pd.StringDtype(), 'TAXID': pd.UInt32Dtype(),
+                            'LENGTH': pd.UInt32Dtype(), '_LENGTH': pd.UInt32Dtype()})
+    df.rename(columns={'_LENGTH': 'LENGTH'}, inplace=True)
+    return df
 
 
 def load_binnings(samples_metadata, file_path_query):
@@ -200,7 +215,7 @@ def get_sample_id_to_num_genomes(sample_id_to_queries_list):
     return sample_id_to_num_genomes
 
 
-def get_rank_to_df(query_df, taxonomy_df, is_gs=False):
+def get_rank_to_df(query_df, taxonomy_df, label, is_gs=False):
     if is_gs:
         if 'LENGTH' not in query_df.columns:
             logging.getLogger('amber').critical("Sequences length could not be determined. Please add column LENGTH to gold standard.")
@@ -210,106 +225,72 @@ def get_rank_to_df(query_df, taxonomy_df, is_gs=False):
         cols = ['TAXID']
 
     rank_to_df = dict()
-    logging.getLogger('amber').info('Aggregating taxonomy information')
+    logging.getLogger('amber').info('Setting taxa ranks')
     query_df = pd.merge(query_df, taxonomy_df.reset_index(), on=['TAXID']).set_index('SEQUENCEID')
 
     for rank in load_ncbi_taxinfo.RANKS:
-        logging.getLogger('amber').info('Deriving bins at rank: ' + rank)
+        logging.getLogger('amber').info('Deriving bins of {} at rank: {}'.format(label, rank))
         if query_df[rank].isnull().all():
             continue
         rank_to_df[rank] = query_df[query_df[rank].notnull()][cols + [rank]]
         rank_to_df[rank]['TAXID'] = rank_to_df[rank][rank]
-        rank_to_df[rank] = rank_to_df[rank].drop(columns=rank)
+        rank_to_df[rank] = rank_to_df[rank].drop(columns=rank).reset_index()
 
     return rank_to_df
 
 
-def filter_by_length(sample_id_to_df, min_length):
-    sample_id_to_df_filtered = OrderedDict()
-    for sample_id in sample_id_to_df:
-        df = sample_id_to_df[sample_id]
-        sample_id_to_df_filtered[sample_id] = df[df['LENGTH'] >= min_length]
-    return sample_id_to_df_filtered
-
-
 def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, options_gs=None):
+    pool = ThreadPool(multiprocessing.cpu_count())
+    metadata_all = pool.map(read_metadata, zip([gold_standard_file] + bin_files, [utils_labels.GS] + labels))
+    pool.close()
+    samples_metadata_gs = metadata_all[0]
+    samples_metadata_queries = metadata_all[1:]
+
     if not options:
         options = binning_classes.Options()
     if not options_gs:
         options_gs = binning_classes.Options()
     taxonomy_df = load_ncbi_info(options.ncbi_dir) if options.ncbi_dir else pd.DataFrame()
-    pool = ThreadPool(multiprocessing.cpu_count())
-    results = pool.map(open_query, [gold_standard_file] + bin_files)
-    pool.close()
-    gs = results[0]
-    queries = results[1:]
-    return load_queries(gs, queries, labels, options, options_gs, taxonomy_df)
 
-
-def load_queries(gs, queries, labels, options, options_gs, taxonomy_df):
-    logging.getLogger('amber').info('Loading {}'.format(utils_labels.GS))
-    sample_id_to_gs_df = gs
-    if options.min_length:
-        sample_id_to_gs_df_filtered = filter_by_length(sample_id_to_gs_df, options.min_length)
-    sample_id_to_gs_rank_to_df = defaultdict()
-    sample_id_to_queries_list = defaultdict(list)
+    sample_id_to_g_queries_list = defaultdict(list)
+    sample_id_to_t_queries_list = defaultdict(list)
     sample_id_to_g_gs = defaultdict(list)
     sample_id_to_t_gs = defaultdict(list)
 
-    for sample_id in sample_id_to_gs_df:
-        gs_df = sample_id_to_gs_df_filtered[sample_id] if options.min_length else sample_id_to_gs_df[sample_id]
-        if gs_df.empty:
-            logging.getLogger('amber').critical("Gold standard for sample {} is empty. Exiting.".format(sample_id))
-            exit(1)
-        if 'BINID' in gs_df.columns:
-            gs_df_g = gs_df.drop_duplicates(['SEQUENCEID', 'BINID'])
-            g_query_gs = binning_classes.GenomeQuery(gs_df_g, utils_labels.GS, sample_id, options_gs)
+    for metadata in samples_metadata_gs:
+        sample_id = metadata[2]['SAMPLEID']
+        columns = metadata[3]
+        if 'BINID' in columns:
+            g_query_gs = binning_classes.GenomeQuery(utils_labels.GS, sample_id, options_gs, metadata, True)
             g_query_gs.gold_standard = g_query_gs
-            g_query_gs.gold_standard_df = gs_df_g
-            sample_id_to_queries_list[sample_id].append(g_query_gs)
+            sample_id_to_g_queries_list[sample_id].append(g_query_gs)
             sample_id_to_g_gs[sample_id] = g_query_gs
-        if 'TAXID' in gs_df.columns and not taxonomy_df.empty:
-            gs_rank_to_df = get_rank_to_df(gs_df, taxonomy_df, is_gs=True)
-            sample_id_to_gs_rank_to_df[sample_id] = gs_rank_to_df
-            t_query_gs = binning_classes.TaxonomicQuery(gs_rank_to_df, utils_labels.GS, sample_id, options_gs, taxonomy_df)
+        if 'TAXID' in columns and not taxonomy_df.empty:
+            t_query_gs = binning_classes.TaxonomicQuery(utils_labels.GS, sample_id, options_gs, metadata, taxonomy_df, True)
             t_query_gs.gold_standard = t_query_gs
-            t_query_gs.gold_standard_df = gs_rank_to_df
-            sample_id_to_queries_list[sample_id].append(t_query_gs)
+            sample_id_to_t_queries_list[sample_id].append(t_query_gs)
             sample_id_to_t_gs[sample_id] = t_query_gs
 
-    for query, label in zip(queries, labels):
+    for query, label in zip(samples_metadata_queries, labels):
         logging.getLogger('amber').info('Loading {}'.format(label))
-        sample_id_to_query_df = query
-        for sample_id in sample_id_to_query_df:
-            if sample_id not in sample_id_to_gs_df:
-                logging.getLogger('amber').critical("Sample ID {} in {} not found in the gold standard.".format(sample_id, label))
-                exit(1)
-
-            gs_df = sample_id_to_gs_df[sample_id]
-            query_df = sample_id_to_query_df[sample_id]
-            condition = query_df['SEQUENCEID'].isin(gs_df['SEQUENCEID'])
-            if ~condition.all():
-                logging.getLogger('amber').warning("{} sequences in {} not found in the gold standard.".format(query_df[~condition]['SEQUENCEID'].nunique(), label))
-                query_df = query_df[condition]
-
-            if options.min_length:
-                gs_df = sample_id_to_gs_df_filtered[sample_id]
-                condition = query_df['SEQUENCEID'].isin(gs_df['SEQUENCEID'])
-                if ~condition.all():
-                    query_df = query_df[condition]
-
-            if 'BINID' in query_df.columns:
-                g_query = binning_classes.GenomeQuery(query_df.drop_duplicates(['SEQUENCEID', 'BINID']), label, sample_id, options)
+        for metadata in query:
+            sample_id = metadata[2]['SAMPLEID']
+            columns = metadata[3]
+            if 'BINID' in columns:
+                if not sample_id_to_g_gs[sample_id]:
+                    logging.getLogger('amber').critical("Sample ID {} in {} not found in the genome binning gold standard.".format(sample_id, label))
+                    exit(1)
+                g_query = binning_classes.GenomeQuery(label, sample_id, options, metadata)
                 g_query.gold_standard = sample_id_to_g_gs[sample_id]
-                g_query.gold_standard_df = gs_df
-                sample_id_to_queries_list[sample_id].append(g_query)
+                sample_id_to_g_queries_list[sample_id].append(g_query)
                 options.only_taxonomic_queries = options_gs.only_taxonomic_queries = False
-            if 'TAXID' in query_df.columns and not taxonomy_df.empty:
-                t_query = binning_classes.TaxonomicQuery(get_rank_to_df(query_df, taxonomy_df), label, sample_id, options, taxonomy_df)
+            if 'TAXID' in columns and not taxonomy_df.empty:
+                if not sample_id_to_t_gs[sample_id]:
+                    logging.getLogger('amber').critical("Sample ID {} in {} not found in the taxon binning gold standard.".format(sample_id, label))
+                    exit(1)
+                t_query = binning_classes.TaxonomicQuery(label, sample_id, options, metadata, taxonomy_df)
                 t_query.gold_standard = sample_id_to_t_gs[sample_id]
-                t_query.gold_standard_df = sample_id_to_gs_rank_to_df[sample_id]
-                sample_id_to_queries_list[sample_id].append(t_query)
+                sample_id_to_t_queries_list[sample_id].append(t_query)
                 options.only_taxonomic_queries = options_gs.only_genome_queries = False
 
-    return sample_id_to_queries_list, list(sample_id_to_gs_df.keys())
-
+    return sample_id_to_g_queries_list, sample_id_to_t_queries_list, [metadata[2]['SAMPLEID'] for metadata in samples_metadata_gs]

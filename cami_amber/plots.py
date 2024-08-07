@@ -16,6 +16,8 @@
 from cami_amber.utils import labels as utils_labels
 from cami_amber.utils import load_ncbi_taxinfo
 from cami_amber import binning_classes
+from cami_amber import plot_by_genome
+import logging
 import matplotlib
 matplotlib.use('Agg')
 import seaborn as sns
@@ -155,8 +157,6 @@ def plot_precision_recall_by_coverage(sample_id_to_queries_list, pd_bins_g, cove
 
 
 def plot_heatmap(df_confusion, sample_id, output_dir, label, separate_bar=False, log_scale=False):
-    if log_scale:
-        df_confusion = df_confusion.apply(np.log10, inplace=True).replace(-np.inf, 0)
     fig, axs = plt.subplots(figsize=(10, 8))
     fontsize = 20
 
@@ -178,13 +178,12 @@ def plot_heatmap(df_confusion, sample_id, output_dir, label, separate_bar=False,
     mappable = sns_plot.get_children()[0]
 
     cbar_ax = fig.add_axes([.915, .11, .017, .77])
-    cbar = plt.colorbar(mappable, ax=axs, cax=cbar_ax, orientation='vertical')
     if log_scale:
-        cbar.set_label(fontsize=fontsize, label='log$_{10}$(# bp)')
+        fmt = lambda x, pos: '{:.0f}'.format((10 ** x) / 1000000)
     else:
         fmt = lambda x, pos: '{:.0f}'.format(x / 1000000)
-        cbar = plt.colorbar(mappable, ax=axs, cax=cbar_ax, orientation='vertical', format=ticker.FuncFormatter(fmt))
-        cbar.set_label(fontsize=fontsize, label='Millions of base pairs')
+    cbar = plt.colorbar(mappable, ax=axs, cax=cbar_ax, orientation='vertical', format=ticker.FuncFormatter(fmt))
+    cbar.set_label(fontsize=fontsize, label='Millions of base pairs')
 
     cbar.ax.tick_params(labelsize=fontsize)
     cbar.outline.set_edgecolor(None)
@@ -599,3 +598,85 @@ def plot_counts(pd_bins, tools, output_dir, output_file, get_bin_counts_function
     fig.savefig(os.path.join(output_dir, 'genome', output_file + '.pdf'), dpi=100, format='pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
     fig.savefig(os.path.join(output_dir, 'genome', output_file + '.png'), dpi=200, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close(fig)
+
+
+def plot_genome_binning(color_indices, sample_id_to_queries_list, df_summary, pd_bins, labels, coverages_pd,
+                        output_dir):
+    df_summary_g = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'genome']
+    if len(df_summary_g) == 0:
+        return
+
+    logging.getLogger('amber').info('Creating genome binning plots')
+
+    for sample_id in sample_id_to_queries_list:
+        for query in sample_id_to_queries_list[sample_id]:
+            query.plot()
+
+    available_tools = list(df_summary_g[utils_labels.TOOL].unique())
+    available_tools = [tool for tool in labels if tool in available_tools]
+
+    if not coverages_pd.empty:
+        plot_precision_recall_by_coverage(sample_id_to_queries_list, pd_bins, coverages_pd, available_tools,
+                                                output_dir)
+
+    if color_indices:
+        color_indices = [int(i) - 1 for i in color_indices.split(',')]
+    create_legend(color_indices, available_tools, output_dir)
+    plot_avg_precision_recall(color_indices, df_summary_g, labels, output_dir)
+    plot_precision_recall(color_indices, df_summary_g, labels, output_dir)
+    plot_adjusted_rand_index_vs_assigned_bps(color_indices, df_summary_g, labels, output_dir)
+
+    plot_boxplot(sample_id_to_queries_list, 'recall_bp', output_dir, available_tools)
+    plot_boxplot(sample_id_to_queries_list, 'precision_bp', output_dir, available_tools)
+
+    plot_counts(pd_bins, available_tools, output_dir, 'bin_counts', get_number_of_hq_bins)
+    plot_counts(pd_bins, available_tools, output_dir, 'high_scoring_bins', get_number_of_hq_bins_by_score)
+
+    plot_by_genome.plot_precision_recall_per_bin(pd_bins, output_dir)
+
+    plot_contamination(pd_bins, 'genome', 'Contamination', 'Index of bin (sorted by contamination (bp))',
+                       'Contamination (bp)', create_contamination_column, output_dir)
+    plot_contamination(pd_bins, 'genome', 'Completeness - contamination',
+                       'Index of bin (sorted by completeness - contamination (bp))',
+                       'Completeness - contamination (bp)', create_completeness_minus_contamination_column,
+                        output_dir)
+
+
+def plot_taxonomic_binning(color_indices, df_summary, pd_bins, labels, output_dir):
+    df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic']
+    if len(df_summary_t) == 0:
+        return
+
+    logging.getLogger('amber').info('Creating taxonomic binning plots')
+
+    available_tools = list(df_summary_t[utils_labels.TOOL].unique())
+    available_tools = [tool for tool in labels if tool in available_tools]
+
+    if color_indices:
+        color_indices = [int(i) - 1 for i in color_indices.split(',')]
+    for rank, pd_group in df_summary_t.groupby('rank'):
+        plot_avg_precision_recall(color_indices, pd_group, available_tools, output_dir, rank)
+        plot_precision_recall(color_indices, pd_group, available_tools, output_dir, rank)
+        plot_adjusted_rand_index_vs_assigned_bps(color_indices, pd_group, available_tools, output_dir, rank)
+
+    metrics_list = [utils_labels.AVG_PRECISION_BP, utils_labels.AVG_RECALL_BP]
+    errors_list = [utils_labels.AVG_PRECISION_BP_SEM, utils_labels.AVG_RECALL_BP_SEM]
+    plot_taxonomic_results(df_summary_t, metrics_list, errors_list, 'avg_precision_recall_bp', output_dir)
+
+    metrics_list = [utils_labels.AVG_PRECISION_SEQ, utils_labels.AVG_RECALL_SEQ]
+    errors_list = [utils_labels.AVG_PRECISION_SEQ_SEM, utils_labels.AVG_RECALL_SEQ_SEM]
+    plot_taxonomic_results(df_summary_t, metrics_list, errors_list, 'avg_precision_recall_seq', output_dir)
+
+    metrics_list = [utils_labels.PRECISION_PER_BP, utils_labels.RECALL_PER_BP, utils_labels.PRECISION_PER_SEQ,
+                    utils_labels.RECALL_PER_SEQ]
+    plot_taxonomic_results(df_summary_t, metrics_list, [], 'precision_recall', output_dir)
+
+    for rank in load_ncbi_taxinfo.RANKS:
+        pd_bins_rank = pd_bins[pd_bins['rank'] == rank]
+        plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Contamination',
+                           'Index of bin (sorted by contamination (bp))', 'Contamination (bp)',
+                           create_contamination_column, output_dir)
+        plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Completeness - contamination',
+                           'Index of bin (sorted by completeness - contamination (bp))',
+                           'Completeness - contamination (bp)',
+                            create_completeness_minus_contamination_column, output_dir)

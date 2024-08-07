@@ -1,4 +1,4 @@
-# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,13 +19,12 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 import pandas as pd
+import numpy as np
 
 
-def transform_confusion_matrix2(query):
-    gs_df = query.gold_standard_df.rename(columns={'BINID': 'genome_id', 'LENGTH': 'seq_length'})
-    precision_df = query.precision_df
-    confusion_df = query.confusion_df
-    genomes_df = pd.DataFrame(gs_df['genome_id'].unique(), columns=['genome_id'])
+def transform_confusion_matrix2(query_w_length, confusion_df, precision_df, gs_df, log_scale=False):
+    gs_df = gs_df.rename(columns={'BINID': 'genome_id', 'LENGTH': 'seq_length'})
+    genomes_df = pd.DataFrame(gs_df['genome_id'].drop_duplicates(), columns=['genome_id'])
 
     all_genomes_sorted_by_size = gs_df.groupby('genome_id', sort=False).agg({'seq_length': 'sum'}).sort_values(by='seq_length', axis=0, ascending=False).index.tolist()
 
@@ -40,14 +39,16 @@ def transform_confusion_matrix2(query):
     heatmap_df = heatmap_df.merge(precision_df['tp_length'], on='BINID', sort=False).sort_values(by='tp_length', axis=0, ascending=False)
 
     gs_df = gs_df.set_index(['SEQUENCEID', 'genome_id'])
-    query_df = query.df.set_index(['SEQUENCEID', 'genome_id'])
+    query_df = query_w_length.set_index(['SEQUENCEID', 'genome_id'])
     difference_df = gs_df.index.difference(query_df.index)
     unassigned_sequences = gs_df.loc[difference_df].groupby('genome_id', sort=False).agg({'seq_length': 'sum'})
 
     heatmap_df = pd.concat([heatmap_df, unassigned_sequences.T], sort=True)
     heatmap_df = heatmap_df[genomes_sorted_list].fillna(0)
+    if log_scale:
+        heatmap_df = heatmap_df.apply(np.log10).replace(-np.inf, 0)
 
-    return heatmap_df
+    return heatmap_df.astype(pd.SparseDtype(np.uint32, 0))
 
 
 def transform_confusion_matrix(query):
