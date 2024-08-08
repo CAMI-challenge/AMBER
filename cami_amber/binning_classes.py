@@ -605,7 +605,8 @@ class GenomeQuery(Query):
         num_unmapped_genomes = len(unmapped_genomes)
         prec_copy = precision_df.reset_index()
         if num_unmapped_genomes:
-            prec_copy = prec_copy.reindex(prec_copy.index.tolist() + list(range(len(prec_copy), len(prec_copy) + num_unmapped_genomes))).fillna(.0)
+            numeric_cols = prec_copy.select_dtypes('number').columns
+            prec_copy = prec_copy.reindex(prec_copy.index.tolist() + list(range(len(prec_copy), len(prec_copy) + num_unmapped_genomes))).fillna(dict.fromkeys(numeric_cols, 0))
         self.metrics.recall_avg_bp_cami1 = prec_copy['recall_bp'].mean()
         self.metrics.recall_avg_seq_cami1 = prec_copy['recall_seq'].mean()
         self.metrics.recall_avg_bp_sem_cami1 = prec_copy['recall_bp'].sem()

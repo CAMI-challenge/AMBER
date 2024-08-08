@@ -82,7 +82,7 @@ def save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, std
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False)
     pd_bins.to_csv(os.path.join(output_dir, 'bin_metrics.tsv'), index=False, sep='\t')
     if stdout:
-        print(df_summary[utils_labels.LABELS1].rename(columns=utils_labels.LABELS).to_string(index=False))
+        print(df_summary[[label for label in utils_labels.LABELS1 if label in df_summary.columns]].rename(columns=utils_labels.LABELS).to_string(index=False))
     for tool, pd_group in pd_bins[pd_bins['rank'] == 'NA'].groupby(utils_labels.TOOL):
         bins_columns = utils_labels.get_genome_bins_columns()
         table = pd_group[['sample_id'] + list(bins_columns.keys())].rename(columns=dict(bins_columns))

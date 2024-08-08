@@ -43,19 +43,23 @@ except ImportError:
 def open_generic(file):
     file_type, file_encoding = mimetypes.guess_type(file)
 
-    if file_encoding == 'gzip':
-        if file_type == 'application/x-tar':  # .tar.gz
-            tar = tarfile.open(file, 'r:gz')
-            f = tar.extractfile(tar.getmembers()[0])
+    try:
+        if file_encoding == 'gzip':
+            if file_type == 'application/x-tar':  # .tar.gz
+                tar = tarfile.open(file, 'r:gz')
+                f = tar.extractfile(tar.getmembers()[0])
+                return io.TextIOWrapper(f)
+            else:  # .gz
+                return gzip.open(file, 'rt')
+        if file_type == 'application/zip':  # .zip
+            f = zipfile.ZipFile(file, 'r')
+            f = f.open(f.namelist()[0])
             return io.TextIOWrapper(f)
-        else:  # .gz
-            return gzip.open(file, 'rt')
-    if file_type == 'application/zip':  # .zip
-        f = zipfile.ZipFile(file, 'r')
-        f = f.open(f.namelist()[0])
-        return io.TextIOWrapper(f)
-    else:
-        return open(file, 'rt')
+        else:
+            return open(file, 'rt')
+    except FileNotFoundError as e:
+        logging.getLogger('amber').error('File not found: %s' % file)
+        raise e
 
 
 def open_coverages(file_path):
@@ -103,7 +107,7 @@ def load_unique_common(unique_common_file_path, args_keyword):
 
 def load_ncbi_info(ncbi_dir):
     if ncbi_dir:
-        logging.getLogger('amber').info('Loading NCBI taxonomy from %s ' % ncbi_dir)
+        logging.getLogger('amber').info('Loading NCBI taxonomy from %s' % ncbi_dir)
         try:
             if os.path.isfile(ncbi_dir):
                 taxonomy_df = pd.read_feather(ncbi_dir).set_index('TAXID')
@@ -159,9 +163,9 @@ def read_metadata(path_label_tuple):
                 data_end = i
     try:
         samples_metadata.append((data_start, data_end, header, columns_list, file_path_query))
-    except UnboundLocalError:
+    except UnboundLocalError as e:
         logging.getLogger('amber').critical("File {} is malformed.".format(file_path_query))
-        exit(1)
+        raise e
     return samples_metadata
 
 
@@ -241,8 +245,13 @@ def get_rank_to_df(query_df, taxonomy_df, label, is_gs=False):
 
 def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, options_gs=None):
     pool = ThreadPool(multiprocessing.cpu_count())
-    metadata_all = pool.map(read_metadata, zip([gold_standard_file] + bin_files, [utils_labels.GS] + labels))
-    pool.close()
+
+    try:
+        metadata_all = pool.map(read_metadata, zip([gold_standard_file] + bin_files, [utils_labels.GS] + labels))
+    except BaseException:
+        logging.getLogger('amber').error('An error occurred. Exiting.')
+        pool.close()
+        exit(1)
     samples_metadata_gs = metadata_all[0]
     samples_metadata_queries = metadata_all[1:]
 
