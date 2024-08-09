@@ -358,6 +358,7 @@ class Query(ABC):
         self.__options = options
         self.__metadata = metadata
         self.__is_gs = is_gs
+        self.__eval_success = False
 
     @property
     def label(self):
@@ -403,6 +404,10 @@ class Query(ABC):
     def is_gs(self):
         return self.__is_gs
 
+    @property
+    def eval_success(self):
+        return self.__eval_success
+
     @label.setter
     def label(self, label):
         self.__label = label
@@ -443,6 +448,10 @@ class Query(ABC):
     def metadata(self, metadata):
         self.__metadata = metadata
 
+    @eval_success.setter
+    def eval_success(self, eval_success):
+        self.__eval_success = eval_success
+
     @abstractmethod
     def compute_metrics(self):
         pass
@@ -473,6 +482,10 @@ class GenomeQuery(Query):
             return query_df[['SEQUENCEID', 'BINID']]
 
     @property
+    def gold_standard_data(self):
+        return self.gold_standard.df[['SEQUENCEID', 'BINID', 'LENGTH']].rename(columns={'LENGTH': 'seq_length', 'BINID': 'genome_id'})
+
+    @property
     def recall_df_cami1(self):
         return self.__recall_df_cami1
 
@@ -485,6 +498,7 @@ class GenomeQuery(Query):
         metrics_dict[utils_labels.TOOL] = self.label
         metrics_dict[utils_labels.BINNING_TYPE] = self.binning_type
         metrics_dict[utils_labels.RANK] = 'NA'
+        metrics_dict[utils_labels.SAMPLE] = self.sample_id
         return pd.DataFrame(metrics_dict)
 
     def compute_metrics(self, gs_df):
@@ -619,9 +633,13 @@ class GenomeQuery(Query):
         self.metrics.accuracy_seq = precision_df['tp_seq_counts'].sum() / recall_df['seq_counts_gs'].sum()
 
         self.precision_df = precision_df.sort_values(by=['recall_bp'], axis=0, ascending=False)
+        self.precision_df[utils_labels.TOOL] = self.label
+        self.precision_df['sample_id'] = self.sample_id
         self.recall_df = recall_df
 
         self.heatmap_sdf = precision_recall_per_bin.transform_confusion_matrix2(query_w_length, confusion_df, precision_df, gs_df, log_scale=True)
+
+        self.eval_success = True
 
         return True
 
@@ -691,6 +709,7 @@ class TaxonomicQuery(Query):
 
     def __init__(self, label, sample_id, options, metadata, taxonomy_df, is_gs=False):
         super().__init__(label, sample_id, options, metadata, is_gs)
+        self.__rank_to_df = None
         self.metrics = defaultdict()
         if self.options.filter_tail_percentage:
             self.metrics_filtered = defaultdict()
@@ -706,6 +725,10 @@ class TaxonomicQuery(Query):
         rank_to_df = load_data.get_rank_to_df(query_df, self.taxonomy_df, self.label, self.is_gs)
         del query_df
         return rank_to_df
+
+    @property
+    def gold_standard_data(self):
+        return self.gold_standard.rank_to_df
 
     @property
     def profile(self):
@@ -790,6 +813,7 @@ class TaxonomicQuery(Query):
             rank_metrics_df[utils_labels.TOOL] = self.label
             rank_metrics_df[utils_labels.BINNING_TYPE] = self.binning_type
             rank_metrics_df[utils_labels.RANK] = rank
+            rank_metrics_df[utils_labels.SAMPLE] = self.sample_id
 
             allranks_metrics_df = pd.concat([allranks_metrics_df, rank_metrics_df], ignore_index=True, sort=True)
         return allranks_metrics_df
@@ -914,6 +938,10 @@ class TaxonomicQuery(Query):
             for rank in self.metrics:
                 self.metrics_filtered[rank].unifrac_bp = unifrac_bp
                 self.metrics_filtered[rank].unifrac_seq = unifrac_seq
+
+        self.precision_df[utils_labels.TOOL] = self.label
+        self.precision_df['sample_id'] = self.sample_id
+        self.eval_success = True
 
         return True
 

@@ -77,6 +77,14 @@ def get_labels(labels, bin_files):
     return tool_id
 
 
+def get_num_threads(num_threads):
+    try:
+        return abs(int(num_threads)) if num_threads else None
+    except ValueError:
+        logging.getLogger('amber').error('Invalid value for number of threads')
+        exit(1)
+
+
 def save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, stdout):
     logging.getLogger('amber').info('Saving computed metrics')
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False)
@@ -117,6 +125,7 @@ def main(args=None):
     parser.add_argument('-d', '--desc', help="Description for HTML page", required=False)
     parser.add_argument('--colors', help="Color indices", required=False)
     parser.add_argument('--silent', help='Silent mode', action='store_true')
+    parser.add_argument('-t', '--threads', help='Number of threads (default: number of CPUs)', required=False)
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
     group_g = parser.add_argument_group('genome binning-specific arguments')
@@ -160,8 +169,9 @@ def main(args=None):
                                          ncbi_dir=args.ncbi_dir,
                                          skip_gs=False)
 
+    num_threads = get_num_threads(args.threads)
     sample_id_to_g_queries_list, sample_id_to_t_queries_list, sample_ids_list = load_data.load_queries_mthreaded(
-        args.gold_standard_file, args.bin_files, labels, options, options_gs)
+        args.gold_standard_file, args.bin_files, labels, options, options_gs, num_threads)
 
     coverages_pd = load_data.open_coverages(args.genome_coverage)
 
@@ -172,7 +182,7 @@ def main(args=None):
 
     create_output_directories(output_dir, sample_id_to_queries_list)
 
-    df_summary, pd_bins = evaluate.evaluate_samples_queries(sample_id_to_g_queries_list, sample_id_to_t_queries_list)
+    df_summary, pd_bins = evaluate.evaluate_samples_queries(sample_id_to_g_queries_list, sample_id_to_t_queries_list, num_threads)
 
     save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, args.stdout)
 

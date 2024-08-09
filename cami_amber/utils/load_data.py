@@ -150,7 +150,7 @@ def read_metadata(path_label_tuple):
                 logging.getLogger('amber').info('Found {} in {}'.format(line, label))
                 # parse header with metadata
                 if got_column_indices:
-                    samples_metadata.append((data_start, data_end, header, columns_list, file_path_query))
+                    samples_metadata.append((data_start, data_end, header, columns_list, file_path_query, label))
                     header = {}
                     columns_list = []
                 key, value = line[1:].split(':', 1)
@@ -162,7 +162,7 @@ def read_metadata(path_label_tuple):
                 reading_data = True
                 data_end = i
     try:
-        samples_metadata.append((data_start, data_end, header, columns_list, file_path_query))
+        samples_metadata.append((data_start, data_end, header, columns_list, file_path_query, label))
     except UnboundLocalError as e:
         logging.getLogger('amber').critical("File {} is malformed.".format(file_path_query))
         raise e
@@ -171,7 +171,7 @@ def read_metadata(path_label_tuple):
 
 def load_sample(metadata):
     columns = ['SEQUENCEID', 'BINID', 'TAXID', 'LENGTH', '_LENGTH']
-    logging.getLogger('amber').info('Loading ' + metadata[2]['SAMPLEID'])
+    logging.getLogger('amber').info('Loading %s of %s' % (metadata[2]['SAMPLEID'], metadata[5]))
     nrows = metadata[1] - metadata[0] + 1
     usecols = [v for v in metadata[3] if v in columns]
     df = pd.read_csv(metadata[4], sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None,
@@ -243,14 +243,15 @@ def get_rank_to_df(query_df, taxonomy_df, label, is_gs=False):
     return rank_to_df
 
 
-def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, options_gs=None):
-    pool = ThreadPool(multiprocessing.cpu_count())
+def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, options_gs=None, max_workers=None):
+    max_workers = min(10, os.cpu_count() or 1, max_workers) if max_workers else min(10, os.cpu_count() or 1)
+    pool = ThreadPool(max_workers)
 
     try:
         metadata_all = pool.map(read_metadata, zip([gold_standard_file] + bin_files, [utils_labels.GS] + labels))
+        pool.close()
     except BaseException:
         logging.getLogger('amber').error('An error occurred. Exiting.')
-        pool.close()
         exit(1)
     samples_metadata_gs = metadata_all[0]
     samples_metadata_queries = metadata_all[1:]
