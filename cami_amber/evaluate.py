@@ -42,16 +42,17 @@ def evaluate_samples_queries(sample_id_to_g_queries_list, sample_id_to_t_queries
     pool_child = ThreadPoolExecutor(max_workers)
     pool_io = ThreadPoolExecutor(min(10, os.cpu_count() or 1, max_workers)) if max_workers else ThreadPoolExecutor(min(10, os.cpu_count() or 1))
 
-    futures = []
     for sample_id in sample_id_to_g_queries_list:
         if not sample_id_to_g_queries_list[sample_id]:
             continue
-        futures.append(pool_main.submit(evaluate_sample, pool_child, pool_io, sample_id_to_g_queries_list[sample_id]))
+        pool_main.submit(evaluate_sample, pool_child, pool_io, sample_id_to_g_queries_list[sample_id])
     for sample_id in sample_id_to_t_queries_list:
         if not sample_id_to_g_queries_list[sample_id]:
             continue
-        futures.append(pool_main.submit(evaluate_sample, pool_child, pool_io, sample_id_to_t_queries_list[sample_id]))
-    wait(futures)
+        pool_main.submit(evaluate_sample, pool_child, pool_io, sample_id_to_t_queries_list[sample_id])
+    pool_main.shutdown()
+    pool_child.shutdown()
+    pool_io.shutdown()
 
     pd_bins = pd.DataFrame()
     df_summary = pd.DataFrame()
