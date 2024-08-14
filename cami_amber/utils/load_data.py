@@ -243,8 +243,8 @@ def get_rank_to_df(query_df, taxonomy_df, label, is_gs=False):
     return rank_to_df
 
 
-def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, options_gs=None, max_workers=None):
-    max_workers = min(10, os.cpu_count() or 1, max_workers) if max_workers else min(10, os.cpu_count() or 1)
+def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, options_gs=None):
+    max_workers = min(len(labels) + 1, os.cpu_count() or 1)
     pool = ThreadPool(max_workers)
 
     try:
@@ -282,7 +282,6 @@ def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, 
             sample_id_to_t_gs[sample_id] = t_query_gs
 
     for query, label in zip(samples_metadata_queries, labels):
-        logging.getLogger('amber').info('Loading {}'.format(label))
         for metadata in query:
             sample_id = metadata[2]['SAMPLEID']
             columns = metadata[3]

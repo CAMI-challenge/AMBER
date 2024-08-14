@@ -474,7 +474,7 @@ class GenomeQuery(Query):
     @property
     def df(self):
         query_df = load_data.load_sample(self.metadata).drop_duplicates(['SEQUENCEID', 'BINID'])
-        if self.options.min_length:
+        if self.options.min_length and self.is_gs:
             query_df = query_df[query_df['LENGTH'] >= self.options.min_length]
         if self.is_gs:
             return query_df[['SEQUENCEID', 'BINID', 'LENGTH']]
@@ -569,8 +569,8 @@ class GenomeQuery(Query):
             precision_df['total_length_pct'] = precision_df['total_length'] / precision_df['total_length'].sum()
             precision_df.sort_values(by='total_length', inplace=True)
             precision_df['cumsum_length_pct'] = precision_df['total_length_pct'].cumsum(axis=0)
-            precision_df['precision_bp'].mask(precision_df['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100, inplace=True)
-            precision_df['precision_seq'].mask(precision_df['precision_bp'].isna(), inplace=True)
+            precision_df['precision_bp'] = precision_df['precision_bp'].mask(precision_df['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100)
+            precision_df['precision_seq'] = precision_df['precision_seq'].mask(precision_df['precision_bp'].isna())
             precision_df.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
         if self.options.genome_to_unique_common:
             precision_df = precision_df[~precision_df['genome_id'].isin(self.options.genome_to_unique_common)]
@@ -641,8 +641,6 @@ class GenomeQuery(Query):
 
         self.eval_success = True
 
-        return True
-
     @staticmethod
     def calc_num_recovered_genomes(pd_bins, min_completeness, max_contamination):
         counts_list = []
@@ -704,6 +702,11 @@ class GenomeQuery(Query):
         self.plot_heat_maps()
 
 
+class Prediction:
+    def __init__(self):
+        pass
+
+
 class TaxonomicQuery(Query):
     binning_type = 'taxonomic'
 
@@ -720,7 +723,7 @@ class TaxonomicQuery(Query):
     @property
     def rank_to_df(self):
         query_df = load_data.load_sample(self.metadata)
-        if self.options.min_length:
+        if self.options.min_length and self.is_gs:
             query_df = query_df[query_df['LENGTH'] >= self.options.min_length]
         rank_to_df = load_data.get_rank_to_df(query_df, self.taxonomy_df, self.label, self.is_gs)
         del query_df
@@ -756,9 +759,6 @@ class TaxonomicQuery(Query):
         if self.recall_df.empty:
             return [], []
 
-        class Prediction:
-            def __init__(self):
-                pass
         profile_bp = []
         profile_seq = []
         if all_bins:
@@ -889,14 +889,14 @@ class TaxonomicQuery(Query):
             df_cpy.sort_values(by='total_length', inplace=True)
             df_cpy['cumsum_length_pct'] = df_cpy['total_length_pct'].cumsum(axis=0)
             nan_rows = df_cpy['cumsum_length_pct'] <= self.options.filter_tail_percentage / 100
-            df_cpy['precision_bp'].mask(nan_rows, inplace=True)
-            df_cpy['precision_seq'].mask(nan_rows, inplace=True)
-            df_cpy['recall_bp'].mask(nan_rows, other=.0, inplace=True)
-            df_cpy['recall_seq'].mask(nan_rows, other=.0, inplace=True)
-            df_cpy['tp_length'].mask(nan_rows, inplace=True)
-            df_cpy['tp_seq_counts'].mask(nan_rows, inplace=True)
-            df_cpy['total_length'].mask(nan_rows, inplace=True)
-            df_cpy['total_seq_counts'].mask(nan_rows, inplace=True)
+            df_cpy['precision_bp'] = df_cpy['precision_bp'].mask(nan_rows)
+            df_cpy['precision_seq'] = df_cpy['precision_seq'].mask(nan_rows)
+            df_cpy['recall_bp'] = df_cpy['recall_bp'].mask(nan_rows, other=.0)
+            df_cpy['recall_seq'] = df_cpy['recall_seq'].mask(nan_rows, other=.0)
+            df_cpy['tp_length'] = df_cpy['tp_length'].mask(nan_rows)
+            df_cpy['tp_seq_counts'] = df_cpy['tp_seq_counts'].mask(nan_rows)
+            df_cpy['total_length'] = df_cpy['total_length'].mask(nan_rows)
+            df_cpy['total_seq_counts'] = df_cpy['total_seq_counts'].mask(nan_rows)
             df_cpy.drop(columns=['cumsum_length_pct', 'total_length_pct'], inplace=True)
 
             self.metrics_filtered[rank] = Metrics()
@@ -942,8 +942,6 @@ class TaxonomicQuery(Query):
         self.precision_df[utils_labels.TOOL] = self.label
         self.precision_df['sample_id'] = self.sample_id
         self.eval_success = True
-
-        return True
 
 
 class Options:

@@ -311,7 +311,7 @@ In order to update *https://cami-challenge.github.io/AMBER*, modify file index.h
 
 If the dev branch is merged into the master branch:
 
-1. Update [version.py](version.py) according to [semantic versioning](semver.org) on the dev branch.
+1. Update [version.py](version.py) according to [semantic versioning](https://semver.org/) on the dev branch.
 
 2. Merge the dev branch into the master branch.
 

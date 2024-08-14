@@ -14,45 +14,26 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from cami_amber.utils import labels as utils_labels
-from concurrent.futures import ThreadPoolExecutor, wait
 import pandas as pd
-import os
 
 
-def get_gs_data(query):
-    return query.gold_standard_data
-
-
-def compute_metrics(query, gs):
-    query.compute_metrics(gs)
-
-
-def evaluate_sample(pool, pool_io, queries_list):
+def evaluate_sample(queries_list):
     query1 = queries_list[0]
-    gs_data = pool_io.submit(get_gs_data, query1).result()
-    futures = [pool.submit(compute_metrics, query, gs_data) for query in queries_list]
-    wait(futures)
+    gs_data = query1.gold_standard_data
+    for query in queries_list:
+        query.compute_metrics(gs_data)
     del gs_data
 
 
-def evaluate_samples_queries(sample_id_to_g_queries_list, sample_id_to_t_queries_list, max_workers=None):
-    if max_workers and max_workers <= 0:
-        raise ValueError('Number of threads must be greater than 0')
-    pool_main = ThreadPoolExecutor(max_workers)
-    pool_child = ThreadPoolExecutor(max_workers)
-    pool_io = ThreadPoolExecutor(min(10, os.cpu_count() or 1, max_workers)) if max_workers else ThreadPoolExecutor(min(10, os.cpu_count() or 1))
-
+def evaluate_samples_queries(sample_id_to_g_queries_list, sample_id_to_t_queries_list):
     for sample_id in sample_id_to_g_queries_list:
         if not sample_id_to_g_queries_list[sample_id]:
             continue
-        pool_main.submit(evaluate_sample, pool_child, pool_io, sample_id_to_g_queries_list[sample_id])
+        evaluate_sample(sample_id_to_g_queries_list[sample_id])
     for sample_id in sample_id_to_t_queries_list:
-        if not sample_id_to_g_queries_list[sample_id]:
+        if not sample_id_to_t_queries_list[sample_id]:
             continue
-        pool_main.submit(evaluate_sample, pool_child, pool_io, sample_id_to_t_queries_list[sample_id])
-    pool_main.shutdown()
-    pool_child.shutdown()
-    pool_io.shutdown()
+        evaluate_sample(sample_id_to_t_queries_list[sample_id])
 
     pd_bins = pd.DataFrame()
     df_summary = pd.DataFrame()
