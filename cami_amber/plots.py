@@ -229,6 +229,8 @@ def plot_boxplot(sample_id_to_queries_list, metric_name, output_dir, available_t
     pd_bins = pd.DataFrame()
     for sample_id in sample_id_to_queries_list:
         for query in sample_id_to_queries_list[sample_id]:
+            if not isinstance(query, binning_classes.GenomeQuery):
+                continue
             metric_df = getattr(query, metric_name.replace('_bp', '_df')).copy()
             metric_df[utils_labels.TOOL] = query.label
             metric_df['sample_id'] = sample_id

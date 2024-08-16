@@ -161,14 +161,15 @@ def main(args=None):
                                          ncbi_dir=args.ncbi_dir,
                                          skip_gs=args.skip_gs)
 
-    sample_id_to_g_queries_list, sample_id_to_t_queries_list, sample_ids_list = load_data.load_queries_mthreaded(
+    sample_id_to_g_queries_list, sample_id_to_t_queries_list, sample_ids_list = load_data.load_queries(
         args.gold_standard_file, args.bin_files, labels, options, options_gs)
 
     coverages_pd = load_data.open_coverages(args.genome_coverage)
 
     sample_id_to_queries_list = defaultdict(list)
-    for sample_id in sample_id_to_g_queries_list | sample_id_to_t_queries_list:
+    for sample_id in sample_id_to_g_queries_list:
         sample_id_to_queries_list[sample_id] += sample_id_to_g_queries_list[sample_id]
+    for sample_id in sample_id_to_t_queries_list:
         sample_id_to_queries_list[sample_id] += sample_id_to_t_queries_list[sample_id]
 
     create_output_directories(output_dir, sample_id_to_queries_list)

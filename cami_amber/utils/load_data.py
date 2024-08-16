@@ -243,7 +243,7 @@ def get_rank_to_df(query_df, taxonomy_df, label, is_gs=False):
     return rank_to_df
 
 
-def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, options_gs=None):
+def load_queries(gold_standard_file, bin_files, labels, options=None, options_gs=None):
     max_workers = min(len(labels) + 1, os.cpu_count() or 1)
     pool = ThreadPool(max_workers)
 
@@ -273,13 +273,15 @@ def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, 
         if 'BINID' in columns:
             g_query_gs = binning_classes.GenomeQuery(utils_labels.GS, sample_id, options_gs, metadata, True)
             g_query_gs.gold_standard = g_query_gs
-            sample_id_to_g_queries_list[sample_id].append(g_query_gs)
             sample_id_to_g_gs[sample_id] = g_query_gs
+            if not options.skip_gs:
+                sample_id_to_g_queries_list[sample_id].append(g_query_gs)
         if 'TAXID' in columns and not taxonomy_df.empty:
             t_query_gs = binning_classes.TaxonomicQuery(utils_labels.GS, sample_id, options_gs, metadata, taxonomy_df, True)
             t_query_gs.gold_standard = t_query_gs
-            sample_id_to_t_queries_list[sample_id].append(t_query_gs)
             sample_id_to_t_gs[sample_id] = t_query_gs
+            if not options.skip_gs:
+                sample_id_to_t_queries_list[sample_id].append(t_query_gs)
 
     for query, label in zip(samples_metadata_queries, labels):
         for metadata in query:
@@ -300,6 +302,6 @@ def load_queries_mthreaded(gold_standard_file, bin_files, labels, options=None, 
                 t_query = binning_classes.TaxonomicQuery(label, sample_id, options, metadata, taxonomy_df)
                 t_query.gold_standard = sample_id_to_t_gs[sample_id]
                 sample_id_to_t_queries_list[sample_id].append(t_query)
-                options.only_taxonomic_queries = options_gs.only_genome_queries = False
+                options.only_genome_queries = options_gs.only_genome_queries = False
 
     return sample_id_to_g_queries_list, sample_id_to_t_queries_list, [metadata[2]['SAMPLEID'] for metadata in samples_metadata_gs]
