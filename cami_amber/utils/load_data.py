@@ -121,51 +121,95 @@ def load_ncbi_info(ncbi_dir):
 
 
 def read_metadata(path_label_tuple):
-    file_path_query, label = path_label_tuple
-    header = {}
-    columns_list = []
-    got_column_indices = False
+    if type(path_label_tuple) == tuple:
+        file_path_query, label = path_label_tuple
 
-    samples_metadata = []
+        header = {}
+        columns_list = []
+        got_column_indices = False
 
-    with open_generic(file_path_query) as f:
-        for i, line in enumerate(f):
-            line = line.strip()
+        samples_metadata = []
 
-            if len(line) == 0 or line.startswith("#"):
-                if got_column_indices and not reading_data:
+        with open_generic(file_path_query) as f:
+            for i, line in enumerate(f):
+                line = line.strip()
+
+                if len(line) == 0 or line.startswith("#"):
+                    if got_column_indices and not reading_data:
+                        data_start = i + 1
+                    continue
+
+                # parse header with column indices
+                if line.startswith('@@'):
+                    for index, column_name in enumerate(line[2:].split('\t')):
+                        columns_list.append(column_name)
+                    got_column_indices = True
+                    reading_data = False
                     data_start = i + 1
-                continue
 
-            # parse header with column indices
-            if line.startswith('@@'):
-                for index, column_name in enumerate(line[2:].split('\t')):
-                    columns_list.append(column_name)
-                got_column_indices = True
-                reading_data = False
-                data_start = i + 1
+                elif line.startswith('@'):
+                    logging.getLogger('amber').info('Found {} in {}'.format(line, label))
+                    # parse header with metadata
+                    if got_column_indices:
+                        samples_metadata.append((data_start, data_end, header, columns_list, file_path_query, label))
+                        header = {}
+                        columns_list = []
+                    key, value = line[1:].split(':', 1)
+                    header[key.upper()] = value.strip()
+                    got_column_indices = False
+                    reading_data = False
 
-            elif line.startswith('@'):
-                logging.getLogger('amber').info('Found {} in {}'.format(line, label))
-                # parse header with metadata
-                if got_column_indices:
-                    samples_metadata.append((data_start, data_end, header, columns_list, file_path_query, label))
-                    header = {}
-                    columns_list = []
-                key, value = line[1:].split(':', 1)
-                header[key.upper()] = value.strip()
-                got_column_indices = False
-                reading_data = False
+                else:
+                    reading_data = True
+                    data_end = i
+        try:
+            samples_metadata.append((data_start, data_end, header, columns_list, file_path_query, label))
+        except UnboundLocalError as e:
+            logging.getLogger('amber').critical("File {} is malformed.".format(file_path_query))
+            raise e
+        return samples_metadata
+    else:
 
-            else:
-                reading_data = True
-                data_end = i
-    try:
-        samples_metadata.append((data_start, data_end, header, columns_list, file_path_query, label))
-    except UnboundLocalError as e:
-        logging.getLogger('amber').critical("File {} is malformed.".format(file_path_query))
-        raise e
-    return samples_metadata
+        header = {}
+        index_to_column_name = {}
+        got_column_indices = False
+
+        samples_metadata = []
+
+        with open(path_label_tuple, 'r') as f:
+            for i, line in enumerate(f):
+                line = line.strip()
+
+                if len(line) == 0 or line.startswith("#"):
+                    if got_column_indices and not reading_data:
+                        data_start = i + 1
+                    continue
+
+                # parse header with column indices
+                if line.startswith('@@'):
+                    for index, column_name in enumerate(line[2:].split('\t')):
+                        index_to_column_name[index] = column_name
+                    got_column_indices = True
+                    reading_data = False
+                    data_start = i + 1
+
+                elif line.startswith('@'):
+                    logging.getLogger('amber').info('Found {}'.format(line))
+                    # parse header with metadata
+                    if got_column_indices:
+                        samples_metadata.append((data_start, data_end, header, index_to_column_name))
+                        header = {}
+                        index_to_column_name = {}
+                    key, value = line[1:].split(':', 1)
+                    header[key.upper()] = value.strip()
+                    got_column_indices = False
+                    reading_data = False
+
+                else:
+                    reading_data = True
+                    data_end = i
+        samples_metadata.append((data_start, data_end, header, index_to_column_name))
+        return samples_metadata
 
 
 def load_sample(metadata):
