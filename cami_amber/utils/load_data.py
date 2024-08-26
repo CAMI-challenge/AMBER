@@ -16,7 +16,6 @@
 import pandas as pd
 import sys
 import logging
-import traceback
 import os
 import mimetypes
 import gzip
@@ -67,16 +66,14 @@ def open_coverages(file_path):
     logging.getLogger('amber').info('Loading coverage file')
     coverages_pd = pd.DataFrame()
     try:
-        samples_metadata = read_metadata(file_path)
+        samples_metadata = read_metadata((file_path, 'coverage file'))
         for metadata in samples_metadata:
             nrows = metadata[1] - metadata[0] + 1
-            df = pd.read_csv(file_path, sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None)
-            df.rename(columns=metadata[3], inplace=True)
+            df = pd.read_csv(file_path, names=metadata[3], sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None)
             df = df[['GENOMEID', 'COVERAGE']]
             df['SAMPLEID'] = metadata[2]['SAMPLEID']
             coverages_pd = pd.concat([coverages_pd, df], ignore_index=True)
     except BaseException as e:
-        traceback.print_exc()
         logging.getLogger('amber').critical("File {} not found or malformed. {}".format(file_path, e))
         exit(1)
     return coverages_pd
@@ -113,7 +110,6 @@ def load_ncbi_info(ncbi_dir):
             else:
                 taxonomy_df = pd.read_feather(os.path.join(ncbi_dir, 'nodes.amber.ft')).set_index('TAXID')
         except BaseException:
-            traceback.print_exc()
             logging.getLogger('amber').info('Preprocessed NCBI taxonomy file not found. Creating file {}'.format(os.path.join(ncbi_dir, 'nodes.amber.ft')))
             taxonomy_df = load_ncbi_taxinfo.preprocess_ncbi_tax(ncbi_dir)
         taxonomy_df = taxonomy_df.astype(dtype={rank: pd.UInt32Dtype() for rank in load_ncbi_taxinfo.RANKS})
@@ -193,17 +189,6 @@ def load_binnings(samples_metadata, file_path_query):
         df.rename(columns=metadata[3], inplace=True)
         df.rename(columns={'_LENGTH': 'LENGTH'}, inplace=True)
         sample_id_to_query_df[metadata[2]['SAMPLEID']] = df
-    return sample_id_to_query_df
-
-
-def open_query(file_path_query):
-    try:
-        samples_metadata = read_metadata(file_path_query)
-        sample_id_to_query_df = load_binnings(samples_metadata, file_path_query)
-    except BaseException as e:
-        traceback.print_exc()
-        logging.getLogger('amber').critical("File {} not found or malformed. {}".format(file_path_query, e))
-        exit(1)
     return sample_id_to_query_df
 
 
