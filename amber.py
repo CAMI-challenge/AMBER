@@ -23,7 +23,6 @@ from cami_amber.utils import load_data
 from cami_amber.utils import argparse_parents
 from cami_amber.utils import labels as utils_labels
 from version import __version__
-from collections import defaultdict
 import argparse
 import errno
 import logging
@@ -56,10 +55,13 @@ def make_sure_path_exists(path):
             raise
 
 
-def create_output_directories(output_dir, sample_id_to_queries_list):
+def create_output_directories(output_dir, sample_id_to_g_queries_list, sample_id_to_t_queries_list):
     logging.getLogger('amber').info('Creating output directories')
-    for sample_id in sample_id_to_queries_list:
-        for query in sample_id_to_queries_list[sample_id]:
+    for sample_id in sample_id_to_g_queries_list:
+        for query in sample_id_to_g_queries_list[sample_id]:
+            make_sure_path_exists(os.path.join(output_dir, query.binning_type, query.label))
+    for sample_id in sample_id_to_t_queries_list:
+        for query in sample_id_to_t_queries_list[sample_id]:
             make_sure_path_exists(os.path.join(output_dir, query.binning_type, query.label))
 
 
@@ -77,7 +79,7 @@ def get_labels(labels, bin_files):
     return tool_id
 
 
-def save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, stdout):
+def save_metrics(sample_id_to_g_queries_list, df_summary, pd_bins, output_dir, stdout):
     logging.getLogger('amber').info('Saving computed metrics')
     df_summary.to_csv(os.path.join(output_dir, 'results.tsv'), sep='\t', index=False)
     pd_bins.to_csv(os.path.join(output_dir, 'bin_metrics.tsv'), index=False, sep='\t')
@@ -95,12 +97,11 @@ def save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, std
         table.to_csv(os.path.join(output_dir, 'taxonomic', tool, 'metrics_per_bin.tsv'), sep='\t', index=False)
 
     pd_genomes_all = pd.DataFrame()
-    for sample_id in sample_id_to_queries_list:
+    for sample_id in sample_id_to_g_queries_list:
         pd_genomes_sample = pd.DataFrame()
-        for query in sample_id_to_queries_list[sample_id]:
-            if isinstance(query, binning_classes.GenomeQuery):
-                query.recall_df_cami1[utils_labels.TOOL] = query.label
-                pd_genomes_sample = pd.concat([pd_genomes_sample, query.recall_df_cami1], ignore_index=True, sort=False)
+        for query in sample_id_to_g_queries_list[sample_id]:
+            query.recall_df_cami1[utils_labels.TOOL] = query.label
+            pd_genomes_sample = pd.concat([pd_genomes_sample, query.recall_df_cami1], ignore_index=True, sort=False)
         pd_genomes_sample['sample_id'] = sample_id
         pd_genomes_all = pd.concat([pd_genomes_all, pd_genomes_sample], ignore_index=True, sort=False)
     if not pd_genomes_all.empty:
@@ -166,17 +167,11 @@ def main(args=None):
 
     coverages_pd = load_data.open_coverages(args.genome_coverage)
 
-    sample_id_to_queries_list = defaultdict(list)
-    for sample_id in sample_id_to_g_queries_list:
-        sample_id_to_queries_list[sample_id] += sample_id_to_g_queries_list[sample_id]
-    for sample_id in sample_id_to_t_queries_list:
-        sample_id_to_queries_list[sample_id] += sample_id_to_t_queries_list[sample_id]
-
-    create_output_directories(output_dir, sample_id_to_queries_list)
+    create_output_directories(output_dir, sample_id_to_g_queries_list, sample_id_to_t_queries_list)
 
     df_summary, pd_bins = evaluate.evaluate_samples_queries(sample_id_to_g_queries_list, sample_id_to_t_queries_list)
 
-    save_metrics(sample_id_to_queries_list, df_summary, pd_bins, output_dir, args.stdout)
+    save_metrics(sample_id_to_g_queries_list, df_summary, pd_bins, output_dir, args.stdout)
 
     plots.plot_genome_binning(args.colors,
                               sample_id_to_g_queries_list,

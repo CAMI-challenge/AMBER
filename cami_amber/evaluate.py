@@ -22,7 +22,6 @@ def evaluate_sample(queries_list):
     gs_data = query1.gold_standard_data
     for query in queries_list:
         query.compute_metrics(gs_data)
-    del gs_data
 
 
 def evaluate_samples_queries(sample_id_to_g_queries_list, sample_id_to_t_queries_list):

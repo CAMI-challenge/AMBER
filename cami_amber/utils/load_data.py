@@ -22,6 +22,7 @@ import gzip
 import io
 import tarfile
 import zipfile
+import itertools
 from multiprocessing.pool import ThreadPool
 from collections import defaultdict
 from collections import OrderedDict
@@ -167,13 +168,27 @@ def read_metadata(path_label_tuple):
 def load_sample(metadata):
     columns = ['SEQUENCEID', 'BINID', 'TAXID', 'LENGTH', '_LENGTH']
     logging.getLogger('amber').info('Loading %s of %s' % (metadata[2]['SAMPLEID'], metadata[5]))
-    nrows = metadata[1] - metadata[0] + 1
     usecols = [v for v in metadata[3] if v in columns]
-    df = pd.read_csv(metadata[4], sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None,
-                     names=metadata[3],
-                     usecols=usecols,
-                     dtype={'SEQUENCEID': pd.StringDtype(), 'BINID': pd.StringDtype(), 'TAXID': pd.UInt32Dtype(),
-                            'LENGTH': pd.UInt32Dtype(), '_LENGTH': pd.UInt32Dtype()})
+
+    if metadata[0] < 1000:
+        nrows = metadata[1] - metadata[0] + 1
+        df = pd.read_csv(metadata[4], sep='\t', comment='#', skiprows=metadata[0], nrows=nrows, header=None,
+                         names=metadata[3],
+                         usecols=usecols,
+                         dtype={'SEQUENCEID': pd.StringDtype(), 'BINID': pd.StringDtype(), 'TAXID': pd.UInt32Dtype(),
+                                'LENGTH': pd.UInt32Dtype(), '_LENGTH': pd.UInt32Dtype()})
+    else:
+        # Avoid high memory peak by using StringIO due to possible pandas bug
+        text = io.StringIO()
+        with open_generic(metadata[4]) as f:
+            for line in itertools.islice(f, metadata[0], metadata[1] + 1):
+                text.write(line)
+        text.seek(0)
+        df = pd.read_csv(text, sep='\t', comment='#', header=None,
+                         names=metadata[3],
+                         usecols=usecols,
+                         dtype={'SEQUENCEID': pd.StringDtype(), 'BINID': pd.StringDtype(), 'TAXID': pd.UInt32Dtype(),
+                                'LENGTH': pd.UInt32Dtype(), '_LENGTH': pd.UInt32Dtype()})
     df.rename(columns={'_LENGTH': 'LENGTH'}, inplace=True)
     return df
 

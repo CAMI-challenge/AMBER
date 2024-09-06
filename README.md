@@ -32,7 +32,7 @@ AMBER is an evaluation package for the comparative assessment of genome reconstr
 
 ## Requirements
 
-AMBER 2.0.4 has been tested with Python 3.11.
+AMBER 2.0.7 has been tested with Python 3.11.
 
 See [requirements.txt](requirements.txt) for all dependencies.
 
@@ -145,7 +145,7 @@ Binnings of datasets with multiple samples are supported by AMBER. For each binn
 ## Running _amber.py_
 
 ~~~BASH
-usage: AMBER [-h] -g GOLD_STANDARD_FILE [-l LABELS] [-p FILTER] [-n MIN_LENGTH] -o OUTPUT_DIR [--stdout] [-d DESC] [--colors COLORS] [--silent] [-v] [-x MIN_COMPLETENESS]
+usage: AMBER [-h] -g GOLD_STANDARD_FILE [-l LABELS] [-p FILTER] [-n MIN_LENGTH] -o OUTPUT_DIR [--stdout] [-d DESC] [--colors COLORS] [--silent] [--skip_gs] [-v] [-x MIN_COMPLETENESS]
              [-y MAX_CONTAMINATION] [-r REMOVE_GENOMES] [-k KEYWORD] [--genome_coverage GENOME_COVERAGE] [--ncbi_dir NCBI_DIR]
              bin_files [bin_files ...]
 
@@ -169,6 +169,7 @@ options:
   --stdout              Print summary to stdout
   -d DESC, --desc DESC  Description for HTML page
   --silent              Silent mode
+  --skip_gs             Skip gold standard evaluation vs itself
   -v, --version         show program's version number and exit
 
 genome binning-specific arguments:

@@ -12,6 +12,8 @@ setup(
     name             = 'cami-amber',
     version          = __version__,
     description      = 'AMBER: Assessment of Metagenome BinnERs',
+    long_description = open('README.md').read(),
+    long_description_content_type="text/markdown",
     author           = 'CAMI',
     author_email     = 'support@cami-challenge.org',
     url              = 'http://cami-challenge.org',

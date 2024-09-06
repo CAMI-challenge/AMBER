@@ -637,7 +637,8 @@ class GenomeQuery(Query):
         self.precision_df['sample_id'] = self.sample_id
         self.recall_df = recall_df
 
-        self.heatmap_sdf = precision_recall_per_bin.transform_confusion_matrix2(query_w_length, confusion_df, precision_df, gs_df, log_scale=True)
+        if not self.options.skip_heatmap:
+            self.heatmap_sdf = precision_recall_per_bin.transform_confusion_matrix2(query_w_length, confusion_df, precision_df, gs_df, log_scale=True)
 
         self.eval_success = True
 
@@ -690,7 +691,7 @@ class GenomeQuery(Query):
         plt.close(fig)
 
     def plot_heat_maps(self):
-        if self.label == utils_labels.GS:
+        if self.label == utils_labels.GS or self.options.skip_heatmap:
             return
         plots.plot_heatmap(self.heatmap_sdf, self.sample_id, self.options.output_dir, self.label, log_scale=True)
 
@@ -947,7 +948,7 @@ class TaxonomicQuery(Query):
 class Options:
     def __init__(self, filter_tail_percentage=0, genome_to_unique_common=None, filter_keyword=None, min_length=0,
                  rank_as_genome_binning=None, output_dir=None, min_completeness=None, max_contamination=None,
-                 ncbi_dir=None, skip_gs=False):
+                 ncbi_dir=None, skip_gs=False, skip_heatmap=False):
         self.__filter_tail_percentage = float(filter_tail_percentage) if filter_tail_percentage else .0
         self.__genome_to_unique_common = genome_to_unique_common
         self.__filter_keyword = filter_keyword
@@ -967,6 +968,7 @@ class Options:
         else:
             self.__max_contamination = [.1, .05]
         self.__skip_gs = skip_gs
+        self.__skip_heatmap = skip_heatmap
         self.__ncbi_dir = ncbi_dir
 
     @property
@@ -1017,6 +1019,10 @@ class Options:
     def skip_gs(self):
         return self.__skip_gs
 
+    @property
+    def skip_heatmap(self):
+        return self.__skip_heatmap
+
     @filter_tail_percentage.setter
     def filter_tail_percentage(self, filter_tail_percentage):
         self.__filter_tail_percentage = filter_tail_percentage
@@ -1064,3 +1070,7 @@ class Options:
     @skip_gs.setter
     def skip_gs(self, skip_gs):
         self.__skip_gs = skip_gs
+
+    @skip_heatmap.setter
+    def skip_heatmap(self, skip_heatmap):
+        self.__skip_heatmap = skip_heatmap
