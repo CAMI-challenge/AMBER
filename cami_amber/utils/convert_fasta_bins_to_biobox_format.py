@@ -16,10 +16,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
+from cami_amber.utils.load_data import open_generic
 
 
 def read_fasta_file(fasta_file):
-    with open(fasta_file, 'r') as read_handler:
+    with open_generic(fasta_file, 'r') as read_handler:
         sequence_id = ""
         for line in read_handler:
             line = line.strip()

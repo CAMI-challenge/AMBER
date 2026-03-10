@@ -1,4 +1,4 @@
-# Copyright 2020 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2026 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -432,15 +432,16 @@ def plot_adjusted_rand_index_vs_assigned_bps(colors, summary_per_query, labels, 
 
 def plot_taxonomic_results(df_summary_t, metrics_list, errors_list, file_name, output_dir):
     colors_list = ["#006cba", "#008000", "#ba9e00", "red"]
+    ranks = [rank for rank in load_ncbi_taxinfo.RANKS if rank in df_summary_t['rank'].unique()]
 
     for tool, pd_results in df_summary_t.groupby(utils_labels.TOOL):
         dict_metric_list = []
         for metric in metrics_list:
-            rank_to_metric = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+            rank_to_metric = OrderedDict([(k, .0) for k in ranks])
             dict_metric_list.append(rank_to_metric)
         dict_error_list = []
         for error in errors_list:
-            rank_to_metric_error = OrderedDict([(k, .0) for k in load_ncbi_taxinfo.RANKS])
+            rank_to_metric_error = OrderedDict([(k, .0) for k in ranks])
             dict_error_list.append(rank_to_metric_error)
 
         for index, row in pd_results.iterrows():
@@ -454,7 +455,7 @@ def plot_taxonomic_results(df_summary_t, metrics_list, errors_list, file_name, o
         # force axes to be from 0 to 100%
         axs.set_xlim([0, 7])
         axs.set_ylim([0.0, 1.0])
-        x_values = range(len(load_ncbi_taxinfo.RANKS))
+        x_values = range(len(ranks))
 
         y_values_list = []
         for rank_to_metric, color in zip(dict_metric_list, colors_list):
@@ -466,7 +467,7 @@ def plot_taxonomic_results(df_summary_t, metrics_list, errors_list, file_name, o
             sem = list(rank_to_metric_error.values())
             plt.fill_between(x_values, np.subtract(y_values, sem).tolist(), np.add(y_values, sem).tolist(), color=color, alpha=0.5)
 
-        plt.xticks(x_values, load_ncbi_taxinfo.RANKS, rotation='vertical')
+        plt.xticks(x_values, ranks, rotation='vertical')
 
         vals = axs.get_yticks()
         axs.yaxis.set_major_locator(ticker.FixedLocator(vals))
@@ -673,7 +674,8 @@ def plot_taxonomic_binning(color_indices, df_summary, pd_bins, labels, output_di
                     utils_labels.RECALL_PER_SEQ]
     plot_taxonomic_results(df_summary_t, metrics_list, [], 'precision_recall', output_dir)
 
-    for rank in load_ncbi_taxinfo.RANKS:
+    ranks = [rank for rank in load_ncbi_taxinfo.RANKS if rank in df_summary_t['rank'].unique()]
+    for rank in ranks:
         pd_bins_rank = pd_bins[pd_bins['rank'] == rank]
         plot_contamination(pd_bins_rank, 'taxonomic', rank + ' | Contamination',
                            'Index of bin (sorted by contamination (bp))', 'Contamination (bp)',

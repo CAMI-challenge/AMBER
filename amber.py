@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2026 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from cami_amber import binning_classes
 from cami_amber.utils import load_data
 from cami_amber.utils import argparse_parents
 from cami_amber.utils import labels as utils_labels
-from version import __version__
+from cami_amber.version import __version__
 import argparse
 import errno
 import logging

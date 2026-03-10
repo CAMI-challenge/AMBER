@@ -1,4 +1,4 @@
-# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2026 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,10 +18,33 @@ import os
 import numpy as np
 import pandas as pd
 
-RANKS = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain']
-RANK_TO_INDEX = dict(zip(RANKS, list(range(len(RANKS)))))
-INDEX_TO_RANK = dict(zip(list(range(len(RANKS))), RANKS))
-RANKS_LOW2HIGH = list(reversed(RANKS))
+
+RANKS = ['acellular root', 'cellular root', 'other entries',
+         'superkingdom',
+         'realm', 'domain',
+         'kingdom',
+         'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain']
+
+LEVELS_NEW = [['acellular root', 'cellular root', 'other entries'],
+          ['realm', 'domain'],
+          ['kingdom'],
+          ['phylum'], ['class'], ['order'], ['family'], ['genus'], ['species'], ['strain']]
+
+LEVELS_OLD = [['superkingdom'], ['phylum'], ['class'], ['order'], ['family'], ['genus'], ['species'], ['strain']]
+
+
+OTHER_ENTRIES_TAXID = 2787854  # “other entries” synthetic root (if not in NCBI taxdump)
+OTHER_ENTRIES_NAME  = 'other entries'
+
+
+def get_ranks(df):
+    cols = set(df.columns)
+    has_superkingdom = "superkingdom" in cols
+    return [
+        rank
+        for rank in RANKS
+        if rank in cols and not (has_superkingdom and rank == "kingdom")
+    ]
 
 
 def load_merged(names_file_path):
@@ -88,6 +111,9 @@ def load_tax_info(ncbi_nodes_file):
         if tax_id_to_rank[tax_id] == "no rank" and check_parent_is_species(tax_id_to_parent, tax_id_to_rank, tax_id):
             tax_id_to_rank[tax_id] = "strain"
 
+    tax_id_to_parent[OTHER_ENTRIES_TAXID] = 1
+    tax_id_to_rank[OTHER_ENTRIES_TAXID] = OTHER_ENTRIES_NAME
+
     return tax_id_to_parent, tax_id_to_rank
 
 
@@ -97,15 +123,16 @@ def get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank, tax_id_to_tax_id):
             tax_id = tax_id_to_tax_id[tax_id]
         else:
             logging.getLogger('amber').warning("Invalid NCBI taxonomic ID: {}".format(tax_id))
-            return [np.nan] * 8
+            return [np.nan] * len(RANKS)
 
     while tax_id_to_rank[tax_id] not in RANKS:
         tax_id = tax_id_to_parent[tax_id]
         if tax_id == 1:
-            return [np.nan] * 8
+            return [np.nan] * len(RANKS)
 
-    index = RANK_TO_INDEX[tax_id_to_rank[tax_id]]
-    path = [np.nan] * 8
+    rank_to_index = dict(zip(RANKS, list(range(len(RANKS)))))
+    index = rank_to_index[tax_id_to_rank[tax_id]]
+    path = [np.nan] * len(RANKS)
     path[index] = tax_id
 
     id = tax_id
@@ -116,9 +143,9 @@ def get_id_path(tax_id, tax_id_to_parent, tax_id_to_rank, tax_id_to_tax_id):
                 break
             if tax_id_to_rank[id] not in RANKS:
                 continue
-            index = RANK_TO_INDEX[tax_id_to_rank[id]]
+            index = rank_to_index[tax_id_to_rank[id]]
             path[index] = id
-            if tax_id_to_rank[id] == 'superkingdom':
+            if tax_id_to_rank[id] == 'superkingdom' or tax_id_to_rank[id] == 'acellular root' or tax_id_to_rank[id] == 'cellular root' or tax_id_to_rank[id] == 'other entries':
                 break
     except KeyError:
         logging.getLogger('amber').warning('Could not get rank for taxonomic ID: {}'.format(tax_id))
@@ -137,9 +164,10 @@ def preprocess_ncbi_tax(ncbi_dir):
     tax_id_to_tax_id = load_merged(os.path.join(ncbi_dir, 'merged.dmp'))
 
     nodes = pd.concat([nodes, nodes.apply(lambda row: get_path(row), axis=1, result_type='expand')], axis='columns')
-    for i in range(8):
+    for i in range(len(RANKS)):
         nodes[i] = nodes[i].astype(pd.UInt32Dtype())
-    nodes.rename(columns=INDEX_TO_RANK, inplace=True)
+    index_to_rank = dict(zip(list(range(len(RANKS))), RANKS))
+    nodes = nodes.rename(columns=index_to_rank).dropna(axis=1, how="all")
 
     tax_id_to_name = load_names(tax_id_to_rank, os.path.join(ncbi_dir, 'names.dmp'))
     for k, v in tax_id_to_tax_id.items():

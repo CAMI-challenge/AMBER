@@ -1,4 +1,4 @@
-# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2026 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -317,7 +317,7 @@ class Metrics:
         temp = (bin_comb * (mapping_comb / num_bp_comb)) if num_bp_comb != 0 else .0
         ret = bin_mapping_comb - temp
         denominator = (((bin_comb + mapping_comb) / 2.0) - temp)
-        adjusted_rand_index = (ret / denominator) if denominator != 0 else .0
+        adjusted_rand_index = (ret / denominator) if denominator != 0 else 1.0
 
         return rand_index, adjusted_rand_index
 
@@ -756,23 +756,53 @@ class TaxonomicQuery(Query):
     def rank_to_df(self, rank_to_df):
         self.__rank_to_df = rank_to_df
 
-    def _create_profile(self, all_bins):
-        if self.recall_df.empty:
-            return [], []
+    def _get_profile_source_df(self, all_bins):
+        if not self.recall_df.empty:
+            if all_bins:
+                return self.recall_df
+            return self.recall_df[~self.recall_df['filtered']]
 
+        if not self.is_gs:
+            return pd.DataFrame(columns=['TAXID', 'rank', 'tp_length', 'tp_seq_counts'])
+
+        grouped_dfs = []
+        for rank, rank_df in self.rank_to_df.items():
+            grouped_df = rank_df.groupby('TAXID', sort=False).agg({
+                'LENGTH': 'sum',
+                'SEQUENCEID': 'count',
+            }).rename(columns={'LENGTH': 'tp_length', 'SEQUENCEID': 'tp_seq_counts'}).reset_index()
+            grouped_df['rank'] = rank
+            grouped_dfs.append(grouped_df[['TAXID', 'rank', 'tp_length', 'tp_seq_counts']])
+
+        if not grouped_dfs:
+            return pd.DataFrame(columns=['TAXID', 'rank', 'tp_length', 'tp_seq_counts'])
+
+        return pd.concat(grouped_dfs, ignore_index=True)
+
+    def _create_profile(self, all_bins):
         profile_bp = []
         profile_seq = []
-        if all_bins:
-            recall_df = self.recall_df
+        recall_df = self._get_profile_source_df(all_bins)
+
+        ranks = load_ncbi_taxinfo.get_ranks(self.taxonomy_df)
+        if 'superkingdom' in set(ranks):
+            levels =  load_ncbi_taxinfo.LEVELS_OLD
         else:
-            recall_df = self.recall_df[~self.recall_df['filtered']]
+            levels =  load_ncbi_taxinfo.LEVELS_NEW
+
         for index, row in recall_df.iterrows():
             prediction_bp = Prediction()
             prediction_bp.taxid = str(int(row['TAXID']))
             prediction_bp.rank = row['rank']
             prediction_bp.percentage = row['tp_length']
-            taxpath = self.taxonomy_df.loc[row['TAXID']][load_ncbi_taxinfo.RANKS].values
-            taxpath = '|'.join(map(lambda v: '' if pd.isnull(v) else str(v), taxpath)).rstrip('|')
+
+            tax_row = self.taxonomy_df.loc[row['TAXID']]
+            taxpath_vals = [
+                next((str(tax_row[r]) for r in level_ranks if pd.notnull(tax_row[r])), '')
+                for level_ranks in levels
+            ]
+            taxpath = '|'.join(taxpath_vals).rstrip('|')
+
             prediction_bp.taxpath = taxpath
             prediction_bp.taxpathsn = None
             profile_bp.append(prediction_bp)
@@ -822,7 +852,8 @@ class TaxonomicQuery(Query):
     def compute_metrics_per_rank(self, rank_to_df, gs_rank_to_df, rank):
         if rank not in gs_rank_to_df:
             return
-        logging.getLogger('amber').info('Evaluating {}, sample {}, taxonomic binning, {}'.format(self.label, self.sample_id, rank))
+        display_rank = f'{rank} (synthetic root)' if rank == 'other entries' else rank
+        logging.getLogger('amber').info('Evaluating {}, sample {}, taxonomic binning, {}'.format(self.label, self.sample_id, display_rank))
 
         self.metrics[rank] = Metrics()
         gs_df = gs_rank_to_df[rank]

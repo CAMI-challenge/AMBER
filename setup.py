@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from version import __version__
+from cami_amber.version import __version__
 import glob
 
 
