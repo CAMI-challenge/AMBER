@@ -1,4 +1,4 @@
-# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2026 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,18 +103,19 @@ def load_unique_common(unique_common_file_path, args_keyword):
 
 
 def load_ncbi_info(ncbi_dir):
-    if ncbi_dir:
-        logging.getLogger('amber').info('Loading NCBI taxonomy from %s' % ncbi_dir)
-        try:
-            if os.path.isfile(ncbi_dir):
-                taxonomy_df = pd.read_feather(ncbi_dir).set_index('TAXID')
-            else:
-                taxonomy_df = pd.read_feather(os.path.join(ncbi_dir, 'nodes.amber.ft')).set_index('TAXID')
-        except BaseException:
-            logging.getLogger('amber').info('Preprocessed NCBI taxonomy file not found. Creating file {}'.format(os.path.join(ncbi_dir, 'nodes.amber.ft')))
-            taxonomy_df = load_ncbi_taxinfo.preprocess_ncbi_tax(ncbi_dir)
-        taxonomy_df = taxonomy_df.astype(dtype={rank: pd.UInt32Dtype() for rank in load_ncbi_taxinfo.RANKS})
-        return taxonomy_df
+    if not ncbi_dir:
+        return pd.DataFrame()
+    logging.getLogger('amber').info('Loading NCBI taxonomy from %s' % ncbi_dir)
+    try:
+        if os.path.isfile(ncbi_dir):
+            taxonomy_df = pd.read_feather(ncbi_dir).set_index('TAXID')
+        else:
+            taxonomy_df = pd.read_feather(os.path.join(ncbi_dir, 'nodes.amber.ft')).set_index('TAXID')
+    except BaseException:
+        logging.getLogger('amber').info('Preprocessed NCBI taxonomy file not found. Creating file {}'.format(os.path.join(ncbi_dir, 'nodes.amber.ft')))
+        taxonomy_df = load_ncbi_taxinfo.preprocess_ncbi_tax(ncbi_dir)
+    taxonomy_df = taxonomy_df.astype(dtype={rank: pd.UInt32Dtype() for rank in load_ncbi_taxinfo.get_ranks(taxonomy_df)})
+    return taxonomy_df
 
 
 def read_metadata(path_label_tuple):
@@ -228,16 +229,20 @@ def get_rank_to_df(query_df, taxonomy_df, label, is_gs=False):
         cols = ['TAXID']
 
     rank_to_df = dict()
-    logging.getLogger('amber').info('Setting taxa ranks')
-    query_df = pd.merge(query_df, taxonomy_df.reset_index(), on=['TAXID']).set_index('SEQUENCEID')
+    logging.getLogger('amber').info('Adding taxonomic ranks')
+    query_df = query_df.join(taxonomy_df, on="TAXID").set_index('SEQUENCEID')
 
-    for rank in load_ncbi_taxinfo.RANKS:
-        logging.getLogger('amber').info('Deriving bins of {} at rank: {}'.format(label, rank))
-        if query_df[rank].isnull().all():
+    for rank in load_ncbi_taxinfo.get_ranks(query_df):
+        sub = query_df.loc[query_df[rank].notna(), cols + [rank]]
+        if sub.empty:
             continue
-        rank_to_df[rank] = query_df[query_df[rank].notnull()][cols + [rank]]
-        rank_to_df[rank]['TAXID'] = rank_to_df[rank][rank]
-        rank_to_df[rank] = rank_to_df[rank].drop(columns=rank).reset_index()
+
+        display_rank = f'{rank} (synthetic root)' if rank == 'other entries' else rank
+        logging.getLogger('amber').info(f'Deriving bins of {label} at rank: {display_rank}')
+
+        sub = sub.copy()
+        sub['TAXID'] = sub[rank]
+        rank_to_df[rank] = sub.drop(columns=rank).reset_index()
 
     return rank_to_df
 
@@ -259,7 +264,7 @@ def load_queries(gold_standard_file, bin_files, labels, options=None, options_gs
         options = binning_classes.Options()
     if not options_gs:
         options_gs = binning_classes.Options()
-    taxonomy_df = load_ncbi_info(options.ncbi_dir) if options.ncbi_dir else pd.DataFrame()
+    taxonomy_df = load_ncbi_info(options.ncbi_dir)
 
     sample_id_to_g_queries_list = defaultdict(list)
     sample_id_to_t_queries_list = defaultdict(list)

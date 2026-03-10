@@ -1,4 +1,4 @@
-# Copyright 2024 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
+# Copyright 2026 Department of Computational Biology for Infection Research - Helmholtz Centre for Infection Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 import math
 import re
+import json
 import logging
 from jinja2 import Template
 from statistics import median
@@ -36,7 +37,7 @@ import matplotlib.pyplot as pltx
 from matplotlib.colors import rgb2hex
 from matplotlib.colors import Normalize
 
-from version import __version__
+from cami_amber.version import __version__
 
 from bokeh.plotting import figure
 from bokeh.layouts import column, row
@@ -595,9 +596,10 @@ def create_contamination_plot(pd_bins, tools, title, xlabel, ylabel, create_colu
 
 
 def create_tax_figure(tool, df_summary, metrics_list, errors_list):
-    rank_indices = list(range(len(load_ncbi_taxinfo.RANKS)))
+    ranks = [rank for rank in load_ncbi_taxinfo.RANKS if rank in df_summary['rank'].unique()]
+    rank_indices = list(range(len(ranks)))
 
-    df = df_summary.set_index("rank").reindex(load_ncbi_taxinfo.RANKS)
+    df = df_summary.set_index("rank").reindex(ranks)
     df["x"] = rank_indices
     for metric, error in zip(metrics_list, errors_list):
         if error:
@@ -605,7 +607,7 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
             df[metric + "lower"] = df[metric] - df[error]
     source = ColumnDataSource(df.reset_index())
 
-    p = figure(width=500, height=550, x_range=(0, 7), y_range=(0, 1))
+    p = figure(width=500, height=550, x_range=(0, len(ranks) - 1), y_range=(0, 1))
     line_colors = ["#006cba", "#008000", "#ba9e00", "red"]
     legend_it = []
     for i, (metric, error, color) in enumerate(zip(metrics_list, errors_list, line_colors)):
@@ -625,10 +627,11 @@ def create_tax_figure(tool, df_summary, metrics_list, errors_list):
                 pline.visible = False
                 band.visible = False
 
+    mapping_js = json.dumps({i: r for i, r in enumerate(ranks)})
     p.xaxis.ticker = FixedTicker(ticks=rank_indices)
-    p.xaxis.formatter = CustomJSTickFormatter(code="""
-        var mapping = {0: "superkingdom", 1: "phylum", 2: "class", 3: "order", 4: "family", 5: "genus", 6: "species", 7: "strain"};
-        return mapping[tick];
+    p.xaxis.formatter = CustomJSTickFormatter(code=f"""
+        const mapping = {mapping_js};
+        return mapping[tick] ?? "";
     """)
     p.xaxis.major_label_orientation = 1.2
     p.add_layout(Legend(items=legend_it, location=(10, 10)), 'above')
@@ -773,11 +776,12 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
     df_summary_t = df_summary[df_summary[utils_labels.BINNING_TYPE] == 'taxonomic'].copy()
     df_summary_t[[utils_labels.UNIFRAC_BP, utils_labels.UNIFRAC_SEQ]] = df_summary_t[[utils_labels.UNIFRAC_BP, utils_labels.UNIFRAC_SEQ]].apply(pd.to_numeric)
 
+    ranks = [rank for rank in load_ncbi_taxinfo.RANKS if rank in df_summary_t['rank'].unique()]
     rank_to_sample_to_html = defaultdict(list)
-    qbins_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
-    qsamples_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
-    cc_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
-    contamination_plots_dict = OrderedDict([(rank, '') for rank in load_ncbi_taxinfo.RANKS])
+    qbins_plots_dict = OrderedDict([(rank, '') for rank in ranks])
+    qsamples_plots_dict = OrderedDict([(rank, '') for rank in ranks])
+    cc_plots_dict = OrderedDict([(rank, '') for rank in ranks])
+    contamination_plots_dict = OrderedDict([(rank, '') for rank in ranks])
 
     pd_mean = df_summary_t.groupby([utils_labels.RANK, utils_labels.TOOL]).mean(numeric_only=True).reset_index()
     pd_mean[utils_labels.SAMPLE] = AVG_OVER_SAMPLES
@@ -821,13 +825,13 @@ def create_taxonomic_binning_html(df_summary, pd_bins, labels, sample_ids_list, 
 
     sample_ids_list_combo = [AVG_OVER_SAMPLES] + sample_ids_list
 
-    taxonomic_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(rank_to_sample_to_html[load_ncbi_taxinfo.RANKS[0]][0]))
-    source = ColumnDataSource(data=rank_to_sample_to_html)
-
     available_ranks = list(pd_groupby_rank.groups.keys())
     available_ranks_sorted = [rank for rank in load_ncbi_taxinfo.RANKS if rank in available_ranks]
 
-    select_rank = Select(title="Taxonomic rank:", value=load_ncbi_taxinfo.RANKS[0], options=available_ranks_sorted)
+    taxonomic_div = Div(text="""<div style="margin-bottom:10pt;">{}</div>""".format(rank_to_sample_to_html[available_ranks_sorted[0]][0]))
+    source = ColumnDataSource(data=rank_to_sample_to_html)
+
+    select_rank = Select(title="Taxonomic rank:", value=available_ranks_sorted[0], options=available_ranks_sorted)
     select_sample = Select(title="Sample:", value='0', options=list(zip(map(str, range(len(sample_ids_list_combo))), sample_ids_list_combo)))
     select_rank_sample_callback = CustomJS(args=dict(source=source), code="""
         mytable.text = source.data[select_rank.value][select_sample.value];
