@@ -344,7 +344,7 @@ class Metrics:
                             (utils_labels.BINNING_TYPE, None),
                             (utils_labels.SAMPLE, None),
                             (utils_labels.RANK, None)] +
-                            [(k, [v]) for k, v in metrics_dict.items()])
+                           [(k, v) for k, v in metrics_dict.items()])
 
 
 class Query(ABC):
@@ -472,14 +472,6 @@ class Query(ABC):
 
     def destroyer(self):
         self._df = pd.DataFrame()
-        self.__precision_df = pd.DataFrame()
-        self.__recall_df = pd.DataFrame()
-        self.__heatmap_sdf = None
-        self.__metrics = None
-        self.__metrics_filtered = None
-        self.__options = None
-        self.__metadata = None
-        self.__eval_success = False
 
 
 class GenomeQuery(Query):
@@ -517,7 +509,7 @@ class GenomeQuery(Query):
         metrics_dict[utils_labels.BINNING_TYPE] = self.binning_type
         metrics_dict[utils_labels.RANK] = 'NA'
         metrics_dict[utils_labels.SAMPLE] = self.sample_id
-        return pd.DataFrame(metrics_dict)
+        return pd.DataFrame([metrics_dict])
 
     def compute_metrics(self):
         if self.label == utils_labels.GS and (self.options.only_taxonomic_queries or self.options.skip_gs):
@@ -530,9 +522,6 @@ class GenomeQuery(Query):
         if ~condition.all():
             logging.getLogger('amber').warning("{} sequences in {} not found in the gold standard.".format(query_df[~condition]['SEQUENCEID'].nunique(), self.label))
             query_df = query_df[condition]
-
-        if query_df.empty:
-            return
 
         query_w_length = pd.merge(query_df, gs_df.drop_duplicates('SEQUENCEID'), on='SEQUENCEID', sort=False)
 
@@ -685,7 +674,9 @@ class GenomeQuery(Query):
         rolling_mean = df_sorted['precision_bp'].rolling(window=window, min_periods=int(window/2)).mean()
         axs.plot(np.log(df_sorted['total_length']), rolling_mean, color='orange')
 
-        axs.set_xlim([None, np.log(df_sorted['total_length'].max())])
+        max_length = df_sorted['total_length'].max()
+        if pd.notna(max_length) and max_length > 0:
+            axs.set_xlim(right=np.log(max_length))
         axs.set_ylim([0.0, 1.0])
         axs.set_title(self.label, fontsize=12)
         plt.ylabel('Purity per bin (%)', fontsize=12)
@@ -703,7 +694,9 @@ class GenomeQuery(Query):
         rolling_mean = df_sorted['recall_bp'].rolling(window=window, min_periods=int(window / 2)).mean()
         axs.plot(np.log(df_sorted['total_length']), rolling_mean, color='orange')
 
-        axs.set_xlim([None, np.log(self.recall_df['total_length'].max())])
+        max_length = self.recall_df['total_length'].max()
+        if pd.notna(max_length) and max_length > 0:
+            axs.set_xlim(right=np.log(max_length))
         axs.set_ylim([0.0, 1.0])
         axs.set_title(self.label, fontsize=12)
         plt.ylabel('Completeness per genome (%)', fontsize=12)
@@ -723,11 +716,6 @@ class GenomeQuery(Query):
         self.plot_precision_vs_bin_size()
         self.plot_recall_vs_genome_size()
         self.plot_heat_maps()
-
-    def destroyer(self):
-        super().destroyer()
-        self.__recall_df_cami1 = pd.DataFrame()
-        self.metrics = None
 
 
 class Prediction:
@@ -878,14 +866,14 @@ class TaxonomicQuery(Query):
         allranks_metrics_df = pd.DataFrame()
         for rank in self.metrics:
             metrics_dict = self.metrics[rank].get_ordered_dict()
-            rank_metrics_df = pd.DataFrame(metrics_dict)
+            rank_metrics_df = pd.DataFrame([metrics_dict])
 
             if self.metrics_filtered:
-                rank_metrics_df = pd.DataFrame(metrics_dict) \
+                rank_metrics_df = pd.DataFrame([metrics_dict]) \
                     .drop(columns=[utils_labels.TOOL, utils_labels.BINNING_TYPE, utils_labels.SAMPLE, utils_labels.RANK]) \
                     .add_suffix(utils_labels.UNFILTERED)
                 metrics_dict = self.metrics_filtered[rank].get_ordered_dict()
-                rank_metrics_df_filtered = pd.DataFrame(metrics_dict)
+                rank_metrics_df_filtered = pd.DataFrame([metrics_dict])
                 rank_metrics_df = pd.concat([rank_metrics_df_filtered, rank_metrics_df], axis=1)
 
             rank_metrics_df[utils_labels.TOOL] = self.label
@@ -1040,12 +1028,6 @@ class TaxonomicQuery(Query):
     def destroyer(self):
         super().destroyer()
         self.__rank_to_df = None
-        self.__profile = None
-        self.__profile_filtered = None
-        self.__taxonomy_df = None
-        self.__gs_sequence_ids = None
-        self.metrics = None
-        self.metrics_filtered = None
 
 
 class Options:
