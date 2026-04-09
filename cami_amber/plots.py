@@ -309,9 +309,27 @@ def plot_summary(color_indices, df_results, labels, output_dir, rank, plot_type,
     axs.set_xlim([0.0, 1.0])
     axs.set_ylim([0.0, 1.0])
 
+    required_columns = {
+        'e': ['precision_avg_bp', 'recall_avg_bp_cami1', 'precision_avg_bp_var', 'recall_avg_bp_var_cami1'],
+        'f': ['precision_avg_seq', 'recall_avg_seq_cami1', 'precision_avg_seq_sem', 'recall_avg_seq_sem_cami1'],
+        'w': ['precision_weighted_bp', 'recall_weighted_bp'],
+        'x': ['precision_weighted_seq', 'recall_weighted_seq'],
+        'p': ['adjusted_rand_index_bp', 'percentage_of_assigned_bps'],
+    }
+
+    missing = [col for col in required_columns.get(plot_type, []) if col not in df_mean.columns]
+    if missing:
+        logging.getLogger('amber').warning(
+            "Skipping plot %s for %s because columns are missing: %s",
+            file_name, binning_type, ", ".join(missing)
+        )
+        plt.close(fig)
+        return
+
     if plot_type == 'e':
         for i, (tool, df_row) in enumerate(df_mean.iterrows()):
-            axs.errorbar(df_row['precision_avg_bp'], df_row['recall_avg_bp_cami1'], xerr=df_row['precision_avg_bp_var'], yerr=df_row['recall_avg_bp_var_cami1'],
+            axs.errorbar(df_row['precision_avg_bp'], df_row['recall_avg_bp_cami1'],
+                         xerr=df_row['precision_avg_bp_var'], yerr=df_row['recall_avg_bp_var_cami1'],
                          fmt='o',
                          ecolor=colors_list[i],
                          mec=colors_list[i],
