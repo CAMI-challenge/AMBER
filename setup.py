@@ -9,7 +9,7 @@ def dependencies():
 
 
 setup(
-    name             = 'cami-amber',
+    name             = 'cami_amber',
     version          = __version__,
     description      = 'AMBER: Assessment of Metagenome BinnERs',
     long_description = open('README.md').read(),
