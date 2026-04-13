@@ -323,6 +323,8 @@ class Metrics:
 
     def get_ordered_dict(self):
         def f1_score(metric1, metric2):
+            if pd.isna(metric1) or pd.isna(metric2):
+                return np.nan
             if metric1 + metric2 > 0:
                 return 2 * metric1 * metric2 / (metric1 + metric2)
             else:
@@ -342,7 +344,7 @@ class Metrics:
                             (utils_labels.BINNING_TYPE, None),
                             (utils_labels.SAMPLE, None),
                             (utils_labels.RANK, None)] +
-                            [(k, [v]) for k, v in metrics_dict.items()])
+                           [(k, v) for k, v in metrics_dict.items()])
 
 
 class Query(ABC):
@@ -359,6 +361,7 @@ class Query(ABC):
         self.__metadata = metadata
         self.__is_gs = is_gs
         self.__eval_success = False
+        self._df = pd.DataFrame()
 
     @property
     def label(self):
@@ -407,6 +410,11 @@ class Query(ABC):
     @property
     def eval_success(self):
         return self.__eval_success
+
+    @property
+    @abstractmethod
+    def df(self):
+        pass
 
     @label.setter
     def label(self, label):
@@ -462,6 +470,9 @@ class Query(ABC):
     def plot(self):
         return
 
+    def destroyer(self):
+        self._df = pd.DataFrame()
+
 
 class GenomeQuery(Query):
     binning_type = 'genome'
@@ -473,17 +484,16 @@ class GenomeQuery(Query):
 
     @property
     def df(self):
+        if not self._df.empty:
+            return self._df
         query_df = load_data.load_sample(self.metadata).drop_duplicates(['SEQUENCEID', 'BINID'])
         if self.options.min_length and self.is_gs:
             query_df = query_df[query_df['LENGTH'] >= self.options.min_length]
+        self._df = query_df
         if self.is_gs:
             return query_df[['SEQUENCEID', 'BINID', 'LENGTH']]
         else:
             return query_df[['SEQUENCEID', 'BINID']]
-
-    @property
-    def gold_standard_data(self):
-        return self.gold_standard.df[['SEQUENCEID', 'BINID', 'LENGTH']].rename(columns={'LENGTH': 'seq_length', 'BINID': 'genome_id'})
 
     @property
     def recall_df_cami1(self):
@@ -499,13 +509,14 @@ class GenomeQuery(Query):
         metrics_dict[utils_labels.BINNING_TYPE] = self.binning_type
         metrics_dict[utils_labels.RANK] = 'NA'
         metrics_dict[utils_labels.SAMPLE] = self.sample_id
-        return pd.DataFrame(metrics_dict)
+        return pd.DataFrame([metrics_dict])
 
-    def compute_metrics(self, gs_df):
+    def compute_metrics(self):
         if self.label == utils_labels.GS and (self.options.only_taxonomic_queries or self.options.skip_gs):
             return False
         logging.getLogger('amber').info('Evaluating {}, sample {}, genome binning'.format(self.label, self.sample_id))
 
+        gs_df = self.gold_standard.df.rename(columns={'LENGTH': 'seq_length', 'BINID': 'genome_id'})
         query_df = self.df
         condition = query_df['SEQUENCEID'].isin(gs_df['SEQUENCEID'])
         if ~condition.all():
@@ -663,7 +674,9 @@ class GenomeQuery(Query):
         rolling_mean = df_sorted['precision_bp'].rolling(window=window, min_periods=int(window/2)).mean()
         axs.plot(np.log(df_sorted['total_length']), rolling_mean, color='orange')
 
-        axs.set_xlim([None, np.log(df_sorted['total_length'].max())])
+        max_length = df_sorted['total_length'].max()
+        if pd.notna(max_length) and max_length > 0:
+            axs.set_xlim(right=np.log(max_length))
         axs.set_ylim([0.0, 1.0])
         axs.set_title(self.label, fontsize=12)
         plt.ylabel('Purity per bin (%)', fontsize=12)
@@ -681,7 +694,9 @@ class GenomeQuery(Query):
         rolling_mean = df_sorted['recall_bp'].rolling(window=window, min_periods=int(window / 2)).mean()
         axs.plot(np.log(df_sorted['total_length']), rolling_mean, color='orange')
 
-        axs.set_xlim([None, np.log(self.recall_df['total_length'].max())])
+        max_length = self.recall_df['total_length'].max()
+        if pd.notna(max_length) and max_length > 0:
+            axs.set_xlim(right=np.log(max_length))
         axs.set_ylim([0.0, 1.0])
         axs.set_title(self.label, fontsize=12)
         plt.ylabel('Completeness per genome (%)', fontsize=12)
@@ -720,19 +735,31 @@ class TaxonomicQuery(Query):
         self.__profile = None
         self.__profile_filtered = None
         self.__taxonomy_df = taxonomy_df
+        self.__gs_sequence_ids = None
 
     @property
-    def rank_to_df(self):
+    def df(self):
+        if self._df is not None and not self._df.empty:
+            return self._df
         query_df = load_data.load_sample(self.metadata)
         if self.options.min_length and self.is_gs:
             query_df = query_df[query_df['LENGTH'] >= self.options.min_length]
-        rank_to_df = load_data.get_rank_to_df(query_df, self.taxonomy_df, self.label, self.is_gs)
-        del query_df
-        return rank_to_df
+        self._df = query_df
+        return query_df
 
     @property
-    def gold_standard_data(self):
-        return self.gold_standard.rank_to_df
+    def rank_to_df(self):
+        if self.__rank_to_df is not None:
+            return self.__rank_to_df
+
+        rank_to_df = load_data.get_rank_to_df(self.df, self.taxonomy_df, self.label, self.is_gs)
+        self._df = None
+        self.__rank_to_df = rank_to_df
+
+        if self.is_gs and self.options.skip_gs and not self.__profile:
+            self.__profile = self._create_profile(all_bins=True)
+
+        return rank_to_df
 
     @property
     def profile(self):
@@ -751,6 +778,14 @@ class TaxonomicQuery(Query):
     @property
     def taxonomy_df(self):
         return self.__taxonomy_df
+
+    @property
+    def gs_sequence_ids(self):
+        return self.__gs_sequence_ids
+
+    @gs_sequence_ids.setter
+    def gs_sequence_ids(self, gs_sequence_ids):
+        self.__gs_sequence_ids = gs_sequence_ids
 
     @rank_to_df.setter
     def rank_to_df(self, rank_to_df):
@@ -831,14 +866,14 @@ class TaxonomicQuery(Query):
         allranks_metrics_df = pd.DataFrame()
         for rank in self.metrics:
             metrics_dict = self.metrics[rank].get_ordered_dict()
-            rank_metrics_df = pd.DataFrame(metrics_dict)
+            rank_metrics_df = pd.DataFrame([metrics_dict])
 
             if self.metrics_filtered:
-                rank_metrics_df = pd.DataFrame(metrics_dict) \
+                rank_metrics_df = pd.DataFrame([metrics_dict]) \
                     .drop(columns=[utils_labels.TOOL, utils_labels.BINNING_TYPE, utils_labels.SAMPLE, utils_labels.RANK]) \
                     .add_suffix(utils_labels.UNFILTERED)
                 metrics_dict = self.metrics_filtered[rank].get_ordered_dict()
-                rank_metrics_df_filtered = pd.DataFrame(metrics_dict)
+                rank_metrics_df_filtered = pd.DataFrame([metrics_dict])
                 rank_metrics_df = pd.concat([rank_metrics_df_filtered, rank_metrics_df], axis=1)
 
             rank_metrics_df[utils_labels.TOOL] = self.label
@@ -859,10 +894,6 @@ class TaxonomicQuery(Query):
         gs_df = gs_rank_to_df[rank]
 
         query_df = rank_to_df[rank][['SEQUENCEID', 'TAXID']]
-        condition = query_df['SEQUENCEID'].isin(gs_df['SEQUENCEID'])
-        if ~condition.all():
-            logging.getLogger('amber').warning("{} sequences in {} not found in the gold standard.".format(query_df[~condition]['SEQUENCEID'].nunique(), self.label))
-            query_df = query_df[condition]
 
         query_w_length_df = pd.merge(query_df, gs_df.rename(columns={'TAXID': 'true_taxid'}).reset_index(), on='SEQUENCEID', sort=False)
 
@@ -892,6 +923,9 @@ class TaxonomicQuery(Query):
         length_gs_sum = tp_fp_fn_df['length_gs'].sum()
         seq_counts_gs_sum = tp_fp_fn_df['seq_counts_gs'].sum()
 
+        def safe_divide(x, y):
+            return x / y if y else np.nan
+
         def set_values(metric_obj, df):
             tp_length_sum = df['tp_length'].sum()
             tp_seq_counts_sum = df['tp_seq_counts'].sum()
@@ -900,18 +934,18 @@ class TaxonomicQuery(Query):
             metric_obj.precision_avg_bp_sem = df['precision_bp'].sem()
             metric_obj.precision_avg_seq = df['precision_seq'].mean()
             metric_obj.precision_avg_seq_sem = df['precision_seq'].sem()
-            metric_obj.precision_weighted_bp = tp_length_sum / df['total_length'].sum()
-            metric_obj.precision_weighted_seq = tp_seq_counts_sum / df['total_seq_counts'].sum()
+            metric_obj.precision_weighted_bp = safe_divide(tp_length_sum, df['total_length'].sum())
+            metric_obj.precision_weighted_seq = safe_divide(tp_seq_counts_sum, df['total_seq_counts'].sum())
 
             metric_obj.recall_avg_bp = df['recall_bp'].mean()
             metric_obj.recall_avg_bp_sem = df['recall_bp'].sem()
             metric_obj.recall_avg_seq = df['recall_seq'].mean()
             metric_obj.recall_avg_seq_sem = df['recall_seq'].sem()
-            metric_obj.recall_weighted_bp = tp_length_sum / length_gs_sum
-            metric_obj.recall_weighted_seq = tp_seq_counts_sum / seq_counts_gs_sum
+            metric_obj.recall_weighted_bp = safe_divide(tp_length_sum, length_gs_sum)
+            metric_obj.recall_weighted_seq = safe_divide(tp_seq_counts_sum, seq_counts_gs_sum)
 
-            metric_obj.accuracy_bp = tp_length_sum / length_gs_sum
-            metric_obj.accuracy_seq = tp_seq_counts_sum / seq_counts_gs_sum
+            metric_obj.accuracy_bp = safe_divide(tp_length_sum, length_gs_sum)
+            metric_obj.accuracy_seq = safe_divide(tp_seq_counts_sum, seq_counts_gs_sum)
 
         set_values(self.metrics[rank], tp_fp_fn_df)
 
@@ -953,13 +987,29 @@ class TaxonomicQuery(Query):
 
         self.recall_df['name'] = self.recall_df['TAXID'].apply(lambda x: self.taxonomy_df.loc[x]['name'])
 
-    def compute_metrics(self, gs_rank_to_df):
+    def compute_metrics(self):
         if self.label == utils_labels.GS and (self.options.only_genome_queries or self.options.skip_gs):
             return False
+
+        if self.gold_standard.gs_sequence_ids is None:
+            self.gold_standard.gs_sequence_ids = set(self.gold_standard.df['SEQUENCEID'])
+
+        query_df = load_data.load_sample(self.metadata)
+        condition = query_df['SEQUENCEID'].isin(self.gold_standard.gs_sequence_ids)
+        if ~condition.all():
+            logging.getLogger('amber').warning("{} sequences in {} not found in the gold standard.".format(query_df[~condition]['SEQUENCEID'].nunique(), self.label))
+            query_df = query_df[condition]
+
+        if query_df.empty:
+            return
+
+        gs_rank_to_df = self.gold_standard.rank_to_df
         rank_to_df = self.rank_to_df
         for rank in rank_to_df:
             self.compute_metrics_per_rank(rank_to_df, gs_rank_to_df, rank)
-        del rank_to_df
+
+        if self.is_gs:
+            self._df = None
 
         unifrac_bp, unifrac_seq = self.compute_unifrac(all_bins=True)
         for rank in self.metrics:
@@ -974,6 +1024,11 @@ class TaxonomicQuery(Query):
         self.precision_df[utils_labels.TOOL] = self.label
         self.precision_df['sample_id'] = self.sample_id
         self.eval_success = True
+
+    def destroyer(self):
+        super().destroyer()
+        self.__rank_to_df = None
+        self.__gs_sequence_ids = None
 
 
 class Options:
